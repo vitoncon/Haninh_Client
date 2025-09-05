@@ -1,0 +1,24 @@
+.layout-breadcrumb-container {
+    margin: 0 -2rem;
+    width: calc(100% + 4rem);
+    background: var(--surface-ground);
+    border-bottom: 1px solid var(--surface-border);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 2rem 0.5rem 2rem;
+    background-color: var(--surface-card);
+    box-shadow: 0 3px 5px #00000005, 0 0 2px #0000000d, 0 1px 4px #00000014;
+    font-family: 'Lato', sans-serif;
+
+     p-breadcrumb {
+        nav.p-breadcrumb {
+            ol.p-breadcrumb-list {
+                margin-left: -1rem;
+                font-family: inherit;  // giữ cùng font với body
+            }
+        }
+    }
+}
+

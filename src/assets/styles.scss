@@ -1,0 +1,11 @@
+/* You can add global styles to this file, and also import other style files */
+@use './tailwind.css';
+@use './layout/layout.scss';
+@use 'primeicons/primeicons.css';
+@use './demo/demo.scss';
+@use './layout/_menu.scss';
+@use './layout/_topbar.scss';
+@use './layout/_responsive.scss';
+@use './layout/_main.scss';
+@use './layout/_breadcrumb.scss';
+
