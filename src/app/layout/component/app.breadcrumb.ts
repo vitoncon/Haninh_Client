@@ -16,7 +16,7 @@ import { filter } from 'rxjs/operators';
 })
 export class AppBreadcrumb {
     items: MenuItem[] = [];
-    home: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
+    home: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
 
     constructor(private router: Router, private route: ActivatedRoute) {
         this.router.events
