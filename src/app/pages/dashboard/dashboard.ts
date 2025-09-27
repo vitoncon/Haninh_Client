@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 import { NotificationsWidget } from './components/notificationswidget';
 import { StatsWidget } from './components/statswidget';
 import { RecentSalesWidget } from './components/recentsaleswidget';
@@ -7,7 +9,16 @@ import { RevenueStreamWidget } from './components/revenuestreamwidget';
 
 @Component({
     selector: 'app-dashboard',
-    imports: [StatsWidget, RecentSalesWidget, BestSellingWidget, RevenueStreamWidget, NotificationsWidget],
+    standalone: true,
+    imports: [
+        ToastModule,
+        StatsWidget,
+        RecentSalesWidget,
+        BestSellingWidget,
+        RevenueStreamWidget,
+        NotificationsWidget
+    ],
+   
     template: `
         <div class="grid grid-cols-12 gap-8">
             <app-stats-widget class="contents" />
@@ -22,4 +33,19 @@ import { RevenueStreamWidget } from './components/revenuestreamwidget';
         </div>
     `
 })
-export class Dashboard {}
+export class Dashboard implements OnInit {
+    constructor(private messageService: MessageService) {}
+
+    ngOnInit(): void {
+        const navState = history.state;
+    
+        if (navState?.loginSuccess) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Đăng nhập thành công',
+            detail: 'Chào mừng Admin!'
+          });
+          history.replaceState({}, '');
+        }
+    }
+}
