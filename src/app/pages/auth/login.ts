@@ -203,13 +203,7 @@ export class Login implements OnInit {
                 }
 
                 this.errorMessage = null;
-                // Redirect thẳng tới dashboard
-                this.isLoading = true;
-                setTimeout(() => {
-                    this.router.navigate(['/dashboard'], {
-                        state: { loginSuccess: true }
-                    });
-                }, 800); 
+                // Auth service sẽ tự động điều hướng theo role
             },
             error: () => {
                 this.isLoading = false;
