@@ -6,7 +6,8 @@ import { Landing } from './app/pages/landing/landing';
 import { Notfound } from './app/pages/notfound/notfound';
 import { Unauthorized } from './app/pages/unauthorized/unauthorized';
 import { authGuard } from './app/core/guards/auth.guard';
-import { roleGuard } from './app/core/guards/role.guard';
+import { permissionGuard } from './app/core/guards/permission.guard';
+import { PermissionService } from './app/core/services/permission.service';
 
 export const appRoutes: Routes = [
     { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
@@ -15,7 +16,7 @@ export const appRoutes: Routes = [
         component: AppLayout,
         canActivate: [authGuard],
         children: [
-            { path: 'dashboard', data: { breadcrumb: 'Dashboard', roles: [1] }, canActivate: [roleGuard], component: Dashboard },
+            { path: 'dashboard', data: { breadcrumb: 'Dashboard' }, canActivate: [permissionGuard([PermissionService.PERMISSIONS.DASHBOARD_VIEW])], component: Dashboard },
             { path: 'features', loadChildren: () => import('./app/features/features.routes') },
             { path: 'documentation', component: Documentation },
             { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }

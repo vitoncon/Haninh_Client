@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, map, tap, catchError } from 'rxjs';
+import { PermissionService, Permission } from './permission.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -9,7 +11,11 @@ export class AuthService {
     private readonly roleKey = 'user_role';
     private readonly rememberKey = 'remember_me';
 
-    constructor(private httpClient: HttpClient) {}
+    constructor(
+        private httpClient: HttpClient, 
+        private router: Router,
+        private permissionService: PermissionService
+    ) {}
 
     isAuthenticated(): boolean {
         const token = this.getAccessToken();
@@ -78,6 +84,8 @@ export class AuthService {
             sessionStorage.removeItem(this.accessTokenKey);
             sessionStorage.removeItem(this.refreshTokenKey);
             sessionStorage.removeItem(this.roleKey);
+            // Clear permissions
+            this.permissionService.clearPermissions();
         } catch {
             // no-op
         }
@@ -117,16 +125,38 @@ export class AuthService {
         }
     }
 
-    login(payload: { email: string; password: string }): Observable<{ accessToken: string; refreshToken: string } | string> {
+    login(payload: { email: string; password: string }): Observable<{ accessToken: string; refreshToken: string; permissions?: Permission[] } | string> {
         return this.httpClient
-            .post<{ accessToken: string; refreshToken: string } | string>('\/api\/auth\/login', payload)
+            .post<{ accessToken: string; refreshToken: string; permissions?: Permission[] } | string>('\/api\/auth\/login', payload)
             .pipe(
                 tap((res) => {
                     if (typeof res !== 'string') {
                         this.setAccessToken(res.accessToken);
                         this.setRefreshToken(res.refreshToken);
                         const roles = this.getRoles();
-                        if (roles.length > 0) this.setRole(roles[0]);
+                        if (roles.length > 0) {
+                            this.setRole(roles[0]);
+                            
+                            // Lưu permissions từ BE nếu có
+                            if (res.permissions && res.permissions.length > 0) {
+                                this.permissionService.setPermissions(res.permissions);
+                            } else {
+                                // Fallback: sử dụng permissions mặc định theo role
+                                this.permissionService.setRolePermissions(roles[0]);
+                            }
+                            
+                            // Điều hướng theo role
+                            const roleId = roles[0];
+                            if (roleId === 1) {
+                                this.router.navigate(['/dashboard']);
+                            } else if (roleId === 2) {
+                                this.router.navigate(['/dashboard']);
+                            } else if (roleId === 3) {
+                                this.router.navigate(['/features/schedule']);
+                            } else {
+                                this.router.navigate(['/unauthorized']);
+                            }                            
+                        }
                     }
                 }),
                 map((res) => res)
