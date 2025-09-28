@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
     selector: 'app-menu',
@@ -15,48 +16,98 @@ import { AppMenuitem } from './app.menuitem';
         </ng-container>
     </ul> `
 })
-export class AppMenu {
+export class AppMenu implements OnInit {
     model: MenuItem[] = [];
 
+    constructor(private permissionService: PermissionService) {}
+
     ngOnInit() {
-        this.model = [
+        const allMenuItems = [
             {
                 label: 'Home',
-                items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/dashboard'] }]
+                items: [{ 
+                    label: 'Dashboard', 
+                    icon: 'pi pi-fw pi-home', 
+                    routerLink: ['/dashboard'],
+                    permissions: [PermissionService.PERMISSIONS.DASHBOARD_VIEW]
+                }]
             },
             {
                 label: 'KHÓA HỌC & LỚP HỌC',
                 items: [
-                    { label: 'Quản lý khóa học', icon: 'pi pi-fw pi-graduation-cap', routerLink: ['/features/courses'] },
-                    { label: 'Quản lý lớp học', icon: 'pi pi-fw pi-users', routerLink: ['/features/class'] },
-                    { label: 'Lịch học', icon: 'pi pi-fw pi-calendar', routerLink: ['/features/schedule'] },
-                    ]
+                    { 
+                        label: 'Quản lý khóa học', 
+                        icon: 'pi pi-fw pi-graduation-cap', 
+                        routerLink: ['/features/courses'],
+                        permissions: [PermissionService.PERMISSIONS.COURSES_VIEW]
+                    },
+                    { 
+                        label: 'Quản lý lớp học', 
+                        icon: 'pi pi-fw pi-users', 
+                        routerLink: ['/features/class'],
+                        permissions: [PermissionService.PERMISSIONS.CLASS_VIEW]
+                    },
+                    { 
+                        label: 'Lịch học', 
+                        icon: 'pi pi-fw pi-calendar', 
+                        routerLink: ['/features/schedule'],
+                        permissions: [PermissionService.PERMISSIONS.SCHEDULE_VIEW]
+                    },
+                ]
             },
             {
                 label: 'HỌC VIÊN',
                 items: [
-                    { label: 'Quản lý học viên', icon: 'pi pi-fw pi-user', routerLink: ['/features/students'] },
-                    { label: 'Kết quả học tập', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/features/study-results'] },
-                    { label: 'Chứng chỉ', icon: 'pi pi-fw pi-crown', routerLink: ['/features/certificates'] },
-                    ]
+                    { 
+                        label: 'Quản lý học viên', 
+                        icon: 'pi pi-fw pi-user', 
+                        routerLink: ['/features/students'],
+                        permissions: [PermissionService.PERMISSIONS.STUDENTS_VIEW]
+                    },
+                    { 
+                        label: 'Kết quả học tập', 
+                        icon: 'pi pi-fw pi-chart-bar', 
+                        routerLink: ['/features/study-results'],
+                        permissions: [PermissionService.PERMISSIONS.STUDY_RESULTS_VIEW]
+                    },
+                    { 
+                        label: 'Chứng chỉ', 
+                        icon: 'pi pi-fw pi-crown', 
+                        routerLink: ['/features/certificates'],
+                        permissions: [PermissionService.PERMISSIONS.CERTIFICATES_VIEW]
+                    },
+                ]
             },
             {
                 label: 'GIẢNG VIÊN',
                 items: [
-                    { label: 'Quản lý giảng viên', icon: 'pi pi-fw pi-credit-card', routerLink: ['/features/teacher'] },
-                    { label: 'Phân công giảng dạy', icon: 'pi pi-fw pi-sitemap', routerLink: ['/features/teaching-assignments'] },
-                    ]
+                    { 
+                        label: 'Quản lý giảng viên', 
+                        icon: 'pi pi-fw pi-credit-card', 
+                        routerLink: ['/features/teacher'],
+                        permissions: [PermissionService.PERMISSIONS.TEACHER_VIEW]
+                    },
+                    { 
+                        label: 'Phân công giảng dạy', 
+                        icon: 'pi pi-fw pi-sitemap', 
+                        routerLink: ['/features/teaching-assignments'],
+                        permissions: [PermissionService.PERMISSIONS.TEACHING_ASSIGNMENTS_VIEW]
+                    },
+                ]
             },
             {
                 label: 'TÀI CHÍNH',
                 items: [
-                    { label: 'Quản lý học phí', icon: 'pi pi-fw pi-wallet', routerLink: ['/features/fees'] },
+                    { 
+                        label: 'Quản lý học phí', 
+                        icon: 'pi pi-fw pi-wallet', 
+                        routerLink: ['/features/fees'],
+                        permissions: [PermissionService.PERMISSIONS.FEES_VIEW]
+                    },
                 ]
             },
-
-
-
-
+        ];
+        
             // duoi 
             // {
             //     label: 'Pages',
@@ -166,6 +217,8 @@ export class AppMenu {
             //         }
             //     ]
             // }
-        ];
+
+        // Filter menu items based on user permissions
+        this.model = this.permissionService.getFilteredMenuItems(allMenuItems);
     }
 }
