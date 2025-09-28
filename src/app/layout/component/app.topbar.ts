@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -7,6 +7,7 @@ import { StyleClassModule } from 'primeng/styleclass';
 import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
 import { API_BASE_URL } from '../../core/tokens/api-url.token';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-topbar',
@@ -58,12 +59,16 @@ import { API_BASE_URL } from '../../core/tokens/api-url.token';
                     </button>
 
                     <div class="relative">
-                        <button type="button" class="layout-topbar-action" pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
+                        <button type="button" class="flex items-center gap-3 h-10 px-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
                             <img [src]="avatarUrl" 
-                                [alt]="user?.name || 'Avatar'" 
+                                [alt]="userName || 'Avatar'" 
                                 class="w-8 h-8 rounded-full object-cover"
-                                (error)="onImageError($event)" />
-                            <span>{{ user?.name || 'User' }}</span>
+                                (error)="onImageError($event)" 
+                            />
+                            <div class="flex flex-col items-start text-left">
+                                <span class="text-sm font-medium text-white">{{ userName || 'User' }}</span>
+                                <span class="text-xs text-white/70">{{ roleText || 'No Role' }}</span>
+                            </div>
                         </button>
 
                         <div class="hidden absolute right-0 mt-1 w-56 rounded-xl bg-surface-0 dark:bg-surface-900 shadow-2 p-2 border border-primary-300 dark:border-primary-500 text-surface-900 dark:text-surface-0">
@@ -94,12 +99,13 @@ import { API_BASE_URL } from '../../core/tokens/api-url.token';
         </div>
     </div>`
 })
-export class AppTopbar {
+export class AppTopbar implements OnInit {
     items!: MenuItem[];
-    user: any;
-    avatarUrl: string = '';
+    userName: string = '';
+    roleText: string = '';
+    avatarUrl: string = '/img_avatar/avatar_default.jpg';
 
-    constructor(public layoutService: LayoutService, private http: HttpClient, private router: Router, @Inject(API_BASE_URL) private apiBaseUrl: string) {}
+    constructor(public layoutService: LayoutService, private http: HttpClient, private router: Router, @Inject(API_BASE_URL) private apiBaseUrl: string, private authService: AuthService) {}
 
     toggleDarkMode() {
         this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
@@ -111,37 +117,86 @@ export class AppTopbar {
     }
 
     ngOnInit(): void {
-        this.http.get('/api/profile').subscribe({
-            next: (res: any) => {
-                this.user = res?.data ?? null;
-                // Sử dụng avatarUrl từ server hoặc fallback về default
-                this.avatarUrl = this.user?.avatarUrl || '/img_avatar/avatar_default.jpg';
+        this.loadUserProfile();
+    }
+
+    private loadUserProfile(): void {
+        const token = this.authService.getAccessToken();
+        if (!token) {
+
+            this.avatarUrl = '/img_avatar/avatar_default.jpg';
+            return;
+        }
+
+        this.http.get(`${this.apiBaseUrl}/api/profile`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }).subscribe({
+            next: (response: any) => {
+                if (response && response.data) {
+                    const userData = response.data;
+                    this.userName = userData.name || userData.fullName || userData.username || userData.email || 'User';
+                    
+                    if (userData.role_id) {
+                        this.roleText = this.getRoleDisplayName(userData.role_id);
+                    } else {
+                        this.roleText = 'No Role';
+                    }
+                    
+                    this.avatarUrl = userData.avatar || userData.avatarUrl || '/img_avatar/avatar_default.jpg';
+                }
             },
             error: (error) => {
-                console.error('Error loading user profile:', error);
-                // Nếu có lỗi khi load profile, sử dụng ảnh default
-                this.avatarUrl = '/img_avatar/avatar_default.jpg';
+                this.loadFromJWT();
             }
         });
     }
+
+    private loadFromJWT(): void {
+        const token = this.authService.getAccessToken();
+        if (token) {
+            const payload = this.decodeJwt(token);
+            this.userName = payload?.name || payload?.fullName || payload?.username || payload?.email || 'User';
+            const roles = Array.isArray(payload?.roles) ? payload.roles : [];
+            this.roleText = roles.length > 0 ? this.getRoleDisplayName(roles[0]) : 'No Role';
+            this.avatarUrl = payload?.avatarUrl || payload?.avatar || '/img_avatar/avatar_default.jpg';
+        } else {
+            this.avatarUrl = '/img_avatar/avatar_default.jpg';
+        }
+    }
+
+    private getRoleDisplayName(roleId: number): string {
+        switch (roleId) {
+            case 1:
+                return 'Admin';
+            case 2:
+                return 'Giáo viên';
+            case 3:
+                return 'Học viên';
+            default:
+                return `Role ${roleId}`;
+        }
+    }
+
+    private decodeJwt(token: string): any | null {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            const json = atob(parts[1]);
+            return JSON.parse(json);
+        } catch {
+            return null;
+        }
+    }
       
     onLogout() {
-        const refreshToken = localStorage.getItem('refreshToken');
-    
-        this.http.post('/api/auth/logout', {}, {
-            headers: { Authorization: `Bearer ${refreshToken}` }
-        }).subscribe({
-            next: () => {
-                localStorage.clear();
-                sessionStorage.clear();
-                this.router.navigate(['/auth/login']);
-            },
-            error: () => {
-                localStorage.clear(); // Dù lỗi cũng clear để đảm bảo user logout
-                sessionStorage.clear();
-                this.router.navigate(['/auth/login']);
-            }
-        });
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } finally {
+            this.router.navigate(['/auth/login']);
+        }
     }
     
 }
