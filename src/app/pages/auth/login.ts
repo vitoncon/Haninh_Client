@@ -81,7 +81,8 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
             [closable]="true"
             [style]="{ width: '450px' }"
             [draggable]="false"
-            [resizable]="false">
+            [resizable]="false"
+            (onHide)="resetForgotForm()">
             
             <div class="flex flex-col gap-4">
                 <div class="text-surface-600 dark:text-surface-200 text-sm">
@@ -104,7 +105,33 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                         <p-password inputId="forgot-password2" name="forgotPassword2" [(ngModel)]="forgotPassword2" placeholder="Nhập lại mật khẩu" [toggleMask]="true" [feedback]="false" [fluid]="true"></p-password>
                     </div>
                 </div>
+
+                <!-- Thông báo lỗi/thành công ngay trong popup -->
+                <div *ngIf="forgotError" class="text-red-500 text-center mt-3 text-base font-medium">
+                    {{ forgotError }}
+                    </div>
+
+                    <div *ngIf="forgotSuccess" class="text-green-600 text-center mt-3 text-base font-medium">
+                    {{ forgotSuccess }}
+                </div>
             </div>
+
+            <ng-template pTemplate="footer">
+               <div class="flex justify-end gap-3 w-full">
+                    <p-button 
+                        label="Hủy" 
+                        severity="secondary" 
+                        (onClick)="showForgot = false">
+                    </p-button>
+
+                    <p-button 
+                        label="Xác nhận" 
+                        [loading]="forgotLoading" 
+                        (onClick)="onSubmitForgot()" 
+                        styleClass="p-button-primary">
+                    </p-button>
+                </div>
+            </ng-template>
         </p-dialog>
 
     `,
@@ -147,6 +174,8 @@ export class Login implements OnInit {
 
     checked: boolean = false;
     errorMessage: string | null = null;
+    forgotError: string | null = null;
+    forgotSuccess: string | null = null;
     isLoading: boolean = false;
     isRedirected: boolean = false;
     showForgot: boolean = false;
@@ -205,11 +234,35 @@ export class Login implements OnInit {
                 this.errorMessage = null;
                 // Auth service sẽ tự động điều hướng theo role
             },
-            error: () => {
+            error: (err: any) => {
                 this.isLoading = false;
-                this.errorMessage = 'Không đúng tài khoản hoặc mật khẩu';
-                this.messageService.add({ severity: 'error', summary: 'Lỗi đăng nhập', detail: 'Không đúng tài khoản hoặc mật khẩu' });
-            }
+              
+                if (err.status === 0) {
+                  // Lỗi mạng hoặc server chưa bật
+                  this.errorMessage = 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau';
+                  this.messageService.add({
+                    severity: 'error',
+                    summary: 'Lỗi kết nối',
+                    detail: 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau'
+                  });
+                } else if (err.status === 401 || err.status === 404) {
+                  // Sai tài khoản hoặc mật khẩu
+                  this.errorMessage = 'Không đúng tài khoản hoặc mật khẩu';
+                  this.messageService.add({
+                    severity: 'error',
+                    summary: 'Lỗi đăng nhập',
+                    detail: 'Không đúng tài khoản hoặc mật khẩu'
+                  });
+                } else {
+                  // Các lỗi còn lại (500, ...)
+                  this.errorMessage = 'Đã xảy ra lỗi. Vui lòng thử lại sau.';
+                  this.messageService.add({
+                    severity: 'error',
+                    summary: 'Lỗi hệ thống',
+                    detail: 'Đã xảy ra lỗi. Vui lòng thử lại sau.'
+                  });
+                }
+            }              
         });
     }
 
@@ -226,29 +279,59 @@ export class Login implements OnInit {
         const email = (this.forgotEmail || '').trim();
         const p1 = (this.forgotPassword1 || '').trim();
         const p2 = (this.forgotPassword2 || '').trim();
-
+      
+        this.forgotError = null;
+        this.forgotSuccess = null;
+      
         if (!email || !p1 || !p2) {
-            this.messageService.add({ severity: 'warn', summary: 'Thiếu thông tin', detail: 'Vui lòng nhập đầy đủ email và mật khẩu mới' });
-            return;
+          this.forgotError = 'Vui lòng nhập đầy đủ email và mật khẩu mới';
+          return;
         }
         if (p1 !== p2) {
-            this.messageService.add({ severity: 'warn', summary: 'Mật khẩu không khớp', detail: 'Vui lòng nhập lại mật khẩu trùng khớp' });
-            return;
+          this.forgotError = 'Mật khẩu không khớp. Vui lòng nhập lại';
+          return;
         }
+      
         this.forgotLoading = true;
         this.authService.forgotPassword({ email, password: p1 }).subscribe({
-            next: () => {
-                this.forgotLoading = false;
-                this.messageService.add({ severity: 'success', summary: 'Cập nhật mật khẩu thành công' });
-                this.showForgot = false;
+          next: () => {
+            this.forgotLoading = false;
+            this.forgotSuccess = 'Cập nhật mật khẩu thành công';
+            this.showForgot = false;
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Thành công',
+                detail: 'Cập nhật mật khẩu thành công'
+                });
             },
-            error: () => {
-                this.forgotLoading = false;
-                this.messageService.add({ severity: 'error', summary: 'Cập nhật mật khẩu thất bại' });
-            }
+            error: (err: any) => {
+            this.forgotLoading = false;
+                if (err.status === 0) {
+                this.forgotError = 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau';
+                } else if (err.status === 401 || err.status === 404 || err.status === 500) {
+                // Không tiết lộ thông tin chính xác
+                this.forgotSuccess = 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu';
+                } else {
+                this.forgotError = 'Đã xảy ra lỗi. Vui lòng thử lại sau.';
+                }
+            }          
         });
     }
-
+    
+    onCancelForgot(): void {
+        this.showForgot = false;
+        this.resetForgotForm();
+    }
+      
+    resetForgotForm(): void {
+        this.forgotEmail = '';
+        this.forgotPassword1 = '';
+        this.forgotPassword2 = '';
+        this.forgotError = null;
+        this.forgotSuccess = null;
+        this.forgotLoading = false;
+    }
+    
     onEmailEnter(event: any): void {
         event.preventDefault();
         // Focus on password field
