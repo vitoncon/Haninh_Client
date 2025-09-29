@@ -18,7 +18,7 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                         <span class="text-primary font-bold text-3xl">404</span>
                         <h1 class="text-surface-900 dark:text-surface-0 font-bold text-3xl lg:text-5xl mb-2">Not Found</h1>
                         <div class="text-surface-600 dark:text-surface-200 mb-8">Liên kết bạn truy cập không hợp lệ hoặc đã bị xóa.</div>
-                        <p-button label="Về trang chủ" routerLink="/" />
+                        <p-button label="Về trang chủ" routerLink="/dashboard" />
                     </div>
                 </div>
             </div>
