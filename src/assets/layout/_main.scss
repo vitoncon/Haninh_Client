@@ -17,14 +17,19 @@ img {
     max-width: none !important;
 }
 
+:root {
+    --header-height: 64px;
+    --breadcrumb-height: 64px;
+    --footer-height: 90px;
+}
 .page-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: calc(100vh - 64px); // chiếm full content sau header
-  background: var(--surface-card);
-  border-radius: var(--content-border-radius);
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: calc(100vh - var(--header-height) - var(--breadcrumb-height) - var(--footer-height));
+    background: var(--surface-card);
+    border-radius: var(--content-border-radius);
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
