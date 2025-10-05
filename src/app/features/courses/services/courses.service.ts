@@ -1,38 +1,45 @@
 import { Injectable } from '@angular/core';
-import { Course } from '@features/courses/models/courses.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { Course } from '../models/courses.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class CourseService {
+export class CoursesService {
+  private apiUrl = 'http://localhost:10093/api/courses';
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  // Trả về dữ liệu demo (Promise)
- getCoursesMini(): Promise<Course[]> {
-  const demoData: Course[] = [
-    { id: 'C001', name: 'Lập trình Web với Angular', category: 'Công nghệ thông tin', duration: '10 tuần', students: 45 },
-    // { id: 'C002', name: 'Phân tích dữ liệu với Python', category: 'Khoa học dữ liệu', duration: '8 tuần', students: 60 },
-    // { id: 'C003', name: 'Thiết kế UI/UX cơ bản', category: 'Thiết kế', duration: '6 tuần', students: 30 },
-    // { id: 'C004', name: 'Quản trị dự án Agile/Scrum', category: 'Quản lý', duration: '4 tuần', students: 25 },
-    // { id: 'C005', name: 'Trí tuệ nhân tạo cơ bản', category: 'AI/Machine Learning', duration: '12 tuần', students: 40 },
-    // { id: 'C001', name: 'Lập trình Web với Angular', category: 'Công nghệ thông tin', duration: '10 tuần', students: 45 },
-    // { id: 'C002', name: 'Phân tích dữ liệu với Python', category: 'Khoa học dữ liệu', duration: '8 tuần', students: 60 },
-    // { id: 'C003', name: 'Thiết kế UI/UX cơ bản', category: 'Thiết kế', duration: '6 tuần', students: 30 },
-    // { id: 'C004', name: 'Quản trị dự án Agile/Scrum', category: 'Quản lý', duration: '4 tuần', students: 25 },
-    // { id: 'C005', name: 'Trí tuệ nhân tạo cơ bản', category: 'AI/Machine Learning', duration: '12 tuần', students: 40 },
-    // { id: 'C001', name: 'Lập trình Web với Angular', category: 'Công nghệ thông tin', duration: '10 tuần', students: 45 },
-    // { id: 'C002', name: 'Phân tích dữ liệu với Python', category: 'Khoa học dữ liệu', duration: '8 tuần', students: 60 },
-    // { id: 'C003', name: 'Thiết kế UI/UX cơ bản', category: 'Thiết kế', duration: '6 tuần', students: 30 },
-    // { id: 'C004', name: 'Quản trị dự án Agile/Scrum', category: 'Quản lý', duration: '4 tuần', students: 25 },
-    // { id: 'C005', name: 'Trí tuệ nhân tạo cơ bản', category: 'AI/Machine Learning', duration: '12 tuần', students: 40 },
-    // { id: 'C001', name: 'Lập trình Web với Angular', category: 'Công nghệ thông tin', duration: '10 tuần', students: 45 },
-    // { id: 'C002', name: 'Phân tích dữ liệu với Python', category: 'Khoa học dữ liệu', duration: '8 tuần', students: 60 },
-    // { id: 'C003', name: 'Thiết kế UI/UX cơ bản', category: 'Thiết kế', duration: '6 tuần', students: 30 },
-    { id: 'C004', name: 'Quản trị dự án Agile/Scrum', category: 'Quản lý', duration: '4 tuần', students: 25 },
-    { id: 'C005', name: 'Trí tuệ nhân tạo cơ bản', category: 'AI/Machine Learning', duration: '12 tuần', students: 40 },
-  ];
+  private getAuthHeaders(): { headers: HttpHeaders } {
+    const token = localStorage.getItem('accessToken') || '';
+    return {
+      headers: new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
 
-  return Promise.resolve(demoData);
-}
+  getCourses(): Observable<Course[]> {
+    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
+      map((res) => res?.data ?? res)
+    );
+  }
+
+  getCourseById(id: number): Observable<Course> {
+    return this.http.get<Course>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
+  }
+
+  addCourse(course: Course): Observable<Course> {
+    return this.http.post<Course>(this.apiUrl, course, this.getAuthHeaders());
+  }
+
+  updateCourse(id: number, course: Course): Observable<Course> {
+    return this.http.put<Course>(`${this.apiUrl}/${id}`, course, this.getAuthHeaders());
+  }
+
+  deleteCourse(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
+  }
 }
