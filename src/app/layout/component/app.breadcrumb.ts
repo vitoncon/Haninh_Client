@@ -28,26 +28,25 @@ export class AppBreadcrumb {
 
     createBreadcrumbs(route: ActivatedRoute, url: string = '', breadcrumbs: MenuItem[] = []): MenuItem[] {
         const children: ActivatedRoute[] = route.children;
-
-        if (children.length === 0) {
-            return breadcrumbs;
-        }
-
+    
         for (let child of children) {
             const routeURL: string = child.snapshot.url.map(segment => segment.path).join('/');
-            if (routeURL !== '') {
+            if (routeURL) {
                 url += `/${routeURL}`;
             }
-
-            if (child.snapshot.data['breadcrumb']) {
+    
+            const breadcrumbLabel = child.snapshot.data['breadcrumb'];
+            if (breadcrumbLabel) {
                 breadcrumbs.push({
-                    label: child.snapshot.data['breadcrumb'],
+                    label: breadcrumbLabel,
                     routerLink: url
                 });
             }
-
+    
+            // Đệ quy tiếp cho cây con
             return this.createBreadcrumbs(child, url, breadcrumbs);
         }
+    
         return breadcrumbs;
-    }
+    }    
 }
