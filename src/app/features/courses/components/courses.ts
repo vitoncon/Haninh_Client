@@ -17,6 +17,9 @@ import { DrawerModule } from 'primeng/drawer';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Table } from 'primeng/table';
+import { Toolbar } from 'primeng/toolbar';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 import { ClassService } from '../../class-management/services/class.service';
 import { ClassModel } from '../../class-management/models/class.model';
 
@@ -38,6 +41,9 @@ import { ClassModel } from '../../class-management/models/class.model';
     DialogModule,
     DrawerModule,
     ConfirmDialogModule,
+    Toolbar,
+    IconField,
+    InputIcon,
   ],
   providers: [ConfirmationService],
   styleUrls: ['./courses.scss']
@@ -49,7 +55,7 @@ export class Courses implements OnInit {
   drawerDetailVisible: boolean = false;
   selectedCourse: Course | null = null;
   formCourse: Course | null = null;
-  classesForCourse: ClassModel[] = [];
+  classesForCourse: any[] = [];
   newCourse: Course = {
     id: undefined,
     course_code: '',
@@ -64,7 +70,6 @@ export class Courses implements OnInit {
   };
   saving: boolean = false;
   @ViewChild('dt', { static: false }) dt!: Table;
-
 
   constructor(
     private coursesService: CoursesService,
@@ -119,27 +124,27 @@ export class Courses implements OnInit {
     this.drawerVisible = true;  
   }
 
-  onDelete(courseId: number) {
+  onDelete(courseItem: Course) {
     this.confirmationService.confirm({
-      message: 'Bạn có chắc muốn xóa khóa học này không?',
-      header: 'Xác nhận',
+      message: `Bạn có chắc muốn xóa khóa học <b>${courseItem.course_name}</b> không?`,
+      header: 'Xác nhận xóa',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Đồng ý',
       rejectLabel: 'Hủy',
-      acceptButtonStyleClass: 'p-button',
+      acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-text',
       accept: () => {
-        this.coursesService.deleteCourse(courseId).subscribe(() => {
+        this.coursesService.deleteCourse(courseItem.id!).subscribe(() => {
           this.loadCourses();
           this.messageService.add({
             severity: 'success',
             summary: 'Thành công',
-            detail: 'Đã xóa khóa học thành công'
+            detail: `Đã xóa khóa học "${courseItem.course_name}" thành công`
           });
         });
       }
-    });    
-  }
+    });
+  }  
   
   onView(course: Course) {
     this.selectedCourse = { ...course };
@@ -217,5 +222,11 @@ export class Courses implements OnInit {
       tuition_fee: null,
       status: 'Đang hoạt động'
     };
+  }
+
+  onGlobalFilter(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const value = (input?.value || '').trim();
+    this.dt?.filterGlobal(value, 'contains');
   }
 }

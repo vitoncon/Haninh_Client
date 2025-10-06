@@ -1,9 +1,6 @@
 <div class="page-card">
-  <header class="page-header" *ngIf="courses.length > 0">
-    <div class="title">Tất cả các khóa học</div>
-  </header>
-  <div class="table-toolbar flex justify-between">
-    <div>
+  <p-toolbar *ngIf="courses.length > 0">
+    <ng-template pTemplate="start">
       <button
         pButton
         type="button"
@@ -13,18 +10,28 @@
         (click)="onClearFilters()"
         *ngIf="dt"
       ></button>
-    </div>
-    <div>
-      <button
-        pButton
-        type="button"
-        label="Tạo mới"
-        icon="pi pi-plus"
-        class="p-button-primary"
-        (click)="onCreate()"
-      ></button>
-    </div>
-  </div>
+    </ng-template>
+    <ng-template pTemplate="center">
+      <div class="flex items-center gap-3">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search" />
+          <input type="text" pInputText placeholder="Tìm kiếm ..." (input)="onGlobalFilter($event)" />
+        </p-iconfield>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="end">
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          type="button"
+          label="Tạo mới"
+          icon="pi pi-plus"
+          class="p-button-primary"
+          (click)="onCreate()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-toolbar>
   <!-- popup thêm/sửa khóa học -->
   <p-drawer header="Thêm/Sửa khóa học" [(visible)]="drawerVisible" 
             position="right"
@@ -125,7 +132,7 @@
 
           <!-- Cột phải -->
           <div class="course-detail-body__right">
-            <h3 class="sub-title">Các lớp học</h3>
+            <h3 class="sub-title">Các lớp học ({{ classesForCourse.length }})</h3>
             <div class="extra-list" *ngIf="classesForCourse.length > 0; else noClasses">
               <div class="extra-item" *ngFor="let cls of classesForCourse">
                 {{ cls.class_name }}
@@ -169,8 +176,9 @@
         [paginator]="true"
         [rows]="5"
         [rowsPerPageOptions]="[5, 10, 20]"
+        [globalFilterFields]="['course_code','course_name','language','level','tuition_fee','status']"
         responsiveLayout="scroll"
-        styleClass="p-datatable-gridlines">
+        styleClass="p-datatable-striped p-datatable-gridlines p-datatable-sm">
         <!-- Header -->
         <ng-template pTemplate="header">
           <tr>
@@ -244,7 +252,7 @@
                 pButton
                 icon="pi pi-trash"
                 class="p-button-rounded p-button-text p-button-danger"
-                (click)="onDelete(course.id)"
+                (click)="onDelete(course)"
               ></button>
             </td>
           </tr>

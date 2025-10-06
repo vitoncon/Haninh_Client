@@ -1,21 +1,64 @@
-.page-card {
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid var(--surface-border, #d0d0d0);
-    background-color: transparent;
+// Bảng tổng thể
+:host ::ng-deep .p-datatable {
+  width: 100%;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--surface-card);
+  transition: all 0.2s ease-in-out;
 
-    .title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-color, #212121);
-      margin: 0;
-      line-height: 1.4;
+  th, td {
+    white-space: nowrap;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-weight: 600;
+    background-color: var(--surface-ground);
+  }
+
+  tr:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+// Cột hành động
+:host ::ng-deep .action-column {
+  text-align: center;
+  min-width: 140px;
+
+  button {
+    margin: 0 0.25rem;
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.1);
     }
   }
+}
+
+// Loại bỏ thanh cuộn ngang nếu không cần
+:host ::ng-deep .p-datatable-wrapper {
+  overflow-x: auto; // Cho phép cuộn khi thực sự cần
+  scrollbar-width: thin; // Firefox
+  -ms-overflow-style: none; // IE/Edge
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+}
+/* Trạng thái khóa học */
+.status-active,
+.status-inactive {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+.status-active { background-color: #DCFCE7; color: #166534; }
+.status-inactive { background-color: #E5E7EB; color: #374151; }
+
+.page-card {
 
   main {
     flex: 1;
@@ -58,20 +101,8 @@
       width: 100%;
     } 
   }
-  .table-toolbar {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 1rem;
-
-    button:first-child {
-      margin-right: auto;
-    }
-
-    button:last-child {
-      margin-left: auto;
-    }
-  }
+  // spacing under the new toolbar
+  ::ng-deep .p-toolbar { margin-bottom: 0.75rem; }
 }
 
 // cua so them khoa hoc 
