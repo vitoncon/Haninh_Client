@@ -1,1 +1,373 @@
-<p>teacher works!</p>
+<div class="page-card">
+  <p-toolbar *ngIf="!loading && teachers.length > 0">
+    <ng-template pTemplate="start">
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          type="button"
+          label="Xóa lọc"
+          icon="pi pi-filter-slash"
+          class="p-button-outlined p-button-primary"
+          (click)="onClearFilters()"
+          *ngIf="dt && filteredTeachers.length > 0"
+        ></button>
+        <button
+          *ngIf="showClearButton" 
+          pButton
+          type="button"
+          label="Xóa tìm kiếm"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary"
+          (click)="clearSearch()"
+        ></button>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="center">
+      <div class="flex items-center gap-3">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search" />
+          <input
+            type="text"
+            pInputText
+            placeholder="Tìm kiếm ..."
+            [(ngModel)]="searchQuery"
+            (input)="onGlobalFilter($event)"
+          />
+        </p-iconfield>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="end">
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          type="button"
+          label="Tạo mới"
+          icon="pi pi-plus"
+          class="p-button-primary"
+          (click)="onCreate()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-toolbar>
+
+  <!-- Drawer thêm/sửa giảng viên -->
+  <p-drawer
+    header="Thêm/Sửa giảng viên"
+    [(visible)]="drawerVisible"
+    position="right"
+    (onHide)="onDrawerHide()"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+  >
+    <div class="form-grid p-fluid" *ngIf="formTeacher">
+      <!-- Mã GV -->
+      <div class="form-group">
+        <label>Mã GV: <span class="req">*</span></label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.teacher_code"
+          placeholder="VD: GV001"
+        />
+      </div>
+
+      <!-- Họ tên -->
+      <div class="form-group">
+        <label>Họ tên: <span class="req">*</span></label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.teacher_name"
+          placeholder="VD: Nguyễn Văn A"
+        />
+      </div>
+
+      <!-- Ngày sinh -->
+      <div class="form-group">
+        <label>Ngày sinh:</label>
+        <p-datepicker
+          [(ngModel)]="formTeacher.dob"
+          dateFormat="yy-mm-dd"
+        ></p-datepicker>
+      </div>
+      
+      <!-- Giới tính -->
+      <div class="form-group">
+        <label>Giới tính:</label>
+        <p-select
+          [options]="genderOptions"
+          [(ngModel)]="formTeacher.gender"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn giới tính"
+        ></p-select>
+      </div>
+
+      <!-- Điện thoại -->
+      <div class="form-group">
+        <label>Số điện thoại:</label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.phone"
+          placeholder="VD: 0912345678"
+        />
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label>Email:</label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.email"
+          placeholder="VD: example@gmail.com"
+        />
+      </div>
+
+      <!-- Địa chỉ -->
+      <div class="form-group">
+        <label>Địa chỉ:</label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.address"
+          placeholder="VD: Hà Nội"
+        />
+      </div>
+
+      <!-- Khoa -->
+      <div class="form-group">
+        <label>Khoa:</label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.department"
+          placeholder="VD: CNTT"
+        />
+      </div>
+
+      <!-- Chuyên môn -->
+      <div class="form-group">
+        <label>Chuyên môn:</label>
+        <input
+          pInputText
+          [(ngModel)]="formTeacher.specialization"
+          placeholder="VD: Trí tuệ nhân tạo"
+        />
+      </div>
+
+      <!-- Kinh nghiệm -->
+      <div class="form-group">
+        <label>Số năm kinh nghiệm:</label>
+        <p-inputNumber
+          [(ngModel)]="formTeacher.experience_years"
+          [min]="0"
+          [allowEmpty]="true"
+          placeholder="VD: 5"
+        ></p-inputNumber>
+      </div>
+
+      <!-- Trình độ -->
+      <div class="form-group">
+        <label>Trình độ học vấn:</label>
+        <p-select
+          [options]="degreeOptions"
+          [(ngModel)]="formTeacher.degree"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn trình độ"
+        ></p-select>
+      </div>
+
+      <!-- Trạng thái -->
+      <div class="form-group">
+        <label>Trạng thái:</label>
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="formTeacher.status"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn trạng thái"
+        ></p-select>
+      </div>
+
+      <!-- Ghi chú -->
+      <div class="form-group full-width">
+        <label>Ghi chú:</label>
+        <textarea
+          pTextarea
+          [(ngModel)]="formTeacher.note"
+          rows="3"
+          placeholder="Ghi chú thêm..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button
+        pButton
+        label="Hủy"
+        class="p-button-text"
+        (click)="drawerVisible = false"
+        [disabled]="saving"
+      ></button>
+      <button
+        pButton
+        label="Lưu"
+        (click)="onSave()"
+        [disabled]="
+          saving ||
+          !formTeacher?.teacher_code ||
+          !formTeacher?.teacher_name
+        "
+      ></button>
+    </div>
+  </p-drawer>
+  
+    <!-- Drawer xem chi tiết giảng viên -->
+    <p-drawer
+      header="Chi tiết giảng viên"
+      [(visible)]="drawerDetailVisible"
+      position="full"
+      [showCloseIcon]="true"
+      [modal]="true"
+    >
+      <div *ngIf="selectedTeacher" class="teacher-detail-body">
+        <div class="teacher-detail-body__header">
+          <h2>{{ selectedTeacher.teacher_name }}</h2>
+          <p>Mã GV: {{ selectedTeacher.teacher_code }}</p>
+        </div>
+  
+        <div class="teacher-detail-body__content">
+          <div class="teacher-info">
+            <p><strong>Giới tính:</strong> {{ selectedTeacher.gender }}</p>
+            <p><strong>Ngày sinh:</strong> {{ selectedTeacher.dob }}</p>
+            <p><strong>Điện thoại:</strong> {{ selectedTeacher.phone }}</p>
+            <p><strong>Email:</strong> {{ selectedTeacher.email }}</p>
+            <p><strong>Địa chỉ:</strong> {{ selectedTeacher.address }}</p>
+            <p><strong>Khoa:</strong> {{ selectedTeacher.department }}</p>
+            <p><strong>Chuyên môn:</strong> {{ selectedTeacher.specialization }}</p>
+            <p><strong>Kinh nghiệm:</strong> {{ selectedTeacher.experience_years }} năm</p>
+            <p><strong>Bằng cấp:</strong> {{ selectedTeacher.degree }}</p>
+            <p><strong>Trạng thái:</strong> {{ selectedTeacher.status }}</p>
+            <p><strong>Ghi chú:</strong> {{ selectedTeacher.note }}</p>
+          </div>
+        </div>
+  
+        <div class="teacher-detail-body__actions">
+          <button
+            pButton
+            label="Đóng"
+            icon="pi pi-times"
+            class="p-button-outlined"
+            (click)="drawerDetailVisible = false"
+          ></button>
+        </div>
+      </div>
+    </p-drawer>
+  
+  <!-- Main content -->
+  <main>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-wrapper">
+      <i class="pi pi-spin pi-spinner loading-icon"></i>
+      <h3>Đang tải...</h3>
+      <p>Vui lòng chờ trong giây lát</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && teachers.length === 0" class="empty-wrapper">
+      <i class="pi pi-graduation-cap empty-icon"></i>
+      <h3>Không có giảng viên</h3>
+      <p>
+        Hiện tại không có giảng viên nào. Hãy chú ý theo dõi, những trải nghiệm học tập mới đang đến gần!
+      </p>
+      <button pButton label="Tạo mới" icon="pi pi-plus" class="p-button-primary" (click)="onCreate()"></button>
+    </div>
+
+    <!-- No Search Results -->
+    <div *ngIf="!loading && teachers.length > 0 && filteredTeachers.length === 0" class="empty-wrapper">
+      <i class="pi pi-search empty-icon"></i>
+      <h3>Không tìm thấy kết quả</h3>
+      <p>
+        Không có giảng viên nào phù hợp với từ khóa "<strong>{{ searchQuery }}</strong>"
+      </p>
+    </div>
+    
+    <!-- Table -->
+    <div *ngIf="!loading && teachers.length > 0 && filteredTeachers.length > 0">
+    <p-table
+      #dt
+      [value]="filteredTeachers"
+      [paginator]="true"
+      [rows]="5"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [globalFilterFields]="[
+        'teacher_code',
+        'teacher_name',
+        'department',
+        'specialization',
+        'degree',
+        'status'
+      ]"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-striped p-datatable-gridlines p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Mã GV</th>
+          <th>Họ tên</th>
+          <th>Khoa</th>
+          <th>Chuyên môn</th>
+          <th>Bằng cấp</th>
+          <th>Kinh nghiệm</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-teacher>
+        <tr>
+          <td>{{ teacher.teacher_code }}</td>
+          <td>{{ teacher.teacher_name }}</td>
+          <td>{{ teacher.department }}</td>
+          <td>{{ teacher.specialization }}</td>
+          <td>{{ teacher.degree }}</td>
+          <td>{{ teacher.experience_years }} năm</td>
+          <td>
+            <span
+              [ngClass]="{
+                'status-active': teacher.status === 'Đang dạy',
+                'status-inactive': teacher.status === 'Tạm nghỉ',
+                'status-ended': teacher.status === 'Đã nghỉ'
+              }"
+            >
+              {{ teacher.status }}
+            </span>
+          </td>
+          <td>
+            <button
+              pButton
+              icon="pi pi-eye"
+              class="p-button-rounded p-button-text p-button-primary"
+              (click)="onView(teacher)"
+            ></button>
+            <button
+              pButton
+              icon="pi pi-pencil"
+              class="p-button-rounded p-button-text p-button-info"
+              (click)="onEdit(teacher)"
+            ></button>
+            <button
+              pButton
+              icon="pi pi-trash"
+              class="p-button-rounded p-button-text p-button-danger"
+              (click)="onDelete(teacher)"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+    </div>
+  </main>
+  
+  <p-confirmDialog></p-confirmDialog>
+</div>
+  

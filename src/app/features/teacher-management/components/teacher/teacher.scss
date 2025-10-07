@@ -1,0 +1,392 @@
+/* ======================== BẢNG DANH SÁCH GIẢNG VIÊN ======================== */
+:host ::ng-deep .p-datatable {
+    width: 100%;
+    border-radius: 0.75rem;
+    overflow: visible; // allow dropdown/panels to overflow
+    background: var(--surface-card);
+    transition: all 0.2s ease-in-out;
+  
+    th,
+    td {
+      white-space: nowrap;
+      text-align: left;
+      vertical-align: middle;
+    }
+  
+    th {
+      font-weight: 600;
+      background-color: var(--surface-ground);
+    }
+  
+    tr:hover {
+      background-color: var(--surface-hover);
+    }
+  }
+  
+  /* ======================== CỘT HÀNH ĐỘNG ======================== */
+  :host ::ng-deep .action-column {
+    text-align: center;
+    min-width: 140px;
+  
+    button {
+      margin: 0 0.25rem;
+      transition: transform 0.15s ease;
+  
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
+  
+  /* ======================== SCROLLBAR ======================== */
+  :host ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: none;
+  
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+  }
+  
+  /* ======================== TRẠNG THÁI HOẠT ĐỘNG ======================== */
+  .status-active,
+  .status-inactive {
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+  .status-active {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+  .status-inactive {
+    background-color: #f3f4f6;
+    color: #374151;
+  }
+  
+  /* ======================== TRANG DANH SÁCH ======================== */
+  .page-card {
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+  
+      .loading-wrapper, .empty-wrapper {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--text-color-secondary, #666);
+
+        // Place action button at top-right of the empty card
+        .p-button {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+          }
+          
+          &:active {
+            transform: translateY(0);
+          }
+        }
+  
+        .loading-icon, .empty-icon {
+          font-size: 3rem;
+          color: var(--primary-color, #3f51b5);
+          display: block;
+        }
+  
+        h3 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem 0;
+          color: var(--text-color);
+        }
+  
+        p {
+          max-width: 500px;
+          margin: 0 auto;
+          font-size: 1rem;
+          line-height: 1.5;
+          color: var(--text-color-secondary, #666);
+        }
+      }
+  
+      p-table {
+        width: 100%;
+      }
+    }
+  
+    ::ng-deep .p-toolbar {
+      margin-bottom: 0.75rem;
+    }
+        // Style cho nút Xóa tìm kiếm
+        .p-button-outlined.p-button-secondary {
+          border-color: var(--orange-500, #f97316);
+          color: var(--orange-500, #f97316);
+          
+          &:hover {
+            background-color: var(--orange-50, #fff7ed);
+            border-color: var(--orange-600, #ea580c);
+            color: var(--orange-600, #ea580c);
+          }
+          
+          &:focus {
+            box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
+          }
+        }
+  }
+  
+  /* ======================== DRAWER THÊM / SỬA GIẢNG VIÊN ======================== */
+  $color-border: #dcdcdc;
+  $spacing-sm: 0.5rem;
+  $spacing-md: 1rem;
+  
+  :host {
+    display: block;
+  
+    ::ng-deep .p-drawer {
+      .p-drawer-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+        padding: $spacing-md;
+        border-bottom: 1px solid $color-border;
+      }
+  
+      .p-drawer-content {
+        padding: $spacing-md;
+      }
+    }
+  }
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-md;
+  
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-sm;
+  
+      label {
+        font-weight: 500;
+        color: var(--text-color);
+  
+        .req {
+          color: var(--red-500, #f44336);
+          margin-left: 0.25rem;
+        }
+      }
+  
+      input,
+      textarea,
+      .p-inputtext,
+      .p-inputnumber,
+      .p-dropdown,
+      .p-datepicker {
+        width: 100%;
+      }
+
+      // Normalize datepicker sizes
+      ::ng-deep .p-datepicker-input,
+      ::ng-deep .p-datepicker input.p-inputtext {
+        width: 100%;
+        height: 33px;
+        min-height: 33px;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.9rem;
+      }
+      ::ng-deep .p-datepicker .p-datepicker-trigger,
+      ::ng-deep .p-datepicker .p-inputtext + .p-datepicker-trigger {
+        height: 33px;
+        width: 33px;
+        padding: 0;
+      }
+      ::ng-deep .p-datepicker .p-button-icon {
+        font-size: 0.8rem;
+      }
+  
+      &.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+  
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-md;
+    padding: $spacing-md;
+    border-top: 1px solid $color-border;
+    margin-top: 1rem;
+  
+    button {
+      min-width: 100px;
+    }
+  }
+  
+  /* ======================== RESPONSIVE ======================== */
+  @media (max-width: 600px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* ======================== CỬA SỔ CHI TIẾT GIẢNG VIÊN ======================== */
+  .teacher-detail-body {
+    padding: 2.5rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    font-family: var(--font-family);
+    color: var(--text-color);
+    background-color: var(--surface-card);
+    border-radius: 20px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--surface-border);
+    animation: fadeIn 0.4s ease;
+  
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  
+    &__header {
+      background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+      padding: 1.75rem 2rem;
+      border-radius: 16px;
+      margin-bottom: 2.5rem;
+      text-align: center;
+      h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--primary-color);
+      }
+      p {
+        margin-top: 0.5rem;
+        color: var(--text-color-secondary);
+        font-size: 1rem;
+      }
+    }
+  
+    &__content {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+  
+      @media (max-width: 992px) {
+        grid-template-columns: 1fr;
+      }
+    }
+  
+    &__left,
+    &__right {
+      background: var(--surface-section);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--surface-border);
+    }
+  
+    &__left {
+      .teacher-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+  
+        p {
+          margin: 0;
+          font-size: 1rem;
+          color: var(--text-color-secondary);
+          line-height: 1.6;
+  
+          strong {
+            color: var(--text-color);
+            font-weight: 600;
+            display: inline-block;
+            min-width: 160px;
+          }
+        }
+      }
+    }
+  
+    &__right {
+      h3.sub-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--primary-color);
+        padding-left: 0.75rem;
+      }
+  
+      .class-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+  
+        .class-item {
+          padding: 0.75rem 1rem;
+          border-radius: 12px;
+          background: var(--surface-card);
+          border: 1px solid var(--surface-border);
+          color: var(--text-color);
+          transition: all 0.25s ease;
+  
+          &:hover {
+            background: var(--surface-hover);
+            color: var(--primary-color);
+            transform: translateX(3px);
+          }
+        }
+      }
+    }
+  
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid var(--surface-border);
+      padding-top: 1.5rem;
+  
+      .p-button {
+        border-radius: 12px;
+        padding: 0.7rem 1.6rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+  
+        &:hover {
+          transform: translateY(-2px);
+        }
+  
+        &.p-button-outlined {
+          background: transparent;
+          color: var(--primary-color);
+          border: 1px solid var(--primary-color);
+  
+          &:hover {
+            background: var(--primary-50);
+          }
+        }
+      }
+    }
+  }
+  
