@@ -1,3 +1,295 @@
 <div class="page-card">
-    <p>anh em minh cu the thoi he he</p>
-</div>
+    <p-toolbar *ngIf="!loading && classes.length > 0">
+      <ng-template pTemplate="start">
+        <div class="flex items-center gap-2">
+          <button
+            pButton
+            type="button"
+            label="Xóa lọc"
+            icon="pi pi-filter-slash"
+            class="p-button-outlined p-button-primary"
+            (click)="onClearFilters()"
+            *ngIf="dt && filteredClasses.length > 0"
+          ></button>
+          <button
+            *ngIf="showClearButton" 
+            pButton
+            type="button"
+            label="Xóa tìm kiếm"
+            icon="pi pi-times"
+            class="p-button-outlined p-button-secondary"
+            (click)="clearSearch()"
+          ></button>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="center">
+        <div class="flex items-center gap-3">
+          <p-iconfield iconPosition="left">
+            <p-inputicon class="pi pi-search" />
+            <input 
+              type="text" 
+              pInputText 
+              placeholder="Tìm kiếm ..." 
+              [(ngModel)]="searchQuery"
+              (input)="onGlobalFilter($event)" 
+            />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="end">
+        <div class="flex items-center gap-2">
+          <button
+            pButton
+            type="button"
+            label="Tạo mới"
+            icon="pi pi-plus"
+            class="p-button-primary"
+            (click)="onCreate()"
+          ></button>
+        </div>
+      </ng-template>
+    </p-toolbar>
+  
+    <!-- popup thêm/sửa lớp học -->
+    <p-drawer header="Thêm/Sửa lớp học" [(visible)]="drawerVisible"
+              position="right"
+              (onHide)="onDrawerHide()"
+              [modal]="true"
+              [style]="{ width: '500px' }">
+      <div class="form-grid p-fluid" *ngIf="formClass">
+        <div class="form-group">
+          <label>Mã lớp: <span class="req">*</span></label>
+          <input pInputText name="class_code" [(ngModel)]="formClass!.class_code" placeholder="VD: L01" />
+        </div>
+        <div class="form-group">
+          <label>Tên lớp: <span class="req">*</span></label>
+          <input pInputText name="class_name" [(ngModel)]="formClass!.class_name" placeholder="VD: Trung Biên Phiên Dịch" />
+        </div>
+        <div class="form-group">
+          <label>Khóa học:</label>
+          <p-select 
+            name="course_id"
+            [(ngModel)]="formClass!.course_id"
+            [options]="courseOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Chọn khóa học">
+          </p-select>
+        </div>
+        <div class="form-group">
+          <label>Ngày bắt đầu:</label>
+          <p-datepicker name="start_date" [(ngModel)]="formClass!.start_date" dateFormat="dd/mm/yy"></p-datepicker>
+        </div>
+        <div class="form-group">
+          <label>Ngày kết thúc:</label>
+          <p-datepicker name="end_date" [(ngModel)]="formClass!.end_date" dateFormat="dd/mm/yy"></p-datepicker>
+        </div>
+        <div class="form-group full-width">
+          <label>Lịch học:</label>
+          <input pInputText name="schedule" [(ngModel)]="formClass!.schedule" placeholder="VD: Thứ 2,4,6 18:00-20:00" />
+        </div>
+        <div class="form-group">
+          <label>Phòng học:</label>
+          <input pInputText name="room" [(ngModel)]="formClass!.room" placeholder="VD: P101" />
+        </div>
+        <div class="form-group">
+          <label>Sĩ số tối đa:</label>
+          <p-inputNumber name="max_students" [(ngModel)]="formClass!.max_students" [min]="0"></p-inputNumber>
+        </div>
+        <div class="form-group full-width">
+          <label>Trạng thái:</label>
+          <p-select name="status" [(ngModel)]="formClass!.status" [options]="statusOptions"></p-select>
+        </div>
+        <div class="form-group full-width">
+          <label>Mô tả:</label>
+          <textarea pTextarea name="description" [(ngModel)]="formClass!.description" rows="3"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Chuẩn đầu ra:</label>
+          <textarea pTextarea name="learning_outcomes" [(ngModel)]="formClass!.learning_outcomes" rows="3" placeholder="VD: Đạt TOEIC ≥ 500, Giao tiếp cơ bản, Năng lực N3"></textarea>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button pButton label="Hủy" class="p-button-text" (click)="drawerVisible=false" [disabled]="saving"></button>
+        <button pButton label="Lưu" (click)="onSave()" [disabled]="saving || !formClass?.class_code || !formClass?.class_name"></button>
+      </div>
+    </p-drawer>
+  
+    <!-- popup xem chi tiết lớp học -->
+    <div class="class-detail-card">
+      <p-drawer
+        header="Chi tiết lớp học"
+        [(visible)]="drawerDetailVisible"
+        position="full"
+        [showCloseIcon]="true"
+        [modal]="true"
+      >
+        <div *ngIf="selectedClass" class="class-detail-body">
+  
+          <!-- Header -->
+          <div class="class-detail-body__header">
+            <h2>{{ selectedClass.class_name }}</h2>
+            <p>Mã lớp: {{ selectedClass.class_code }}</p>
+          </div>
+  
+          <!-- Nội dung chính -->
+          <div class="class-detail-body__content">
+            <!-- Cột trái -->
+            <div class="class-detail-body__left">
+              <div class="class-info">
+                <p><strong>Khóa học:</strong> {{ selectedClass.course_name }}</p>
+                <p><strong>Ngày bắt đầu:</strong> {{ selectedClass.start_date | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Ngày kết thúc:</strong> {{ selectedClass.end_date | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Lịch học:</strong> {{ selectedClass.schedule }}</p>
+                <p><strong>Phòng:</strong> {{ selectedClass.room }}</p>
+                <p><strong>Sĩ số tối đa:</strong> {{ selectedClass.max_students }}</p>
+                <p><strong>Trạng thái:</strong> {{ selectedClass.status }}</p>
+                <p><strong>Mô tả:</strong> {{ selectedClass.description }}</p>
+                <p *ngIf="selectedClass.learning_outcomes"><strong>Chuẩn đầu ra:</strong> {{ selectedClass.learning_outcomes }}</p>
+              </div>
+            </div>
+  
+            <!-- Cột phải -->
+            <div class="class-detail-body__right">
+              <h3 class="sub-title">Giáo viên phụ trách</h3>
+              <div class="extra-list">
+                <div class="extra-item" *ngFor="let lec of selectedClass.lecturers">
+                  {{ lec.name }}
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Footer -->
+          <div class="class-detail-body__actions">
+            <button
+              pButton
+              label="Đóng"
+              icon="pi pi-times"
+              class="p-button-outlined"
+              (click)="drawerDetailVisible = false"
+            ></button>
+          </div>
+        </div>
+      </p-drawer>
+    </div>
+  
+    <!-- main -->
+    <main>
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-wrapper">
+        <i class="pi pi-spin pi-spinner loading-icon"></i>
+        <h3>Đang tải...</h3>
+        <p>Vui lòng chờ trong giây lát</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && classes.length === 0" class="empty-wrapper">
+        <i class="pi pi-graduation-cap empty-icon"></i>
+        <h3>Không có lớp học</h3>
+        <p>
+          Hiện tại không có lớp học nào. Hãy chú ý theo dõi, những trải nghiệm học tập mới đang đến gần!
+        </p>
+        <button pButton label="Tạo mới" icon="pi pi-plus" class="p-button-primary" (click)="onCreate()"></button>
+      </div>
+
+      <!-- No Search Results -->
+      <div *ngIf="!loading && classes.length > 0 && filteredClasses.length === 0" class="empty-wrapper">
+        <i class="pi pi-search empty-icon"></i>
+        <h3>Không tìm thấy kết quả</h3>
+        <p>
+          Không có lớp học nào phù hợp với từ khóa "<strong>{{ searchQuery }}</strong>"
+        </p>
+      </div>
+      
+      <!-- Table -->
+      <div *ngIf="!loading && classes.length > 0 && filteredClasses.length > 0">
+      <p-table #dt
+        [value]="filteredClasses"
+        [paginator]="true"
+        [rows]="5"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [globalFilterFields]="['class_code','class_name','course_name','status']"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-striped p-datatable-gridlines p-datatable-sm">
+
+        <!-- Header -->
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Mã lớp</th>
+            <th>
+              Tên lớp
+              <p-columnFilter field="class_name" display="menu" matchMode="contains"></p-columnFilter>
+            </th>
+            <th>
+              Khóa học
+              <p-columnFilter field="course_name" display="menu" matchMode="equals"></p-columnFilter>
+            </th>
+            <th>
+              Ngày bắt đầu
+              <p-columnFilter field="start_date" display="menu" matchMode="gte"></p-columnFilter>
+            </th>
+            <th>
+              Ngày kết thúc
+              <p-columnFilter field="end_date" display="menu" matchMode="lte"></p-columnFilter>
+            </th>
+            <th>
+              Sĩ số tối đa
+              <p-columnFilter field="max_students" display="menu" matchMode="equals"></p-columnFilter>
+            </th>
+            <th>
+              Trạng thái
+              <p-columnFilter field="status" display="menu" matchMode="equals"></p-columnFilter>
+            </th>
+            <th>Hành động</th>
+          </tr>
+        </ng-template>
+
+        <!-- Body -->
+        <ng-template pTemplate="body" let-class>
+          <tr>
+            <td>{{ class.class_code }}</td>
+            <td>{{ class.class_name }}</td>
+            <td>{{ courseNameById[class.course_id] || class.course_name || '-' }}</td>
+            <td>{{ class.start_date | date:'dd/MM/yyyy' }}</td>
+            <td>{{ class.end_date | date:'dd/MM/yyyy' }}</td>
+            <td>{{ class.max_students }}</td>
+            <td>
+              <span
+                [ngClass]="{
+                  'status-open': class.status === 'Mở đăng ký',
+                  'status-ongoing': class.status === 'Đang diễn ra',
+                  'status-completed': class.status === 'Hoàn thành',
+                  'status-cancelled': class.status === 'Đã hủy'
+                }"
+              >
+                {{ class.status }}
+              </span>
+            </td>
+            <td>
+              <button
+                pButton
+                icon="pi pi-eye"
+                class="p-button-rounded p-button-text p-button-primary"
+                (click)="onView(class)"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-pencil"
+                class="p-button-rounded p-button-text p-button-info"
+                (click)="onEdit(class)"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-trash"
+                class="p-button-rounded p-button-text p-button-danger"
+                (click)="onDelete(class)"
+              ></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+      </div>
+    </main>
+    <p-confirmDialog></p-confirmDialog>
+  </div>
