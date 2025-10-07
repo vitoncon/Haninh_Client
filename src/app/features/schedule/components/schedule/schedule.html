@@ -1,1 +1,38 @@
-<p>schedule works!</p>
+<div class="page-card">
+<full-calendar [options]="calendarOptions"></full-calendar>
+
+<p-dialog header="Thêm / Sửa buổi học" [(visible)]="displayDialog" [modal]="true" [style]="{width: '400px'}">
+  <div class="p-fluid">
+    <div class="p-field">
+      <label for="title">Tên buổi học</label>
+      <input id="title" type="text" pInputText [(ngModel)]="formSchedule.class_name" />
+    </div>
+
+    <div class="p-field">
+      <label for="date">Ngày học</label>
+      <input id="date" type="date" pInputText [(ngModel)]="formSchedule.date" />
+    </div>
+
+    <div class="p-field">
+      <label for="start">Giờ bắt đầu</label>
+      <input id="start" type="time" pInputText [(ngModel)]="formSchedule.start_time" />
+    </div>
+
+    <div class="p-field">
+      <label for="end">Giờ kết thúc</label>
+      <input id="end" type="time" pInputText [(ngModel)]="formSchedule.end_time" />
+    </div>
+
+    <div class="p-field">
+      <label for="room">Phòng học</label>
+      <input id="room" type="text" pInputText [(ngModel)]="formSchedule.room" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton label="Lưu" icon="pi pi-check" (click)="onSave()"></button>
+    <button pButton label="Hủy" icon="pi pi-times" class="p-button-secondary" (click)="onCancel()"></button>
+    <button *ngIf="formSchedule?.id" pButton label="Xóa" icon="pi pi-trash" class="p-button-danger" (click)="onDelete()"></button>
+  </ng-template>
+</p-dialog>
+</div>
