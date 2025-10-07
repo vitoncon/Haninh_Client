@@ -1,21 +1,38 @@
 <div class="page-card">
-  <p-toolbar *ngIf="courses.length > 0">
+  <p-toolbar *ngIf="!loading && courses.length > 0">
     <ng-template pTemplate="start">
-      <button
-        pButton
-        type="button"
-        label="Xóa lọc"
-        icon="pi pi-filter-slash"
-        class="p-button-outlined p-button-primary"
-        (click)="onClearFilters()"
-        *ngIf="dt"
-      ></button>
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          type="button"
+          label="Xóa lọc"
+          icon="pi pi-filter-slash"
+          class="p-button-outlined p-button-primary"
+          (click)="onClearFilters()"
+          *ngIf="dt && filteredCourses.length > 0"
+        ></button>
+        <button
+          *ngIf="showClearButton" 
+          pButton
+          type="button"
+          label="Xóa tìm kiếm"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary"
+          (click)="clearSearch()"
+        ></button>
+      </div>
     </ng-template>
     <ng-template pTemplate="center">
       <div class="flex items-center gap-3">
         <p-iconfield iconPosition="left">
           <p-inputicon class="pi pi-search" />
-          <input type="text" pInputText placeholder="Tìm kiếm ..." (input)="onGlobalFilter($event)" />
+          <input 
+            type="text" 
+            pInputText 
+            placeholder="Tìm kiếm ..." 
+            [(ngModel)]="searchQuery"
+            (input)="onGlobalFilter($event)" 
+          />
         </p-iconfield>
       </div>
     </ng-template>
@@ -156,23 +173,48 @@
           ></button>
         </div>
       </div>
-      </p-drawer>
-    </div>
-
+    </p-drawer>
+  </div>
 
   <!--main-->
   <main>
-    <div *ngIf="courses.length === 0" class="empty-wrapper">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-wrapper">
+      <i class="pi pi-spin pi-spinner loading-icon"></i>
+      <h3>Đang tải...</h3>
+      <p>Vui lòng chờ trong giây lát</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && courses.length === 0" class="empty-wrapper">
       <i class="pi pi-graduation-cap empty-icon"></i>
       <h3>Không có khóa học</h3>
       <p>
         Hiện tại không có khóa học nào. Hãy chú ý theo dõi, những trải nghiệm học tập mới đang đến gần!
       </p>
+      <button
+          pButton
+          type="button"
+          label="Tạo mới"
+          icon="pi pi-plus"
+          class="p-button-primary mt-3"
+          (click)="onCreate()"
+        ></button>
     </div>
+
+    <!-- No Search Results -->
+    <div *ngIf="!loading && courses.length > 0 && filteredCourses.length === 0" class="empty-wrapper">
+      <i class="pi pi-search empty-icon"></i>
+      <h3>Không tìm thấy kết quả</h3>
+      <p>
+        Không có khóa học nào phù hợp với từ khóa "<strong>{{ searchQuery }}</strong>"
+      </p>
+    </div>
+    
     <!-- Table -->
-    <div *ngIf="courses.length > 0">
+    <div *ngIf="!loading && courses.length > 0 && filteredCourses.length > 0">
       <p-table #dt
-        [value]="courses"
+        [value]="filteredCourses"
         [paginator]="true"
         [rows]="5"
         [rowsPerPageOptions]="[5, 10, 20]"

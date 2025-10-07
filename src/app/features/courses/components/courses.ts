@@ -1,4 +1,4 @@
-import { Component, OnInit,ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { CoursesService } from '../services/courses.service';
 import { Course } from '../models/courses.model';
@@ -17,9 +17,10 @@ import { DrawerModule } from 'primeng/drawer';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Table } from 'primeng/table';
-import { Toolbar } from 'primeng/toolbar';
-import { IconField } from 'primeng/iconfield';
-import { InputIcon } from 'primeng/inputicon';
+import { ToolbarModule } from 'primeng/toolbar';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { TooltipModule } from 'primeng/tooltip';
 import { ClassService } from '../../class-management/services/class.service';
 import { ClassModel } from '../../class-management/models/class.model';
 
@@ -41,15 +42,17 @@ import { ClassModel } from '../../class-management/models/class.model';
     DialogModule,
     DrawerModule,
     ConfirmDialogModule,
-    Toolbar,
-    IconField,
-    InputIcon,
+    ToolbarModule,
+    IconFieldModule,
+    InputIconModule,
+    TooltipModule,
   ],
   providers: [ConfirmationService],
   styleUrls: ['./courses.scss']
 })
 export class Courses implements OnInit {
   courses: Course[] = [];
+  filteredCourses: Course[] = [];
   displayDialog: boolean = false; 
   drawerVisible: boolean = false;
   drawerDetailVisible: boolean = false;
@@ -69,13 +72,20 @@ export class Courses implements OnInit {
     status: 'Đang hoạt động'
   };
   saving: boolean = false;
+  loading: boolean = false;
+  searchQuery: string = '';
+  showClearButton: boolean = false;
   @ViewChild('dt', { static: false }) dt!: Table;
+  private searchTimer: any = null;
+  private searchCache: Map<string, Course[]> = new Map();
+  private readonly CACHE_SIZE_LIMIT = 50;
 
   constructor(
     private coursesService: CoursesService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private classService: ClassService
+    private classService: ClassService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -98,11 +108,27 @@ export class Courses implements OnInit {
   }
 
   loadCourses() {
-    this.coursesService.getCourses().subscribe(data => {
-      this.courses = data.map(course => ({
-        ...course,
-        tuition_fee: Number(course.tuition_fee)
-      }));
+    this.loading = true;
+    this.coursesService.getCourses().subscribe({
+      next: (data) => {
+        this.courses = data.map(course => ({
+          ...course,
+          tuition_fee: Number(course.tuition_fee)
+        }));
+        this.filteredCourses = [...this.courses];
+        this.clearSearchCache();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading courses:', error);
+        this.loading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: 'Không thể tải danh sách khóa học'
+        });
+        this.cdr.detectChanges();
+      }
     });
   }
   onCreate() {
@@ -206,7 +232,7 @@ export class Courses implements OnInit {
   }
 
   onClearFilters() {
-    this.dt?.clear();
+    this.clearSearch();
   }
 
   resetForm() {
@@ -227,6 +253,120 @@ export class Courses implements OnInit {
   onGlobalFilter(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = (input?.value || '').trim();
-    this.dt?.filterGlobal(value, 'contains');
+
+    this.searchQuery = value || '';
+    this.showClearButton = (value || '').length > 0;
+    
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    const debounceTime = value.length > 3 ? 300 : 500;
+    
+    this.searchTimer = setTimeout(() => {
+      this.filterCourses(value);
+    }, debounceTime);
+  }
+
+  private filterCourses(query: string) {
+    if (!query || query.trim() === '') {
+      this.filteredCourses = [...this.courses];
+      this.cdr.detectChanges();
+      return;
+    }
+    const cacheKey = query.toLowerCase().trim();
+    if (this.searchCache.has(cacheKey)) {
+      this.filteredCourses = [...this.searchCache.get(cacheKey)!];
+      this.cdr.detectChanges();
+      return;
+    }
+    const searchTerms = this.parseSearchQuery(query);
+    const results = this.courses.filter(course => 
+      this.advancedSearchInCourse(course, searchTerms)
+    );
+    this.cacheSearchResults(cacheKey, results);
+    this.filteredCourses = [...results];
+    if (this.dt) {
+      this.dt.clear();
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  private cacheSearchResults(key: string, results: Course[]) {
+    if (this.searchCache.size >= this.CACHE_SIZE_LIMIT) {
+      const firstKey = this.searchCache.keys().next().value;
+      if (firstKey) {
+        this.searchCache.delete(firstKey);
+      }
+    }
+    
+    this.searchCache.set(key, results);
+  }
+  private parseSearchQuery(query: string): string[] {
+    return query.toLowerCase().trim().split(/\s+/).filter(term => term.length > 0);
+  }
+
+  private advancedSearchInCourse(course: Course, searchTerms: string[]): boolean {
+    const searchableFields = [
+      course.course_code?.toLowerCase() || '',
+      course.course_name?.toLowerCase() || '',
+      course.language?.toLowerCase() || '',
+      course.level?.toLowerCase() || '',
+      course.description?.toLowerCase() || '',
+      course.status?.toLowerCase() || '',
+      course.tuition_fee?.toString() || '',
+      course.duration_weeks?.toString() || '',
+      course.total_hours?.toString() || ''
+    ];
+    return searchTerms.every(term => 
+      this.isTermMatched(term, searchableFields)
+    );
+  }
+
+  private isTermMatched(term: string, fields: string[]): boolean {
+    return fields.some(field => {
+      if (field.includes(term)) return true;
+      if (this.wordBoundaryMatch(field, term)) return true;
+      if (this.numberMatch(field, term)) return true;
+      
+      return false;
+    });
+  }
+
+  private wordBoundaryMatch(text: string, term: string): boolean {
+    if (term.length < 2) return false;
+    const words = text.split(/\s+/);
+    return words.some(word => {
+      if (word === term) return true;
+      if (term.length >= 3 && word.startsWith(term)) return true;
+      
+      return false;
+    });
+  }
+
+  private numberMatch(text: string, term: string): boolean {
+    if (!/^\d+$/.test(term)) return false;
+    const numbers = text.match(/\d+/g);
+    if (!numbers) return false;
+    return numbers.some(num => num === term || num.includes(term));
+  }
+
+  clearSearch() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+  
+    this.filteredCourses = [...this.courses];
+    this.searchQuery = '';
+    this.showClearButton = false;
+  
+    if (this.dt) {
+      this.dt.clear();
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  private clearSearchCache() {
+    this.searchCache.clear(); 
   }
 }

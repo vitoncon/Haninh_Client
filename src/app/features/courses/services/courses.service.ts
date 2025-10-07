@@ -21,8 +21,9 @@ export class CoursesService {
     };
   }
 
-  getCourses(): Observable<Course[]> {
-    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
+  getCourses(q?: string): Observable<Course[]> {
+    const url = q && q.trim().length > 0 ? `${this.apiUrl}?q=${encodeURIComponent(q.trim())}` : this.apiUrl;
+    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
       map((res) => res?.data ?? res)
     );
   }

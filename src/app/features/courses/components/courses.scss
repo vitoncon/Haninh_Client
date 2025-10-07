@@ -2,7 +2,7 @@
 :host ::ng-deep .p-datatable {
   width: 100%;
   border-radius: 0.75rem;
-  overflow: hidden;
+  overflow: visible; // allow dropdown/panels to overflow
   background: var(--surface-card);
   transition: all 0.2s ease-in-out;
 
@@ -65,36 +65,71 @@
     display: flex;
     flex-direction: column;
 
+    .loading-wrapper,
     .empty-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 2rem 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-color-secondary, #666);
+    position: relative; // rất quan trọng để nút định vị theo khung này
+    
+    // Style cho nút Tạo mới trong empty state
+    button {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+    
+    .add-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 2;
+    }
+
+    .loading-icon,
+    .empty-icon {
+      font-size: 3rem;
+      color: var(--primary-color, #3f51b5);
+      display: block;
+    }
+    
+    .loading-icon {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+    }
+
+    p {
+      max-width: 500px;
+      margin: 0 auto;
+      font-size: 1rem;
+      line-height: 1.5;
       color: var(--text-color-secondary, #666);
-
-      .empty-icon {
-        font-size: 3rem;
-        color: var(--primary-color, #3f51b5);
-        display: block;
-      }
-
-      h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0 0 0.5rem 0;
-        color: var(--text-color);
-      }
-
-      p {
-        max-width: 500px;
-        margin: 0 auto;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: var(--text-color-secondary, #666);
-      }
+    }
     }
 
     p-table {
@@ -102,7 +137,25 @@
     } 
   }
   // spacing under the new toolbar
-  ::ng-deep .p-toolbar { margin-bottom: 0.75rem; }
+  ::ng-deep .p-toolbar { 
+    margin-bottom: 0.75rem; 
+    
+    // Style cho nút Xóa tìm kiếm
+    .p-button-outlined.p-button-secondary {
+      border-color: var(--orange-500, #f97316);
+      color: var(--orange-500, #f97316);
+      
+      &:hover {
+        background-color: var(--orange-50, #fff7ed);
+        border-color: var(--orange-600, #ea580c);
+        color: var(--orange-600, #ea580c);
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
+      }
+    }
+  }
 }
 
 // cua so them khoa hoc 
