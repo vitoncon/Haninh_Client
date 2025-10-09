@@ -18,6 +18,7 @@
         "target": "ES2022",
         "module": "ES2022",
         "baseUrl": "src",
+        "typeRoots": ["node_modules/@types", "src/types"],
             "paths": {
             "@/*": ["app/*"],
             "@features/*": ["app/features/*"],
