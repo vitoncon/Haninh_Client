@@ -1,0 +1,455 @@
+.certificates-container {
+  
+  // Stats grid responsive background
+  .stats-grid-responsive {
+    background: transparent;
+    
+    .dark & {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+  }
+  
+  // Stat card styling
+  .stat-card-item {
+    background: var(--surface-card, white) !important;
+    border: 1px solid var(--surface-border, rgba(0, 0, 0, 0.05)) !important;
+    box-shadow: var(--shadow-1, 0 2px 6px rgba(0, 0, 0, 0.08)) !important;
+    color: var(--text-color, #2d3748) !important;
+    
+    .stat-number {
+      color: var(--text-color, #2d3748) !important;
+    }
+    
+    .stat-label {
+      color: var(--text-color-secondary, #718096) !important;
+    }
+    
+    &:hover {
+      background: var(--surface-hover, white) !important;
+      box-shadow: var(--shadow-2, 0 6px 14px rgba(0, 0, 0, 0.12)) !important;
+    }
+  }
+  
+  // Dark theme override
+  .dark .stat-card-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    
+    .stat-number {
+      color: #f8f9fa !important;
+    }
+    
+    .stat-label {
+      color: #adb5bd !important;
+    }
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3) !important;
+    }
+  }
+
+  // Main Content Card
+  .p-card {
+    h2 {
+      font-weight: 700;
+      font-size: 1.875rem;
+    }
+
+    // Header Section
+    .flex.justify-content-between {
+      align-items: center;
+      margin-bottom: 1.5rem;
+      
+      h2 {
+        margin: 0;
+        flex: 1;
+      }
+      
+      .flex.gap-2 {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        
+        .p-button {
+          border-radius: 8px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          
+          &.p-button-outlined {
+            border-width: 1px;
+            
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+          }
+        }
+      }
+    }
+
+    // Search Section
+    .flex.gap-3 {
+      .p-iconField {
+        .p-inputtext {
+          border-radius: 8px;
+          border: 1px solid #d1d5db;
+          padding: 0.75rem 1rem 0.75rem 2.5rem;
+          font-size: 0.875rem;
+          transition: all 0.2s ease;
+
+          &:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+
+          &::placeholder {
+            color: #9ca3af;
+          }
+        }
+
+        .p-input-icon {
+          color: #6b7280;
+        }
+      }
+
+      .p-button.p-button-text {
+        color: #6b7280;
+        border-radius: 6px;
+
+        &:hover {
+          background-color: #f3f4f6;
+          color: #374151;
+        }
+      }
+    }
+  }
+
+  // Data Table
+  .p-datatable {
+    .p-datatable-tbody > tr > td {
+      .font-semibold {
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+
+      .text-sm {
+        font-size: 0.75rem;
+      }
+
+      code {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      }
+
+      .flex.gap-2 .p-button {
+        border-radius: 6px;
+        padding: 0.5rem;
+        min-width: auto;
+        height: auto;
+
+        &.p-button-sm {
+          padding: 0.375rem;
+        }
+      }
+    }
+  }
+
+  // Drawer (Add/Edit Form)
+  .p-drawer {
+    .p-drawer-header h4 {
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .p-drawer-content {
+      // Certificate form grid layout
+      .certificate-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3rem;
+        padding: 1rem; // Thêm padding cho certificate-form-grid để tách nội dung bên trong
+        
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
+          padding: 0.75rem; // Giảm padding trên mobile
+        }
+        
+        @media (max-width: 480px) {
+          padding: 0.5rem; // Giảm padding trên màn hình nhỏ
+        }
+      }
+
+      // Certificate form fields
+      .certificate-form-field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 4rem;
+        padding: 1.5rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+        .dark & {
+          border-color: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.03);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        &:hover {
+          border-color: rgba(59, 130, 246, 0.2);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+          
+          .dark & {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          }
+        }
+
+        label {
+          display: block;
+          margin-bottom: 0.75rem;
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--text-color, #374151);
+          
+          .req {
+            color: #ef4444 !important;
+          }
+        }
+
+        .p-select,
+        .p-inputtext,
+        .p-inputtextarea,
+        .p-datepicker,
+        input,
+        textarea {
+          width: 100%;
+          margin-bottom: 0.5rem;
+        }
+        
+        small {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          font-size: 0.75rem;
+          display: block;
+          
+          &:not(.text-green-600):not(.text-blue-600) {
+            color: #ef4444;
+            font-weight: 500;
+          }
+          
+          &.text-green-600 {
+            color: #059669;
+            font-weight: 500;
+          }
+          
+          &.text-blue-600 {
+            color: #2563eb;
+            font-weight: 500;
+          }
+        }
+      }
+      
+      // Full width fields
+      .certificate-form-field.full-width {
+        grid-column: 1 / -1;
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+        padding: 2rem 1.5rem;
+        background: rgba(248, 250, 252, 0.7);
+        border-radius: 10px;
+        border: 2px solid rgba(59, 130, 246, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        
+        .dark & {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(59, 130, 246, 0.2);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        &:hover {
+          border-color: rgba(59, 130, 246, 0.2);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          
+          .dark & {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          }
+        }
+      }
+      
+      // Form divider
+      .form-divider {
+        height: 1px;
+        background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        margin: 2rem 0;
+      }
+      
+      // Dialog actions
+      .dialog-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 1rem !important;
+        margin: 2rem 0 1rem 0 !important;
+        width: 100% !important;
+        margin-left: auto !important;
+
+        // Xóa ảnh hưởng từ ::before nếu có
+        &::before {
+          display: none !important;
+          content: none !important;
+        }
+        
+        .p-button {
+          border-radius: 8px;
+          padding: 0.75rem 1.5rem;
+          font-weight: 600;
+          min-width: 100px;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+
+  // Buttons
+  .p-button {
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  // Global override cho dialog actions để đảm bảo buttons ở bên phải
+  ::ng-deep .dialog-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    margin: 2rem 0 1rem 0 !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    
+    &::before {
+      display: none !important;
+      content: none !important;
+    }
+  }
+
+  // Tags
+  .p-tag {
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    .flex.gap-2 {
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .p-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .p-drawer .p-drawer-content {
+      .certificate-form-field {
+        margin-bottom: 3rem;
+        padding: 1.25rem 0.75rem;
+        
+        label {
+          margin-bottom: 0.5rem;
+        }
+        
+        small {
+          margin-top: 0.375rem;
+          margin-bottom: 0.375rem;
+        }
+      }
+      
+      .certificate-form-field.full-width {
+        margin-top: 2.5rem;
+        margin-bottom: 2.5rem;
+        padding: 1.5rem 1rem;
+      }
+      
+      .form-divider {
+        margin: 1.5rem 0;
+      }
+      
+      .dialog-actions.full-width {
+        grid-column: 1 / -1;
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 1rem !important;
+        margin: 2rem 0 1rem 0 !important;
+        width: 100% !important;
+
+        &::before {
+          display: none !important;
+          content: none !important;
+        }
+      }
+      
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .p-drawer .p-drawer-content {
+      .certificate-form-field {
+        margin-bottom: 2.5rem;
+        padding: 1rem 0.5rem;
+        
+        label {
+          margin-bottom: 0.5rem;
+        }
+        
+        small {
+          margin-top: 0.25rem;
+          margin-bottom: 0.25rem;
+        }
+      }
+      
+      .certificate-form-field.full-width {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.25rem 0.75rem;
+      }
+      
+      .form-divider {
+        margin: 1.25rem 0;
+      }
+      
+      .dialog-actions.full-width {
+        margin: 1.25rem 0 1rem 0;
+        justify-content: flex-end !important;
+        gap: 0.5rem;
+
+        &::before {
+          display: none !important;
+          content: none !important;
+        }
+      }
+    }
+  }
+}
