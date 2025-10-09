@@ -37,6 +37,47 @@ export class AppBreadcrumb {
     
             const breadcrumbLabel = child.snapshot.data['breadcrumb'];
             if (breadcrumbLabel) {
+                // Xử lý logic đặc biệt cho các route detail
+                const routePath = child.snapshot.routeConfig?.path || '';
+                
+                if (routePath.includes('class/detail')) {
+                    // Thêm breadcrumb cho "Quản lý lớp học" trước "Chi tiết lớp học"
+                    const classManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý lớp học');
+                    if (!classManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý lớp học',
+                            routerLink: '/features/class'
+                        });
+                    }
+                } else if (routePath.includes('courses/detail')) {
+                    // Thêm breadcrumb cho "Quản lý khóa học" trước "Chi tiết khóa học"
+                    const courseManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý khóa học');
+                    if (!courseManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý khóa học',
+                            routerLink: '/features/courses'
+                        });
+                    }
+                } else if (routePath.includes('teacher/detail')) {
+                    // Thêm breadcrumb cho "Quản lý giảng viên" trước "Chi tiết giảng viên"
+                    const teacherManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý giảng viên');
+                    if (!teacherManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý giảng viên',
+                            routerLink: '/features/teacher'
+                        });
+                    }
+                } else if (routePath.includes('students/detail')) {
+                    // Thêm breadcrumb cho "Quản lý học viên" trước "Chi tiết học viên"
+                    const studentManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý học viên');
+                    if (!studentManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý học viên',
+                            routerLink: '/features/students'
+                        });
+                    }
+                }
+                
                 breadcrumbs.push({
                     label: breadcrumbLabel,
                     routerLink: url
