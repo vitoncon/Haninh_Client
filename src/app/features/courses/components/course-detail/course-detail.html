@@ -190,3 +190,101 @@
     </button>
   </div>
 </div>
+
+<!-- Edit Course Drawer -->
+<p-drawer 
+  header="Chỉnh sửa khóa học" 
+  [(visible)]="drawerVisible" 
+  position="right"
+  (onHide)="onDrawerHide()" 
+  [modal]="true" 
+  [style]="{ width: '450px' }">
+  
+  <div class="form-grid p-fluid" *ngIf="formCourse">
+    <div class="form-group">
+      <label>Mã KH: <span class="req">*</span></label>
+      <input pInputText [(ngModel)]="formCourse!.course_code" placeholder="VD: EN101" />
+    </div>   
+    <div class="form-group">
+      <label>Tên khóa học: <span class="req">*</span></label>
+      <input pInputText [(ngModel)]="formCourse!.course_name" placeholder="Tiếng Anh cơ bản" />
+    </div>   
+    <div class="form-group full-width">
+      <label>Mô tả:</label>
+      <textarea pTextarea [(ngModel)]="formCourse!.description" rows="3" placeholder="Mô tả chi tiết về khóa học"></textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label>Điều kiện tiên quyết:</label>
+      <textarea pTextarea [(ngModel)]="formCourse!.prerequisites" rows="2" placeholder="VD: Kiến thức cơ bản về ngữ pháp, từ vựng 500 từ"></textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label>Mục tiêu học tập:</label>
+      <textarea pTextarea [(ngModel)]="formCourse!.learning_objectives" rows="2" placeholder="VD: Có thể giao tiếp cơ bản, đọc hiểu văn bản đơn giản"></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label>Danh mục:</label>
+      <p-select 
+        [(ngModel)]="formCourse!.category" 
+        [options]="['Giao tiếp', 'Ngữ pháp', 'Từ vựng', 'Phát âm', 'Luyện thi', 'Khác']"
+        placeholder="Chọn danh mục">
+      </p-select>
+    </div>
+    <div class="form-group">
+      <label>Thẻ phân loại:</label>
+      <input pInputText 
+        [(ngModel)]="tagsInput" 
+        placeholder="VD: beginner,conversation,grammar (phân cách bằng dấu phẩy)"
+        (ngModelChange)="updateTagsFromInput($event)" />
+    </div>   
+    <div class="form-group">
+      <label>Ngôn ngữ:</label>
+      <p-select [(ngModel)]="formCourse!.language" [options]="['Tiếng Anh','Tiếng Hàn','Tiếng Trung']"></p-select>
+    </div>
+    <div class="form-group">
+      <label>Trình độ:</label>
+      <p-select [(ngModel)]="formCourse!.level" [options]="['Sơ cấp','Trung cấp','Cao cấp']"></p-select>
+    </div>
+    <div class="form-group">
+      <label>Số tuần:</label>
+      <p-inputNumber 
+          [(ngModel)]="formCourse!.duration_weeks" 
+          [min]="0" 
+          [allowEmpty]="true"
+          placeholder="VD: 12">
+      </p-inputNumber>
+    </div>    
+    <div class="form-group">
+      <label>Tổng giờ:</label>
+      <p-inputNumber 
+          [(ngModel)]="formCourse!.total_hours" 
+          [min]="0"
+          [allowEmpty]="true"
+          placeholder="VD: 100">
+      </p-inputNumber>
+    </div>   
+    <div class="form-group full-width">
+      <label>Học phí:</label>
+      <p-inputNumber 
+          [(ngModel)]="formCourse!.tuition_fee" 
+          [min]="0"
+          [allowEmpty]="true"
+          mode="currency" 
+          currency="VND" 
+          [useGrouping]="false"
+          placeholder="VD: 2000000">
+      </p-inputNumber>
+    </div>
+    <div class="form-group full-width">
+      <label>Trạng thái:</label>
+      <p-select [(ngModel)]="formCourse!.status" [options]="['Đang hoạt động','Không hoạt động']"></p-select>
+    </div>
+  </div>
+  
+  <div class="dialog-actions">
+    <button pButton label="Hủy" class="p-button-text" (click)="drawerVisible=false" [disabled]="saving"></button>
+    <button pButton label="Lưu" (click)="onSave()" [disabled]="saving || !formCourse?.course_code || !formCourse?.course_name"></button>
+  </div>
+</p-drawer>

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Course } from '../../models/courses.model';
 import { CoursesService } from '../../services/courses.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { ToastModule } from 'primeng/toast';
@@ -12,6 +13,11 @@ import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { SelectModule } from 'primeng/select';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DrawerModule } from 'primeng/drawer';
 import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { ClassService } from '../../../class-management/services/class.service';
@@ -24,6 +30,7 @@ import { TeachingAssignmentService } from '../../../teaching-assignments/service
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ButtonModule,
     RippleModule,
     ToastModule,
@@ -33,6 +40,11 @@ import { TeachingAssignmentService } from '../../../teaching-assignments/service
     DividerModule,
     ProgressSpinnerModule,
     TooltipModule,
+    InputTextModule,
+    TextareaModule,
+    SelectModule,
+    InputNumberModule,
+    DrawerModule,
   ],
   styleUrls: ['./course-detail.scss']
 })
@@ -48,6 +60,12 @@ export class CourseDetail implements OnInit, OnDestroy {
     totalStudents: 0,
     totalTeachers: 0
   };
+
+  // Edit functionality properties
+  drawerVisible: boolean = false;
+  formCourse: Course | null = null;
+  saving: boolean = false;
+  tagsInput: string = '';
 
   private destroy$ = new Subject<void>();
 
@@ -126,7 +144,6 @@ export class CourseDetail implements OnInit, OnDestroy {
           this.loadCourseStats();
         },
         error: (error) => {
-          console.error('Error loading course detail:', error);
           this.handleLoadError(error);
         }
       });
@@ -163,7 +180,10 @@ export class CourseDetail implements OnInit, OnDestroy {
 
   onEdit(): void {
     if (this.courseData?.id) {
-      this.router.navigate(['/features/courses/edit', this.courseData.id]);
+      this.formCourse = { ...this.courseData };
+      // Initialize tags input from form data
+      this.initializeTagsInput();
+      this.drawerVisible = true;
     } else {
       this.messageService.add({
         severity: 'warn',
@@ -171,6 +191,187 @@ export class CourseDetail implements OnInit, OnDestroy {
         detail: 'Không thể chỉnh sửa khóa học này'
       });
     }
+  }
+
+  private initializeTagsInput(): void {
+    if (this.formCourse?.tags) {
+      if (Array.isArray(this.formCourse.tags)) {
+        this.tagsInput = this.formCourse.tags.join(', ');
+      } else if (typeof this.formCourse.tags === 'string') {
+        try {
+          const parsed = JSON.parse(this.formCourse.tags);
+          if (Array.isArray(parsed)) {
+            this.tagsInput = parsed.join(', ');
+          } else {
+            this.tagsInput = '';
+          }
+        } catch {
+          this.tagsInput = '';
+        }
+      }
+    } else {
+      this.tagsInput = '';
+    }
+  }
+
+  updateTagsFromInput(input: string): void {
+    if (this.formCourse) {
+      if (input.trim()) {
+        const tags = input.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        this.formCourse.tags = tags;
+      } else {
+        this.formCourse.tags = [];
+      }
+    }
+  }
+
+  onDrawerHide(): void {
+    this.formCourse = null;
+    this.tagsInput = '';
+    this.drawerVisible = false;
+  }
+
+  onSave(): void {
+    if (!this.validateForm()) {
+      return;
+    }
+
+    this.saving = true;
+    this.updateCourse();
+  }
+
+  private validateForm(): boolean {
+    if (!this.formCourse) {
+      this.showValidationError('Vui lòng điền đầy đủ thông tin khóa học');
+      return false;
+    }
+
+    const errors: string[] = [];
+    
+    if (!this.formCourse.course_code?.trim()) {
+      errors.push('Mã khóa học');
+    }
+    
+    if (!this.formCourse.course_name?.trim()) {
+      errors.push('Tên khóa học');
+    }
+
+    if (errors.length > 0) {
+      this.showValidationError(`Vui lòng nhập: ${errors.join(', ')}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  private showValidationError(message: string): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Thiếu thông tin',
+      detail: message
+    });
+  }
+
+  private updateCourse(): void {
+    if (!this.courseData?.id || !this.formCourse) {
+      return;
+    }
+
+    // Clean and prepare data for API
+    const cleanData = this.prepareCourseDataForUpdate(this.formCourse);
+
+    this.coursesService.updateCourse(this.courseData.id, cleanData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.handleSaveSuccess('Cập nhật khóa học thành công');
+        },
+        error: (error) => {
+          this.handleSaveError(error, 'Không thể cập nhật khóa học');
+        }
+      });
+  }
+
+  private prepareCourseDataForUpdate(formData: Course): any {
+    const cleanData: any = { ...formData };
+    
+    // Remove fields that shouldn't be updated
+    delete cleanData.id;
+    delete cleanData.created_at;
+    delete cleanData.updated_at;
+    
+    // Handle tags - ensure it's a proper JSON array or null
+    if (cleanData.tags && Array.isArray(cleanData.tags) && cleanData.tags.length > 0) {
+      // Convert array to JSON string for database storage
+      cleanData.tags = JSON.stringify(cleanData.tags);
+    } else {
+      // Set to null if empty or invalid
+      cleanData.tags = null;
+    }
+    
+    // Ensure numeric fields are properly formatted
+    if (cleanData.tuition_fee !== null && cleanData.tuition_fee !== undefined && cleanData.tuition_fee !== '') {
+      cleanData.tuition_fee = Number(cleanData.tuition_fee);
+    } else {
+      cleanData.tuition_fee = null;
+    }
+    if (cleanData.duration_weeks !== null && cleanData.duration_weeks !== undefined && cleanData.duration_weeks !== '') {
+      cleanData.duration_weeks = Number(cleanData.duration_weeks);
+    } else {
+      cleanData.duration_weeks = null;
+    }
+    if (cleanData.total_hours !== null && cleanData.total_hours !== undefined && cleanData.total_hours !== '') {
+      cleanData.total_hours = Number(cleanData.total_hours);
+    } else {
+      cleanData.total_hours = null;
+    }
+    
+    // Ensure string fields are trimmed and handle empty strings
+    cleanData.course_code = cleanData.course_code ? cleanData.course_code.trim() : '';
+    cleanData.course_name = cleanData.course_name ? cleanData.course_name.trim() : '';
+    cleanData.description = cleanData.description ? cleanData.description.trim() : null;
+    cleanData.prerequisites = cleanData.prerequisites ? cleanData.prerequisites.trim() : null;
+    cleanData.learning_objectives = cleanData.learning_objectives ? cleanData.learning_objectives.trim() : null;
+    cleanData.category = cleanData.category ? cleanData.category.trim() : null;
+    
+    // Validate enum values to match database schema
+    const validLanguages = ['Tiếng Anh', 'Tiếng Hàn', 'Tiếng Trung'];
+    const validLevels = ['Sơ cấp', 'Trung cấp', 'Cao cấp'];
+    const validStatuses = ['Đang hoạt động', 'Không hoạt động'];
+    
+    if (cleanData.language && !validLanguages.includes(cleanData.language)) {
+      cleanData.language = 'Tiếng Anh'; // Default value
+    }
+    if (cleanData.level && !validLevels.includes(cleanData.level)) {
+      cleanData.level = 'Sơ cấp'; // Default value
+    }
+    if (cleanData.status && !validStatuses.includes(cleanData.status)) {
+      cleanData.status = 'Đang hoạt động'; // Default value
+    }
+    
+    return cleanData;
+  }
+
+  private handleSaveSuccess(message: string): void {
+    this.saving = false;
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: message
+    });
+    this.loadCourseDetail(); // Reload course data
+    this.drawerVisible = false;
+  }
+
+  private handleSaveError(error: any, defaultMessage: string): void {
+    this.saving = false;
+    
+    const errorMessage = error?.error?.message || defaultMessage;
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: errorMessage
+    });
   }
 
 
@@ -223,7 +424,6 @@ export class CourseDetail implements OnInit, OnDestroy {
           this.loadActualStudentAndTeacherCount(classIds, courseClasses.length);
         },
         error: (error) => {
-          console.error('Error loading course stats:', error);
           this.statsLoading = false;
         }
       });
@@ -292,7 +492,6 @@ export class CourseDetail implements OnInit, OnDestroy {
         this.statsLoading = false;
       })
       .catch(error => {
-        console.error('Error loading course statistics:', error);
         this.statsLoading = false;
       });
   }
