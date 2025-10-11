@@ -1,392 +1,1026 @@
-/* ======================== BẢNG DANH SÁCH GIẢNG VIÊN ======================== */
-:host ::ng-deep .p-datatable {
-    width: 100%;
-    border-radius: 0.75rem;
-    overflow: visible; // allow dropdown/panels to overflow
-    background: var(--surface-card);
-    transition: all 0.2s ease-in-out;
-  
-    th,
-    td {
-      white-space: nowrap;
-      text-align: left;
-      vertical-align: middle;
-    }
-  
-    th {
-      font-weight: 600;
-      background-color: var(--surface-ground);
-    }
-  
-    tr:hover {
-      background-color: var(--surface-hover);
-    }
-  }
-  
-  /* ======================== CỘT HÀNH ĐỘNG ======================== */
-  :host ::ng-deep .action-column {
-    text-align: center;
-    min-width: 140px;
-  
-    button {
-      margin: 0 0.25rem;
-      transition: transform 0.15s ease;
-  
-      &:hover {
-        transform: scale(1.1);
-      }
-    }
-  }
-  
-  /* ======================== SCROLLBAR ======================== */
-  :host ::ng-deep .p-datatable-wrapper {
-    overflow-x: auto;
-    scrollbar-width: thin;
-    -ms-overflow-style: none;
-  
-    &::-webkit-scrollbar {
-      height: 6px;
-    }
-  }
-  
-  /* ======================== TRẠNG THÁI HOẠT ĐỘNG ======================== */
-  .status-active,
-  .status-inactive {
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 12px;
-    display: inline-block;
-  }
-  .status-active {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-  .status-inactive {
-    background-color: #f3f4f6;
-    color: #374151;
-  }
-  
-  /* ======================== TRANG DANH SÁCH ======================== */
-  .page-card {
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-  
-      .loading-wrapper, .empty-wrapper {
-        position: relative;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 2rem 1rem;
-        color: var(--text-color-secondary, #666);
+// Main container - prevent horizontal overflow
+.teachers-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 
-        // Place action button at top-right of the empty card
-        .p-button {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-          }
-          
-          &:active {
-            transform: translateY(0);
-          }
-        }
+// Statistics Cards
+.stats-grid-responsive {
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
   
-        .loading-icon, .empty-icon {
-          font-size: 3rem;
-          color: var(--primary-color, #3f51b5);
-          display: block;
-        }
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+// Header with buttons - make buttons flush with right edge
+.header-with-buttons {
+  position: relative;
   
-        h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin: 0 0 0.5rem 0;
-          color: var(--text-color);
-        }
+  .flex.gap-2 {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    @media (max-width: 768px) {
+      position: static;
+      transform: none;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+  }
+}
+
+.stat-card-item {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color);
+  box-shadow: var(--surface-card-shadow);
+  transition: all 0.25s ease-in-out;
   
-        p {
-          max-width: 500px;
-          margin: 0 auto;
-          font-size: 1rem;
-          line-height: 1.5;
-          color: var(--text-color-secondary, #666);
-        }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--surface-card-shadow-hover);
+  }
+  
+  // Dark theme specific adjustments
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background: var(--surface-700);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.stat-number {
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.stat-label {
+  color: var(--text-muted-color);
+  transition: color 0.3s ease;
+}
+
+.stat-icon-wrapper {
+  transition: background-color 0.3s ease;
+  
+  // Dark theme adjustments for icon backgrounds
+  .app-dark & {
+    &.stat-icon-wrapper {
+      background: var(--surface-700) !important;
+      
+      i {
+        color: var(--text-color) !important;
       }
+    }
+  }
+}
+
+// Advanced Filters Panel
+.advanced-filters-panel {
+  background: var(--surface-100);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.5rem;
+  overflow: visible; // Allow dropdowns to show outside
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
   
-      p-table {
+  // Dark theme adjustments
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+  }
+  
+   .filter-group {
+     min-width: 0;
+     
+     label {
+       color: var(--text-color);
+       font-weight: 500;
+       margin-bottom: 0.2rem;
+       display: block;
+       font-size: 0.8rem;
+       transition: color 0.3s ease;
+     }
+   }
+  
+  .experience-range {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    
+    span {
+      color: var(--text-muted-color);
+      font-weight: 500;
+      transition: color 0.3s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+      
+      @media (max-width: 768px) {
+        text-align: center;
+      }
+    }
+  }
+  
+  // Compact single-line grid layout - smaller gaps
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    align-items: start;
+    
+    @media (max-width: 1400px) {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 1rem !important;
+    }
+    
+    @media (max-width: 1000px) {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 1rem !important;
+    }
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr !important;
+      gap: 1.5rem !important;
+    }
+  }
+  
+  // Fix flex layouts that cause overflow
+  .flex.gap-2 {
+    @media (max-width: 768px) {
+      flex-direction: column !important;
+      gap: 0.75rem !important;
+    }
+  }
+  
+  // Ensure filter groups don't overlap
+  .filter-group {
+    min-width: 0; // Allow shrinking
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    @media (max-width: 768px) {
+      margin-bottom: 1.5rem;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    // Fix input alignment and spacing
+    .flex.gap-2 {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      flex-wrap: nowrap;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      
+      @media (max-width: 480px) {
+        gap: 0.5rem;
+      }
+    }
+    
+    // Ensure inputs don't overflow
+    p-inputNumber, p-datePicker, p-select {
+      width: 100%;
+      min-width: 0;
+      flex: 1;
+      
+      @media (max-width: 768px) {
         width: 100%;
+        flex: none;
       }
     }
-  
-    ::ng-deep .p-toolbar {
-      margin-bottom: 0.75rem;
+    
+    // Specific styling for range inputs
+    .flex.gap-2 p-inputNumber,
+    .flex.gap-2 p-datePicker {
+      flex: 1;
+      min-width: 0;
+      
+      ::ng-deep .p-inputnumber,
+      ::ng-deep .p-calendar {
+        width: 100%;
+        min-width: 0;
+      }
+      
+      ::ng-deep .p-inputtext {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
     }
-        // Style cho nút Xóa tìm kiếm
-        .p-button-outlined.p-button-secondary {
-          border-color: var(--orange-500, #f97316);
-          color: var(--orange-500, #f97316);
-          
-          &:hover {
-            background-color: var(--orange-50, #fff7ed);
-            border-color: var(--orange-600, #ea580c);
-            color: var(--orange-600, #ea580c);
-          }
-          
-          &:focus {
-            box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
-          }
-        }
+    
+    // Fix date picker alignment
+    .p-datepicker {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+}
+
+// Form Styling
+.teacher-form-grid {
+  .form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--surface-100);
+    border-radius: 0.5rem;
+    border: 1px solid var(--surface-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    
+    // Dark theme adjustments
+    .app-dark & {
+      background: var(--surface-800);
+      border-color: var(--surface-700);
+    }
+    
+    .form-section-title {
+      color: var(--text-color);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-color);
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
   }
   
-  /* ======================== DRAWER THÊM / SỬA GIẢNG VIÊN ======================== */
-  $color-border: #dcdcdc;
-  $spacing-sm: 0.5rem;
-  $spacing-md: 1rem;
-  
-  :host {
-    display: block;
-  
-    ::ng-deep .p-drawer {
-      .p-drawer-header {
-        font-size: 1.25rem;
+  .form-group {
+    margin-bottom: 1rem;
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+      font-weight: 500;
+      transition: color 0.3s ease;
+      
+      .req {
+        color: var(--red-500);
         font-weight: 600;
-        color: var(--text-color);
-        padding: $spacing-md;
-        border-bottom: 1px solid $color-border;
-      }
-  
-      .p-drawer-content {
-        padding: $spacing-md;
       }
     }
   }
   
-  .form-grid {
+  .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: $spacing-md;
-  
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: $spacing-sm;
-  
-      label {
-        font-weight: 500;
-        color: var(--text-color);
-  
-        .req {
-          color: var(--red-500, #f44336);
-          margin-left: 0.25rem;
-        }
-      }
-  
-      input,
-      textarea,
-      .p-inputtext,
-      .p-inputnumber,
-      .p-dropdown,
-      .p-datepicker {
-        width: 100%;
-      }
-
-      // Normalize datepicker sizes
-      ::ng-deep .p-datepicker-input,
-      ::ng-deep .p-datepicker input.p-inputtext {
-        width: 100%;
-        height: 33px;
-        min-height: 33px;
-        padding: 0.35rem 0.6rem;
-        font-size: 0.9rem;
-      }
-      ::ng-deep .p-datepicker .p-datepicker-trigger,
-      ::ng-deep .p-datepicker .p-inputtext + .p-datepicker-trigger {
-        height: 33px;
-        width: 33px;
-        padding: 0;
-      }
-      ::ng-deep .p-datepicker .p-button-icon {
-        font-size: 0.8rem;
-      }
-  
-      &.full-width {
-        grid-column: 1 / -1;
-      }
-    }
-  }
-  
-  .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: $spacing-md;
-    padding: $spacing-md;
-    border-top: 1px solid $color-border;
-    margin-top: 1rem;
-  
-    button {
-      min-width: 100px;
-    }
-  }
-  
-  /* ======================== RESPONSIVE ======================== */
-  @media (max-width: 600px) {
-    .form-grid {
+    gap: 1rem;
+    
+    @media (max-width: 768px) {
       grid-template-columns: 1fr;
     }
   }
   
-  /* ======================== CỬA SỔ CHI TIẾT GIẢNG VIÊN ======================== */
-  .teacher-detail-body {
-    padding: 2.5rem;
-    max-width: 1200px;
-    margin: 2rem auto;
-    font-family: var(--font-family);
-    color: var(--text-color);
-    background-color: var(--surface-card);
-    border-radius: 20px;
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--surface-border);
-    animation: fadeIn 0.4s ease;
-  
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(15px);
+  .dialog-actions {
+    border-top: 1px solid var(--surface-border);
+    padding-top: 1rem;
+    transition: border-color 0.3s ease;
+  }
+}
+
+
+// File Upload Text Override
+:host ::ng-deep {
+  // Override "No file chosen" text to Vietnamese
+  .p-fileupload {
+    .p-fileupload-filename {
+      // Default styling for filename display
+      font-size: 0.875rem !important;
+      color: var(--text-color) !important;
+      visibility: visible !important;
+      
+      // Only override when showing "No file chosen" (empty state)
+      &:empty {
+        font-size: 0 !important;
+        visibility: hidden !important;
+        position: relative !important;
+        
+        &::before {
+          content: "Chưa chọn tệp nào" !important;
+          font-size: 0.875rem !important;
+          color: var(--text-muted-color) !important;
+          display: block !important;
+          visibility: visible !important;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+        }
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  
-    &__header {
-      background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-      padding: 1.75rem 2rem;
-      border-radius: 16px;
-      margin-bottom: 2.5rem;
-      text-align: center;
-      h2 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--primary-color);
-      }
-      p {
-        margin-top: 0.5rem;
-        color: var(--text-color-secondary);
-        font-size: 1rem;
-      }
-    }
-  
-    &__content {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 2rem;
-      margin-bottom: 2.5rem;
-  
-      @media (max-width: 992px) {
-        grid-template-columns: 1fr;
+      
+      // When file is selected, ensure filename is visible
+      &:not(:empty) {
+        font-size: 0.875rem !important;
+        color: var(--text-color) !important;
+        visibility: visible !important;
+        position: static !important;
+        
+        &::before {
+          display: none !important;
+        }
       }
     }
-  
-    &__left,
-    &__right {
-      background: var(--surface-section);
-      border-radius: 16px;
-      padding: 2rem;
-      border: 1px solid var(--surface-border);
-    }
-  
-    &__left {
-      .teacher-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.85rem;
-  
-        p {
-          margin: 0;
-          font-size: 1rem;
-          color: var(--text-color-secondary);
-          line-height: 1.6;
-  
-          strong {
-            color: var(--text-color);
-            font-weight: 600;
-            display: inline-block;
-            min-width: 160px;
+    
+    // Also target content area
+    .p-fileupload-content {
+      .p-fileupload-filename {
+        font-size: 0.875rem !important;
+        color: var(--text-color) !important;
+        visibility: visible !important;
+        
+        &:empty {
+          font-size: 0 !important;
+          visibility: hidden !important;
+          position: relative !important;
+          
+          &::before {
+            content: "Chưa chọn tệp nào" !important;
+            font-size: 0.875rem !important;
+            color: var(--text-muted-color) !important;
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
           }
         }
-      }
-    }
-  
-    &__right {
-      h3.sub-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-color);
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--primary-color);
-        padding-left: 0.75rem;
-      }
-  
-      .class-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-  
-        .class-item {
-          padding: 0.75rem 1rem;
-          border-radius: 12px;
-          background: var(--surface-card);
-          border: 1px solid var(--surface-border);
-          color: var(--text-color);
-          transition: all 0.25s ease;
-  
-          &:hover {
-            background: var(--surface-hover);
-            color: var(--primary-color);
-            transform: translateX(3px);
-          }
-        }
-      }
-    }
-  
-    &__actions {
-      display: flex;
-      justify-content: flex-end;
-      border-top: 1px solid var(--surface-border);
-      padding-top: 1.5rem;
-  
-      .p-button {
-        border-radius: 12px;
-        padding: 0.7rem 1.6rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-  
-        &:hover {
-          transform: translateY(-2px);
-        }
-  
-        &.p-button-outlined {
-          background: transparent;
-          color: var(--primary-color);
-          border: 1px solid var(--primary-color);
-  
-          &:hover {
-            background: var(--primary-50);
+        
+        &:not(:empty) {
+          font-size: 0.875rem !important;
+          color: var(--text-color) !important;
+          visibility: visible !important;
+          position: static !important;
+          
+          &::before {
+            display: none !important;
           }
         }
       }
     }
   }
   
+  // Override error messages - multiple approaches
+  .p-fileupload .p-message,
+  .p-fileupload .p-message-error,
+  .p-fileupload .p-message-text,
+  .p-fileupload .p-inline-message {
+    .p-message-text,
+    .p-inline-message-text {
+      font-size: 0 !important;
+      
+      &::before {
+        content: "Kích thước tệp vượt quá giới hạn cho phép (1MB)" !important;
+        font-size: 0.875rem !important;
+        color: var(--red-500) !important;
+        display: block !important;
+      }
+    }
+  }
+  
+  // Target any error message in file upload
+  .p-fileupload *[class*="message"] {
+    font-size: 0 !important;
+    
+    &::before {
+      content: "Kích thước tệp vượt quá giới hạn cho phép (1MB)" !important;
+      font-size: 0.875rem !important;
+      color: var(--red-500) !important;
+      display: block !important;
+    }
+  }
+}
+
+// Table Styling
+:host ::ng-deep {
+  .p-datatable {
+    .p-datatable-header {
+      background: var(--surface-card) !important;
+      border-bottom: 1px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .p-datatable-thead > tr > th {
+      background: var(--surface-100) !important;
+      color: var(--text-color) !important;
+      font-weight: 600;
+      border-bottom: 2px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        color: var(--text-color) !important;
+        border-bottom-color: var(--surface-700) !important;
+      }
+    }
+    
+    .p-datatable-tbody > tr {
+      transition: background-color 0.15s ease-in-out;
+      color: var(--text-color) !important;
+      
+      // Light mode alternating rows
+      &:nth-child(odd) {
+        background: #ffffff !important; // Dòng lẻ: trắng
+        
+        &:hover {
+          background: #f8fafc !important;
+        }
+      }
+      
+      &:nth-child(even) {
+        background: #f8fafc !important; // Dòng chẵn: xám nhạt
+        
+        &:hover {
+          background: #f1f5f9 !important;
+        }
+      }
+      
+      // Dark theme row styling
+      .app-dark & {
+        &:nth-child(odd) {
+          background: #1a1a1a !important; // Dòng lẻ: đen đậm
+          
+          &:hover {
+            background: #2a2a2a !important;
+          }
+        }
+        
+        &:nth-child(even) {
+          background: #222222 !important; // Dòng chẵn: đen sáng hơn
+          
+          &:hover {
+            background: #333333 !important;
+          }
+        }
+      }
+    }
+    
+    .p-datatable-tbody > tr > td {
+      border-bottom: 1px solid var(--surface-border) !important;
+      padding: 1rem 0.75rem;
+      color: var(--text-color) !important;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    // Compact pagination styling
+    .p-paginator {
+      background: var(--surface-card) !important;
+      border-top: 1px solid var(--surface-border) !important;
+      padding: 0.75rem 1rem;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        border-top-color: var(--surface-700) !important;
+      }
+      
+      .p-paginator-current {
+        font-size: 0.875rem;
+        margin-right: 1rem;
+        color: var(--text-muted-color) !important;
+        transition: color 0.3s ease;
+      }
+      
+       .p-paginator-page,
+       .p-paginator-prev,
+       .p-paginator-next,
+       .p-paginator-first,
+       .p-paginator-last {
+         color: var(--text-color) !important;
+         transition: color 0.3s ease, background-color 0.3s ease;
+         
+         &:hover {
+           background: var(--surface-hover) !important;
+         }
+         
+         &.p-highlight {
+           background: var(--primary-color) !important;
+           color: white !important;
+         }
+       }
+      
+      .p-paginator-pages {
+        .p-paginator-page {
+          min-width: 1.75rem;
+          height: 1.75rem;
+          font-size: 0.875rem;
+        }
+        
+        .p-paginator-prev,
+        .p-paginator-next,
+        .p-paginator-first,
+        .p-paginator-last {
+          min-width: 1.75rem;
+          height: 1.75rem;
+          font-size: 0.875rem;
+        }
+      }
+      
+      .p-dropdown {
+        min-width: 50px !important;
+        max-width: 50px !important;
+        width: 50px !important;
+        
+        .p-dropdown-label {
+          font-size: 0.875rem;
+          padding: 0.25rem 0.25rem !important;
+          text-align: center !important;
+        }
+        
+        .p-dropdown-trigger {
+          width: 1.5rem !important;
+          min-width: 1.5rem !important;
+        }
+      }
+    }
+  }
+  
+  .p-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    color: var(--text-color, #374151);
+  }
+  
+  .p-button {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    
+    &.p-button-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    }
+  }
+  
+  .p-inputtext, .p-dropdown, .p-inputnumber, .p-calendar {
+    border-radius: 0.375rem;
+    border: 1px solid var(--surface-border) !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    color: var(--text-color) !important;
+    background: var(--surface-card) !important;
+    transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+    
+    &:focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 3px var(--primary-color-text) !important;
+    }
+    
+    // Dark theme adjustments
+    .app-dark & {
+      background: var(--surface-800) !important;
+      border-color: var(--surface-700) !important;
+      color: var(--text-color) !important;
+      
+      &:focus {
+        border-color: var(--primary-color) !important;
+        background: var(--surface-700) !important;
+      }
+    }
+  }
+  
+  .p-select {
+    .p-select-label {
+      color: var(--text-color) !important;
+      transition: color 0.3s ease;
+    }
+    
+    .p-select-trigger {
+      background: var(--surface-card) !important;
+      border: 1px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        border-color: var(--surface-700) !important;
+      }
+    }
+  }
+  
+  // Prevent date picker overflow
+  .p-datepicker {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  // Ensure calendar icons are clickable
+  .p-calendar .p-datepicker-trigger {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+  }
+  
+  .p-drawer {
+    .p-drawer-header {
+      background: var(--surface-50);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 1.5rem;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800);
+        border-bottom-color: var(--surface-700);
+      }
+      
+      h4 {
+        color: var(--text-color);
+        font-weight: 600;
+        margin: 0;
+        transition: color 0.3s ease;
+      }
+    }
+    
+    .p-drawer-content {
+      padding: 1.5rem;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      background: var(--surface-card);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-900);
+        color: var(--text-color);
+      }
+    }
+  }
+  
+   .p-fileupload {
+     .p-button {
+       background: var(--surface-100);
+       border: 1px solid var(--surface-border);
+       color: var(--text-color);
+       transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+       
+       // Dark theme adjustments
+       .app-dark & {
+         background: var(--surface-700);
+         border-color: var(--surface-600);
+         color: var(--text-color);
+         
+         &:hover {
+           background: var(--surface-600);
+         }
+       }
+     }
+     
+     // Override "No file chosen" text to Vietnamese
+     .p-fileupload-filename {
+       font-size: 0 !important;
+       
+       &::before {
+         content: "Chưa chọn tệp nào" !important;
+         font-size: 0.875rem !important;
+         color: var(--text-muted-color) !important;
+         display: block !important;
+       }
+     }
+   }
+  
+
+// Status Colors
+.status-active {
+  color: var(--green-600);
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+.status-inactive {
+  color: var(--red-600);
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.status-ended {
+  color: var(--text-muted-color);
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .teachers-container {
+    padding: 0.5rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+  
+  // Improve mobile filter layout
+  .flex.flex-wrap.gap-3 {
+    flex-direction: column;
+    gap: 1rem !important;
+    
+    > div {
+      width: 100% !important;
+      min-width: unset !important;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid-responsive {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .advanced-filters-panel {
+    .grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  
+  .p-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  // Prevent horizontal overflow on mobile
+  .teachers-container {
+    overflow-x: hidden;
+    padding: 0.5rem;
+  }
+  
+  // Make sure all content fits
+  .p-card {
+    overflow-x: hidden;
+  }
+  
+}
+
+// Loading and Empty States
+.loading-wrapper, .empty-wrapper {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted-color);
+  transition: color 0.3s ease;
+  
+  .loading-icon, .empty-icon {
+    font-size: 3rem;
+    color: var(--text-muted-color);
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+  
+  h3 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+  }
+  
+  p {
+    margin-bottom: 1.5rem;
+    color: var(--text-muted-color);
+    transition: color 0.3s ease;
+  }
+}
+
+// Animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card-item, .form-section {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Custom Scrollbar
+:host ::ng-deep {
+  .p-drawer-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .p-drawer-content::-webkit-scrollbar-track {
+    background: var(--surface-200);
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+    
+    .app-dark & {
+      background: var(--surface-700);
+    }
+  }
+  
+  .p-drawer-content::-webkit-scrollbar-thumb {
+    background: var(--surface-400);
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+    
+    .app-dark & {
+      background: var(--surface-500);
+    }
+    
+    &:hover {
+      background: var(--surface-500);
+      
+      .app-dark & {
+        background: var(--surface-400);
+      }
+    }
+  }
+}
+
+// Theme transition enhancements
+.teachers-container {
+  // Global transition for all elements
+  * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease, 
+                box-shadow 0.3s ease;
+  }
+  
+  // Enhanced hover effects with theme awareness
+  .stat-card-item {
+    &:hover {
+      .stat-icon-wrapper {
+        transform: scale(1.05);
+        transition: transform 0.2s ease;
+      }
+    }
+  }
+  
+  // Improved focus states
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+// Dark theme specific enhancements
+.app-dark {
+  .teachers-container {
+    // Enhanced contrast for dark theme
+    .stat-card-item {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      
+      &:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+      }
+    }
+    
+    // Improved readability for dark theme
+    .p-tag {
+      border: 1px solid var(--surface-border);
+    }
+    
+    // Enhanced table readability in dark mode
+    .p-datatable {
+      .p-datatable-tbody > tr {
+        &:nth-child(even) {
+          background: var(--surface-850) !important;
+        }
+        
+        &:hover {
+          background: var(--surface-700) !important;
+        }
+      }
+    }
+    
+    // Better form contrast
+    .form-section {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+// Light theme specific enhancements
+:root:not(.app-dark) {
+  .teachers-container {
+    // Subtle shadows for light theme
+    .stat-card-item {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+      
+      &:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+      }
+    }
+    
+    // Enhanced form sections
+    .form-section {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  .teachers-container * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .teachers-container {
+    .stat-card-item,
+    .form-section,
+    .advanced-filters-panel {
+      border-width: 2px;
+    }
+    
+    .p-button {
+      border-width: 2px;
+    }
+  }
+}
+
+// Fix layout cho file upload clear button
+.p-fileupload-basic-content {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  
+  .ng-star-inserted {
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    
+    .file-clear-btn {
+      display: inline !important;
+      vertical-align: baseline !important;
+      margin-left: 8px !important;
+      color: #ef4444 !important;
+      cursor: pointer !important;
+      font-weight: bold !important;
+      padding: 2px 4px !important;
+      border-radius: 3px !important;
+      transition: background-color 0.2s !important;
+      
+      &:hover {
+        background-color: #fee2e2 !important;
+      }
+    }
+  }
+}
+
+.p-fileupload .p-fileupload-filename,
+.p-fileupload-filename {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  
+  .file-clear-btn {
+    display: inline !important;
+    vertical-align: baseline !important;
+    margin-left: 8px !important;
+    color: #ef4444 !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    transition: background-color 0.2s !important;
+    
+    &:hover {
+      background-color: #fee2e2 !important;
+    }
+  }
+}

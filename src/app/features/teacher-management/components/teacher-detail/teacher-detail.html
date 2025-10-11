@@ -1,0 +1,507 @@
+<div class="teacher-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-wrapper">
+    <p-progressSpinner strokeWidth="3" animationDuration="1s"></p-progressSpinner>
+    <h3>Đang tải thông tin giảng viên...</h3>
+    <p>Vui lòng chờ trong giây lát</p>
+  </div>
+
+  <!-- Teacher Detail Content -->
+  <div *ngIf="!loading && teacherData" class="teacher-detail-content">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="flex justify-content-between align-items-center mb-4">
+        <div class="flex align-items-center gap-3">
+          <p-button 
+            icon="pi pi-arrow-left" 
+            [text]="true" 
+            (click)="onBack()"
+            pTooltip="Quay lại danh sách"
+            styleClass="p-button-lg">
+          </p-button>
+          <div>
+            <h1 class="teacher-name">{{ teacherData.teacher_name }}</h1>
+            <p class="teacher-code">{{ teacherData.teacher_code }}</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <p-button 
+            icon="pi pi-pencil" 
+            label="Chỉnh sửa" 
+            (click)="onEdit()"
+            [outlined]="true">
+          </p-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+      <!-- Left Column - Basic Information -->
+      <div class="left-column">
+        <!-- Profile Card -->
+        <p-card styleClass="profile-card">
+          <ng-template pTemplate="header">
+            <div class="profile-header">
+              <p-avatar 
+                [image]="getAvatarUrl(teacherData)" 
+                [label]="getLastNameInitial(teacherData.teacher_name)" 
+                size="xlarge" 
+                shape="circle"
+                styleClass="profile-avatar">
+              </p-avatar>
+              <div class="profile-info">
+                <h3>{{ teacherData.teacher_name }}</h3>
+                <p class="teacher-code">{{ teacherData.teacher_code }}</p>
+                <p-tag 
+                  [value]="teacherData.status" 
+                  [severity]="getStatusSeverity(teacherData.status)"
+                  styleClass="status-tag">
+                </p-tag>
+              </div>
+            </div>
+          </ng-template>
+          
+          <div class="profile-details">
+            <div class="detail-item" *ngIf="teacherData.dob">
+              <i class="pi pi-calendar"></i>
+              <span class="label">Ngày sinh:</span>
+              <span class="value">{{ teacherData.dob | date:'dd/MM/yyyy' }}</span>
+              <span class="age" *ngIf="calculateAge(teacherData.dob)">({{ calculateAge(teacherData.dob) }} tuổi)</span>
+            </div>
+            
+            <div class="detail-item" *ngIf="teacherData.gender">
+              <i class="pi pi-user"></i>
+              <span class="label">Giới tính:</span>
+              <span class="value">{{ teacherData.gender }}</span>
+            </div>
+            
+            <div class="detail-item" *ngIf="teacherData.phone">
+              <i class="pi pi-phone"></i>
+              <span class="label">Điện thoại:</span>
+              <span class="value">{{ teacherData.phone }}</span>
+            </div>
+            
+            <div class="detail-item" *ngIf="teacherData.email">
+              <i class="pi pi-envelope"></i>
+              <span class="label">Email:</span>
+              <span class="value">{{ teacherData.email }}</span>
+            </div>
+            
+            <div class="detail-item" *ngIf="teacherData.address">
+              <i class="pi pi-map-marker"></i>
+              <span class="label">Địa chỉ:</span>
+              <span class="value">{{ teacherData.address }}</span>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Professional Information -->
+        <p-card header="Thông tin chuyên môn" styleClass="info-card">
+          <div class="info-grid">
+            <div class="info-item" *ngIf="teacherData.department">
+              <span class="label">Khoa/Bộ môn:</span>
+              <span class="value">{{ teacherData.department }}</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.specialization">
+              <span class="label">Chuyên môn:</span>
+              <span class="value">{{ teacherData.specialization }}</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.degree">
+              <span class="label">Bằng cấp:</span>
+              <p-tag 
+                [value]="teacherData.degree" 
+                [severity]="getDegreeSeverity(teacherData.degree)">
+              </p-tag>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.experience_years !== undefined">
+              <span class="label">Kinh nghiệm:</span>
+              <span class="value">{{ teacherData.experience_years }} năm</span>
+              <span class="level">({{ getExperienceLevel(teacherData.experience_years) }})</span>
+            </div>
+            
+            <!-- Các trường mới - đã có migration -->
+            <div class="info-item" *ngIf="teacherData.languages">
+              <span class="label">Ngôn ngữ:</span>
+              <span class="value">{{ teacherData.languages }}</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.certifications">
+              <span class="label">Chứng chỉ:</span>
+              <span class="value">{{ teacherData.certifications }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- Right Column - Employment & Additional Info -->
+      <div class="right-column">
+        <!-- Employment Information -->
+        <p-card header="Thông tin việc làm" styleClass="info-card">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Trạng thái:</span>
+              <p-tag [value]="teacherData.status" [severity]="getStatusSeverity(teacherData.status)"></p-tag>
+            </div>
+            
+            <!-- Các trường mới - đã có migration -->
+            <div class="info-item" *ngIf="teacherData.hire_date">
+              <span class="label">Ngày tuyển dụng:</span>
+              <span class="value">{{ teacherData.hire_date | date:'dd/MM/yyyy' }}</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.contract_type">
+              <span class="label">Loại hợp đồng:</span>
+              <span class="value">{{ teacherData.contract_type }}</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.teaching_hours_per_week">
+              <span class="label">Số giờ dạy/tuần:</span>
+              <span class="value">{{ teacherData.teaching_hours_per_week }} giờ</span>
+            </div>
+            
+            <div class="info-item" *ngIf="teacherData.salary">
+              <span class="label">Lương cơ bản:</span>
+              <span class="value salary">{{ formatCurrency(teacherData.salary) }}</span>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Statistics Card -->
+        <p-card header="Thống kê" styleClass="info-card">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">{{ teacherData.experience_years || 0 }}</div>
+              <div class="stat-label">Năm kinh nghiệm</div>
+            </div>
+            
+            <div class="stat-item">
+              <div class="stat-value">{{ teacherData.teaching_hours_per_week || 0 }}</div>
+              <div class="stat-label">Giờ dạy/tuần</div>
+            </div>
+            
+            <div class="stat-item" *ngIf="teacherData.dob && calculateAge(teacherData.dob)">
+              <div class="stat-value">{{ calculateAge(teacherData.dob) }}</div>
+              <div class="stat-label">Tuổi</div>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Notes -->
+        <p-card header="Ghi chú" styleClass="info-card" *ngIf="teacherData.note">
+          <div class="notes-content">
+            <p>{{ teacherData.note }}</p>
+          </div>
+        </p-card>
+
+        <!-- Contact Actions -->
+        <p-card header="Liên hệ" styleClass="info-card">
+          <div class="contact-actions">
+            <p-button 
+              *ngIf="teacherData.phone"
+              icon="pi pi-phone" 
+              label="Gọi điện" 
+              [outlined]="true"
+              (click)="callPhone(teacherData.phone!)"
+              styleClass="w-full mb-2">
+            </p-button>
+            
+            <p-button 
+              *ngIf="teacherData.email"
+              icon="pi pi-envelope" 
+              label="Gửi email" 
+              [outlined]="true"
+              (click)="sendEmail(teacherData.email!)"
+              styleClass="w-full">
+            </p-button>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !teacherData" class="error-wrapper">
+    <i class="pi pi-exclamation-triangle error-icon"></i>
+    <h3>Không tìm thấy thông tin giảng viên</h3>
+    <p>Giảng viên này có thể đã bị xóa hoặc không tồn tại.</p>
+    <p-button 
+      label="Quay lại danh sách" 
+      icon="pi pi-arrow-left" 
+      (click)="onBack()"
+      styleClass="mt-3">
+    </p-button>
+  </div>
+</div>
+
+<!-- Drawer for Edit -->
+<p-drawer 
+  [(visible)]="drawerVisible" 
+  [position]="'right'" 
+  [style]="{ width: '600px' }"
+  [modal]="true">
+  
+  <ng-template pTemplate="header">
+    <h4 class="m-0">Chỉnh sửa giảng viên</h4>
+  </ng-template>
+  
+  <ng-template pTemplate="content">
+    <div class="teacher-form-grid p-fluid" *ngIf="formTeacher">
+      <!-- Basic Information Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin cơ bản</h5>
+        
+        <!-- Teacher Code -->
+        <div class="form-group">
+          <label>Mã giảng viên <span class="req">*</span></label>
+          <input 
+            pInputText 
+            [(ngModel)]="formTeacher.teacher_code"
+            placeholder="Nhập mã giảng viên"
+            class="w-full">
+        </div>
+
+        <!-- Teacher Name -->
+        <div class="form-group">
+          <label>Họ và tên <span class="req">*</span></label>
+          <input 
+            pInputText 
+            [(ngModel)]="formTeacher.teacher_name"
+            placeholder="Nhập họ và tên"
+            class="w-full">
+        </div>
+
+        <!-- Gender and DOB -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Giới tính</label>
+            <p-select 
+              [ngModel]="formTeacher.gender"
+              (ngModelChange)="formTeacher.gender = $event"
+              [options]="genderOptions"
+              placeholder="Chọn giới tính"
+              class="w-full">
+            </p-select>
+          </div>
+          <div class="form-group">
+            <label>Ngày sinh</label>
+            <p-datePicker 
+              [(ngModel)]="formTeacher.dob"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full">
+            </p-datePicker>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Số điện thoại</label>
+            <input 
+              pInputText 
+              [(ngModel)]="formTeacher.phone"
+              placeholder="Nhập số điện thoại"
+              class="w-full">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input 
+              pInputText 
+              [(ngModel)]="formTeacher.email"
+              placeholder="Nhập email"
+              class="w-full">
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="form-group">
+          <label>Địa chỉ</label>
+          <input 
+            pInputText 
+            [(ngModel)]="formTeacher.address"
+            placeholder="Nhập địa chỉ"
+            class="w-full">
+        </div>
+      </div>
+
+      <!-- Professional Information Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin chuyên môn</h5>
+        
+        <!-- Department and Specialization -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Khoa/Bộ môn</label>
+            <p-select 
+              [ngModel]="formTeacher.department"
+              (ngModelChange)="formTeacher.department = $event"
+              [options]="departmentOptions"
+              placeholder="Chọn khoa"
+              [filter]="true"
+              class="w-full">
+            </p-select>
+          </div>
+          <div class="form-group">
+            <label>Chuyên môn</label>
+            <input 
+              pInputText 
+              [(ngModel)]="formTeacher.specialization"
+              placeholder="Nhập chuyên môn"
+              class="w-full">
+          </div>
+        </div>
+
+        <!-- Degree and Experience -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Bằng cấp</label>
+            <p-select 
+              [ngModel]="formTeacher.degree"
+              (ngModelChange)="formTeacher.degree = $event"
+              [options]="degreeOptions"
+              placeholder="Chọn bằng cấp"
+              class="w-full">
+            </p-select>
+          </div>
+          <div class="form-group">
+            <label>Số năm kinh nghiệm</label>
+            <p-inputNumber
+              [(ngModel)]="formTeacher.experience_years"
+              [min]="0"
+              [max]="50"
+              placeholder="Nhập số năm"
+              class="w-full">
+            </p-inputNumber>
+          </div>
+        </div>
+
+        <!-- Languages -->
+        <div class="form-group">
+          <label>Ngôn ngữ có thể dạy</label>
+          <input 
+            pInputText 
+            [(ngModel)]="formTeacher.languages"
+            placeholder="VD: Tiếng Anh, Tiếng Hàn"
+            class="w-full">
+        </div>
+
+        <!-- Certifications -->
+        <div class="form-group">
+          <label>Chứng chỉ chuyên môn</label>
+          <textarea 
+            pInputTextarea 
+            [(ngModel)]="formTeacher.certifications"
+            rows="3"
+            placeholder="Nhập các chứng chỉ chuyên môn"
+            class="w-full">
+          </textarea>
+        </div>
+      </div>
+
+      <!-- Employment Information Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin việc làm</h5>
+        
+        <!-- Status and Contract Type -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Trạng thái <span class="req">*</span></label>
+            <p-select 
+              [ngModel]="formTeacher.status"
+              (ngModelChange)="formTeacher.status = $event"
+              [options]="statusOptions"
+              placeholder="Chọn trạng thái"
+              class="w-full">
+            </p-select>
+          </div>
+          <div class="form-group">
+            <label>Loại hợp đồng</label>
+            <p-select 
+              [ngModel]="formTeacher.contract_type"
+              (ngModelChange)="formTeacher.contract_type = $event"
+              [options]="contractTypeOptions"
+              placeholder="Chọn loại hợp đồng"
+              class="w-full">
+            </p-select>
+          </div>
+        </div>
+
+        <!-- Hire Date and Teaching Hours -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ngày tuyển dụng</label>
+            <p-datePicker 
+              [(ngModel)]="formTeacher.hire_date"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full">
+            </p-datePicker>
+          </div>
+          <div class="form-group">
+            <label>Số giờ dạy/tuần</label>
+            <p-inputNumber
+              [(ngModel)]="formTeacher.teaching_hours_per_week"
+              [min]="0"
+              [max]="60"
+              placeholder="Nhập số giờ"
+              class="w-full">
+            </p-inputNumber>
+          </div>
+        </div>
+
+        <!-- Salary -->
+        <div class="form-group">
+          <label>Lương cơ bản</label>
+          <p-inputNumber
+            [(ngModel)]="formTeacher.salary"
+            [min]="0"
+            [maxFractionDigits]="0"
+            placeholder="Nhập lương cơ bản"
+            class="w-full">
+          </p-inputNumber>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label>Ghi chú</label>
+          <textarea 
+            pInputTextarea 
+            [(ngModel)]="formTeacher.note"
+            rows="3"
+            placeholder="Nhập ghi chú"
+            class="w-full">
+          </textarea>
+        </div>
+      </div>
+      
+      <!-- Dialog Actions -->
+      <div class="dialog-actions flex justify-content-end align-items-center gap-3 w-full">
+        <button 
+          pButton 
+          label="Hủy" 
+          class="p-button-text" 
+          (click)="onDrawerHide()"
+          [disabled]="saving">
+        </button>
+        <button 
+          pButton 
+          label="Cập nhật" 
+          (click)="onSave()"
+          [disabled]="saving || !formTeacher.teacher_code || !formTeacher.teacher_name"
+          [loading]="saving">
+        </button>
+      </div>
+    </div>
+  </ng-template>
+</p-drawer>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>

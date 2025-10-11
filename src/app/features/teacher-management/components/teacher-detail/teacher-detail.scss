@@ -1,0 +1,543 @@
+.teacher-detail-container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// Loading and Error States
+.loading-wrapper, .error-wrapper {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-color-secondary);
+  
+  .error-icon {
+    font-size: 3rem;
+    color: var(--red-500);
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Header Section
+.header-section {
+  margin-bottom: 2rem;
+  
+  .teacher-name {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+  }
+  
+  .teacher-code {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+    font-family: 'Courier New', monospace;
+  }
+  
+  // Ensure edit button is positioned at the far right
+  .flex.justify-content-between {
+    .flex.gap-2 {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Content Grid
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+// Profile Card
+:host ::ng-deep {
+  .profile-card {
+    margin-bottom: 2rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius);
+    
+    .p-card-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: var(--content-border-radius) var(--content-border-radius) 0 0;
+    }
+    
+    .p-card-content {
+      padding: 1.5rem;
+      background: var(--surface-card);
+      color: var(--text-color);
+    }
+  }
+  
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    
+    .profile-avatar {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-info {
+      flex: 1;
+      
+      h3 {
+        color: white;
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+      
+      .teacher-code {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0 0 1rem 0;
+        font-family: 'Courier New', monospace;
+      }
+      
+      .status-tag {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+  
+  .profile-details {
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--surface-border);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      i {
+        color: var(--text-color-secondary);
+        width: 1rem;
+        text-align: center;
+      }
+      
+      .label {
+        font-weight: 500;
+        color: var(--text-color-secondary);
+        min-width: 100px;
+      }
+      
+      .value {
+        color: var(--text-color);
+        flex: 1;
+      }
+      
+      .age {
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+// Info Cards
+:host ::ng-deep {
+  .info-card {
+    margin-bottom: 2rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius);
+    
+    .p-card-header {
+      background: var(--surface-ground);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 1rem 1.5rem;
+      
+      h5 {
+        color: var(--text-color);
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+    
+    .p-card-content {
+      padding: 1.5rem;
+      background: var(--surface-card);
+      color: var(--text-color);
+    }
+  }
+  
+  .info-grid {
+    display: grid;
+    gap: 1rem;
+    
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .label {
+        font-weight: 500;
+        color: var(--text-color-secondary);
+        min-width: 120px;
+        font-size: 0.875rem;
+      }
+      
+      .value {
+        color: var(--text-color);
+        flex: 1;
+        font-weight: 500;
+        
+        &.salary {
+          color: var(--primary-color);
+          font-weight: 600;
+        }
+      }
+      
+      .level {
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+        font-style: italic;
+      }
+    }
+  }
+}
+
+// Statistics Grid
+:host ::ng-deep {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 1rem;
+      background: var(--surface-card);
+      border-radius: var(--content-border-radius);
+      border: 1px solid var(--surface-border);
+      
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+      }
+      
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Contact Actions
+:host ::ng-deep {
+  .contact-actions {
+    .p-button {
+      justify-content: flex-start;
+      
+      .p-button-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+// Notes Content
+:host ::ng-deep {
+  .notes-content {
+    background: var(--surface-ground);
+    padding: 1rem;
+    border-radius: var(--content-border-radius);
+    border-left: 4px solid var(--primary-color);
+    
+    p {
+      margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .teacher-detail-container {
+    padding: 0.5rem;
+  }
+  
+  .header-section {
+    .teacher-name {
+      font-size: 1.5rem;
+    }
+    
+    .flex {
+      flex-direction: column;
+      align-items: flex-start !important;
+      gap: 1rem;
+      
+      &.justify-content-between {
+        .flex.gap-2 {
+          margin-left: 0;
+          align-self: flex-end;
+        }
+      }
+    }
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  :host ::ng-deep {
+    .profile-card {
+      margin-bottom: 1.5rem;
+    }
+    
+    .info-card {
+      margin-bottom: 1.5rem;
+    }
+    
+    .profile-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Form Styling (copied from teacher component)
+.teacher-form-grid {
+  .form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--surface-100);
+    border-radius: 0.5rem;
+    border: 1px solid var(--surface-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    
+    // Dark theme adjustments
+    .app-dark & {
+      background: var(--surface-800);
+      border-color: var(--surface-700);
+    }
+    
+    .form-section-title {
+      color: var(--text-color);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-color);
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+      font-weight: 500;
+      transition: color 0.3s ease;
+      
+      .req {
+        color: var(--red-500);
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .dialog-actions {
+    border-top: 1px solid var(--surface-border);
+    padding-top: 1rem;
+    transition: border-color 0.3s ease;
+  }
+}
+
+// Drawer Styling
+:host ::ng-deep {
+  .p-drawer {
+    .p-drawer-header {
+      background: var(--surface-50);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 1.5rem;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800);
+        border-bottom-color: var(--surface-700);
+      }
+      
+      h4 {
+        color: var(--text-color);
+        font-weight: 600;
+        margin: 0;
+        transition: color 0.3s ease;
+      }
+    }
+    
+    .p-drawer-content {
+      padding: 1.5rem;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      background: var(--surface-card);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-900);
+        color: var(--text-color);
+      }
+    }
+  }
+  
+  // Form Input Styling
+  .p-inputtext, .p-dropdown, .p-inputnumber, .p-calendar {
+    border-radius: 0.375rem;
+    border: 1px solid var(--surface-border) !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    color: var(--text-color) !important;
+    background: var(--surface-card) !important;
+    transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+    
+    &:focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 3px var(--primary-color-text) !important;
+    }
+    
+    // Dark theme adjustments
+    .app-dark & {
+      background: var(--surface-800) !important;
+      border-color: var(--surface-700) !important;
+      color: var(--text-color) !important;
+      
+      &:focus {
+        border-color: var(--primary-color) !important;
+        background: var(--surface-700) !important;
+      }
+    }
+  }
+  
+  .p-select {
+    .p-select-label {
+      color: var(--text-color) !important;
+      transition: color 0.3s ease;
+    }
+    
+    .p-select-trigger {
+      background: var(--surface-card) !important;
+      border: 1px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        border-color: var(--surface-700) !important;
+      }
+    }
+  }
+  
+  // Prevent date picker overflow
+  .p-datepicker {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  // Ensure calendar icons are clickable
+  .p-calendar .p-datepicker-trigger {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+  }
+}
+
+.teacher-detail-content {
+  animation: fadeIn 0.5s ease-out;
+}
+
+// Tag Styling
+:host ::ng-deep {
+  .p-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    
+    &.status-tag {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Button Styling
+:host ::ng-deep {
+  .p-button {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
