@@ -1,24 +1,76 @@
-<div class="page-card">
+
+  <!-- Statistics Dashboard -->
+  <div class="stats-grid-responsive" 
+       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;" 
+       [style.grid-template-columns]="'repeat(4, 1fr)'"
+       [style.gap]="'1.5rem'"
+       *ngIf="statistics">
+    <!-- Card 1: Tổng khóa học -->
+    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
+         onmouseover="this.style.transform='translateY(-4px)'"
+         onmouseout="this.style.transform='translateY(0)'">
+      <div style="flex: 1;">
+        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.total_courses }}</div>
+        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Tổng khóa học</div>
+      </div>
+      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dbeafe; box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15); flex-shrink: 0;">
+        <i class="pi pi-book" style="font-size: 1.8rem; color: #3b82f6;"></i>
+      </div>
+    </div>
+    
+    <!-- Card 2: Đang hoạt động -->
+    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
+         onmouseover="this.style.transform='translateY(-4px)'"
+         onmouseout="this.style.transform='translateY(0)'">
+      <div style="flex: 1;">
+        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.active_courses }}</div>
+        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Đang hoạt động</div>
+      </div>
+      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dcfce7; box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15); flex-shrink: 0;">
+        <i class="pi pi-check-circle" style="font-size: 1.8rem; color: #22c55e;"></i>
+      </div>
+    </div>
+    
+    <!-- Card 3: Không hoạt động -->
+    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
+         onmouseover="this.style.transform='translateY(-4px)'"
+         onmouseout="this.style.transform='translateY(0)'">
+      <div style="flex: 1;">
+        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.inactive_courses }}</div>
+        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Không hoạt động</div>
+      </div>
+      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fee2e2; box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15); flex-shrink: 0;">
+        <i class="pi pi-times-circle" style="font-size: 1.8rem; color: #ef4444;"></i>
+      </div>
+    </div>
+    
+    <!-- Card 4: Học phí trung bình -->
+    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
+         onmouseover="this.style.transform='translateY(-4px)'"
+         onmouseout="this.style.transform='translateY(0)'">
+      <div style="flex: 1;">
+        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ formatCurrency(statistics.average_tuition_fee) }}</div>
+        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Học phí TB</div>
+      </div>
+      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fef3c7; box-shadow: 0 4px 8px rgba(245, 158, 11, 0.15); flex-shrink: 0;">
+        <i class="pi pi-money-bill" style="font-size: 1.8rem; color: #f59e0b;"></i>
+      </div>
+    </div>
+  </div>
+  
+  <div class="page-card">
   <p-toolbar *ngIf="!loading && courses.length > 0">
     <ng-template pTemplate="start">
       <div class="flex items-center gap-2">
         <button
           pButton
           type="button"
-          label="Xóa lọc"
-          icon="pi pi-filter-slash"
+          label="Làm mới"
+          icon="pi pi-refresh"
           class="p-button-outlined p-button-primary"
-          (click)="onClearFilters()"
-          *ngIf="dt && filteredCourses.length > 0"
-        ></button>
-        <button
-          *ngIf="showClearButton" 
-          pButton
-          type="button"
-          label="Xóa tìm kiếm"
-          icon="pi pi-times"
-          class="p-button-outlined p-button-secondary"
-          (click)="clearSearch()"
+          (click)="forceRefresh()"
+          [loading]="loading"
+          pTooltip="Làm mới danh sách khóa học"
         ></button>
       </div>
     </ng-template>
@@ -31,7 +83,15 @@
             pInputText 
             placeholder="Tìm kiếm ..." 
             [(ngModel)]="searchQuery"
-            (input)="onGlobalFilter($event)" 
+            (input)="onGlobalFilter($event)"
+            class="search-input"
+          />
+          <p-inputicon 
+            *ngIf="searchQuery" 
+            class="pi pi-times clear-search" 
+            (click)="clearSearch()"
+            pTooltip="Xóa tìm kiếm"
+            tooltipPosition="bottom"
           />
         </p-iconfield>
       </div>
@@ -66,7 +126,26 @@
       </div>   
       <div class="form-group full-width">
         <label>Mô tả:</label>
-        <textarea pTextarea [(ngModel)]="formCourse!.description" rows="3"></textarea>
+        <textarea pTextarea [(ngModel)]="formCourse!.description" rows="3" placeholder="Mô tả chi tiết về khóa học"></textarea>
+      </div>
+      
+      <div class="form-group full-width">
+        <label>Điều kiện tiên quyết:</label>
+        <textarea pTextarea [(ngModel)]="formCourse!.prerequisites" rows="2" placeholder="VD: Kiến thức cơ bản về ngữ pháp, từ vựng 500 từ"></textarea>
+      </div>
+      
+      <div class="form-group full-width">
+        <label>Mục tiêu học tập:</label>
+        <textarea pTextarea [(ngModel)]="formCourse!.learning_objectives" rows="2" placeholder="VD: Có thể giao tiếp cơ bản, đọc hiểu văn bản đơn giản"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Danh mục:</label>
+        <p-select 
+          [(ngModel)]="formCourse!.category" 
+          [options]="['Giao tiếp', 'Ngữ pháp', 'Từ vựng', 'Phát âm', 'Luyện thi', 'Khác']"
+          placeholder="Chọn danh mục">
+        </p-select>
       </div>   
       <div class="form-group">
         <label>Ngôn ngữ:</label>
@@ -117,64 +196,6 @@
     </div>
   </p-drawer>
   
-  <!--popup xem chi tiết khóa học  -->
-  <div class="course-detail-card">
-    <p-drawer
-      header="Chi tiết khóa học"
-      [(visible)]="drawerDetailVisible"
-      position="full"
-      [showCloseIcon]="true"
-      [modal]="true"
-    >
-      <div *ngIf="selectedCourse" class="course-detail-body">
-        
-        <!-- Header -->
-        <div class="course-detail-body__header">
-          <h2>{{ selectedCourse.course_name }}</h2>
-          <p>Mã khóa học: {{ selectedCourse.course_code }}</p>
-        </div>
-
-        <!-- Nội dung chính -->
-        <div class="course-detail-body__content">
-          <!-- Cột trái -->
-          <div class="course-detail-body__left">
-            <div class="course-info">
-              <p><strong>Ngôn ngữ:</strong> {{ selectedCourse.language }}</p>
-              <p><strong>Cấp độ:</strong> {{ selectedCourse.level }}</p>
-              <p><strong>Thời lượng:</strong> {{ selectedCourse.duration_weeks }} tuần</p>
-              <p><strong>Học phí:</strong> {{ selectedCourse.tuition_fee | number:'1.0-0' }} VNĐ</p>
-              <p><strong>Mô tả:</strong> {{ selectedCourse.description }}</p>
-            </div>
-          </div>
-
-          <!-- Cột phải -->
-          <div class="course-detail-body__right">
-            <h3 class="sub-title">Các lớp học ({{ classesForCourse.length }})</h3>
-            <div class="extra-list" *ngIf="classesForCourse.length > 0; else noClasses">
-              <div class="extra-item" *ngFor="let cls of classesForCourse">
-                {{ cls.class_name }}
-                <span class="text-sm text-gray-500 ml-2">({{ cls.class_code }})</span>
-              </div>
-            </div>
-            <ng-template #noClasses>
-              <div class="text-sm text-gray-500">Chưa có lớp nào cho khóa học này</div>
-            </ng-template>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="course-detail-body__actions">
-          <button
-            pButton
-            label="Đóng"
-            icon="pi pi-times"
-            class="p-button-outlined"
-            (click)="drawerDetailVisible = false"
-          ></button>
-        </div>
-      </div>
-    </p-drawer>
-  </div>
 
   <!--main-->
   <main>
@@ -185,7 +206,7 @@
       <p>Vui lòng chờ trong giây lát</p>
     </div>
 
-    <!-- Empty State -->
+    <!-- Empty State when no courses exist -->
     <div *ngIf="!loading && courses.length === 0" class="empty-wrapper">
       <i class="pi pi-graduation-cap empty-icon"></i>
       <h3>Không có khóa học</h3>
@@ -202,17 +223,8 @@
         ></button>
     </div>
 
-    <!-- No Search Results -->
-    <div *ngIf="!loading && courses.length > 0 && filteredCourses.length === 0" class="empty-wrapper">
-      <i class="pi pi-search empty-icon"></i>
-      <h3>Không tìm thấy kết quả</h3>
-      <p>
-        Không có khóa học nào phù hợp với từ khóa "<strong>{{ searchQuery }}</strong>"
-      </p>
-    </div>
-    
     <!-- Table -->
-    <div *ngIf="!loading && courses.length > 0 && filteredCourses.length > 0">
+    <div *ngIf="!loading && courses.length > 0">
       <p-table #dt
         [value]="filteredCourses"
         [paginator]="true"
@@ -224,36 +236,31 @@
         <!-- Header -->
         <ng-template pTemplate="header">
           <tr>
-            <th>Mã KH</th>
-            <th>
-              Tên khóa học
-              <p-columnFilter field="course_name" display="menu" matchMode="contains"></p-columnFilter>
+            <th pSortableColumn="course_code">
+              Mã KH <p-sortIcon field="course_code"></p-sortIcon>
             </th>
-            <th>
-              Ngôn ngữ
-              <p-columnFilter field="language" display="menu" matchMode="equals"></p-columnFilter>
+            <th pSortableColumn="course_name">
+              Tên khóa học <p-sortIcon field="course_name"></p-sortIcon>
             </th>
-            <th>
-              Trình độ
-              <p-columnFilter field="level" display="menu" matchMode="equals"></p-columnFilter>
+            <th pSortableColumn="language">
+              Ngôn ngữ <p-sortIcon field="language"></p-sortIcon>
             </th>
-            <th>
-              Số tuần
-              <p-columnFilter field="duration_weeks" display="menu" matchMode="equals"></p-columnFilter>
+            <th pSortableColumn="level">
+              Trình độ <p-sortIcon field="level"></p-sortIcon>
             </th>
-            <th>
-              Tổng giờ
-              <p-columnFilter field="total_hours" display="menu" matchMode="equals"></p-columnFilter>
+            <th pSortableColumn="duration_weeks">
+              Số tuần <p-sortIcon field="duration_weeks"></p-sortIcon>
             </th>
-            <th>
-              Học phí
-              <p-columnFilter field="tuition_fee" display="menu" matchMode="gte"></p-columnFilter>
+            <th pSortableColumn="total_hours">
+              Tổng giờ <p-sortIcon field="total_hours"></p-sortIcon>
             </th>
-            <th>
-              Trạng thái
-              <p-columnFilter field="status" display="menu" matchMode="equals"></p-columnFilter>
+            <th pSortableColumn="tuition_fee">
+              Học phí <p-sortIcon field="tuition_fee"></p-sortIcon>
             </th>
-            <th>Hành động</th>
+            <th pSortableColumn="status">
+              Trạng thái <p-sortIcon field="status"></p-sortIcon>
+            </th>
+            <th style="width: 8rem">Hành động</th>
           </tr>
         </ng-template>
 
@@ -296,6 +303,20 @@
                 class="p-button-rounded p-button-text p-button-danger"
                 (click)="onDelete(course)"
               ></button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <!-- Empty Message Template for Search Results -->
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="text-center">
+                <div class="py-4">
+                <div class="text-center">
+                  <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                  <p class="mb-0">Không thấy khóa học nào</p>
+                </div>
+              </div>
             </td>
           </tr>
         </ng-template>

@@ -1,0 +1,192 @@
+<div class="course-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <p-progressSpinner [style]="{width: '50px', height: '50px'}"></p-progressSpinner>
+    <h3>Đang tải thông tin khóa học...</h3>
+    <p>Vui lòng chờ trong giây lát</p>
+  </div>
+
+  <!-- Course Detail Content -->
+  <div *ngIf="!loading && courseData" class="course-detail-content">
+    <!-- Header Section -->
+    <div class="course-header">
+      <!-- Left: Back Button -->
+      <button
+        pButton
+        icon="pi pi-arrow-left"
+        class="p-button-text back-button"
+        pTooltip="Quay lại danh sách khóa học"
+        (click)="onBack()">
+      </button>
+      
+      <!-- Center: Course Information -->
+      <div class="course-header__info">
+        <div class="course-title-section">
+          <h1 class="course-title">{{ courseData.course_name }}</h1>
+          <div class="course-meta">
+            <span class="course-code">
+              <i class="pi pi-tag"></i>
+              {{ courseData.course_code }}
+            </span>
+            <p-tag 
+              [value]="courseData.status" 
+              [severity]="getStatusSeverity(courseData.status)"
+              class="status-tag">
+            </p-tag>
+          </div>
+        </div>
+        <div class="course-category" *ngIf="hasContent(courseData.category)">
+          <i class="pi pi-bookmark"></i>
+          <span>{{ courseData.category }}</span>
+        </div>
+      </div>
+      
+      <!-- Right: Edit Button -->
+      <button
+        pButton
+        label="Chỉnh sửa"
+        icon="pi pi-pencil"
+        class="p-button-primary"
+        [disabled]="!canEdit()"
+        (click)="onEdit()">
+      </button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="course-main-content">
+      <!-- Left Column - Course Information -->
+      <div class="course-info-section">
+        <!-- Course Overview Card -->
+        <p-card header="Thông tin tổng quan" class="info-card">
+          <div class="overview-grid">
+            <div class="overview-item" *ngFor="let stat of getCourseStats()">
+              <div class="overview-icon">
+                <i [class]="stat.icon"></i>
+              </div>
+              <div class="overview-content">
+                <div class="overview-value">{{ stat.value }}</div>
+                <div class="overview-label">{{ stat.label }}</div>
+              </div>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Course Details Card -->
+        <p-card header="Chi tiết khóa học" class="info-card">
+          <div class="details-grid">
+            <div class="detail-item">
+              <label>Trình độ</label>
+              <p-tag 
+                [value]="courseData.level" 
+                [severity]="getLevelColor(courseData.level)"
+                class="level-tag">
+              </p-tag>
+            </div>
+            <div class="detail-item">
+              <label>Ngày tạo</label>
+              <span>{{ formatDate(courseData.created_at) }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Lần cập nhật cuối</label>
+              <span>{{ formatDate(courseData.updated_at) }}</span>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Description Card -->
+        <p-card header="Mô tả khóa học" class="info-card" *ngIf="hasContent(courseData.description)">
+          <div class="description-content">
+            {{ courseData.description }}
+          </div>
+        </p-card>
+
+        <!-- Prerequisites Card -->
+        <p-card header="Điều kiện tiên quyết" class="info-card" *ngIf="hasContent(courseData.prerequisites)">
+          <div class="prerequisites-content">
+            {{ courseData.prerequisites }}
+          </div>
+        </p-card>
+
+        <!-- Learning Objectives Card -->
+        <p-card header="Mục tiêu học tập" class="info-card" *ngIf="hasContent(courseData.learning_objectives)">
+          <div class="objectives-content">
+            {{ courseData.learning_objectives }}
+          </div>
+        </p-card>
+
+        <!-- Tags Card -->
+        <p-card header="Thẻ phân loại" class="info-card" *ngIf="hasTags(courseData.tags)">
+          <div class="tags-content">
+            <p-chip 
+              *ngFor="let tag of formatTags(courseData.tags)" 
+              [label]="tag"
+              class="course-tag">
+            </p-chip>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- Right Column - Statistics -->
+      <div class="course-stats-section">
+        <p-card header="Thống kê khóa học" class="stats-card">
+          <div class="stats-content" *ngIf="!statsLoading; else statsLoadingTemplate">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="pi pi-users"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ courseStats.totalClasses }}</div>
+                <div class="stat-label">Lớp học</div>
+              </div>
+            </div>
+            
+            <p-divider></p-divider>
+            
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="pi pi-user"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ courseStats.totalStudents }}</div>
+                <div class="stat-label">Học viên</div>
+              </div>
+            </div>
+            
+            <p-divider></p-divider>
+            
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="pi pi-user-plus"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ courseStats.totalTeachers }}</div>
+                <div class="stat-label">Giáo viên</div>
+              </div>
+            </div>
+          </div>
+          
+          <ng-template #statsLoadingTemplate>
+            <div class="stats-loading">
+              <p-progressSpinner [style]="{width: '30px', height: '30px'}"></p-progressSpinner>
+              <p>Đang tải thống kê...</p>
+            </div>
+          </ng-template>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !courseData" class="error-container">
+    <i class="pi pi-exclamation-triangle error-icon"></i>
+    <h3>Không tìm thấy khóa học</h3>
+    <p>Khóa học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+    <button 
+      pButton 
+      label="Quay lại" 
+      icon="pi pi-arrow-left" 
+      class="p-button-primary" 
+      (click)="onBack()">
+    </button>
+  </div>
+</div>
