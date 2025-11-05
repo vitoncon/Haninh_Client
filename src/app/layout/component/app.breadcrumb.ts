@@ -76,6 +76,78 @@ export class AppBreadcrumb {
                             routerLink: '/features/students'
                         });
                     }
+                } else if (routePath.includes('fees/detail')) {
+                    // Thêm breadcrumb cho "Quản lý học phí" trước "Chi tiết học phí"
+                    const feesManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý học phí');
+                    if (!feesManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý học phí',
+                            routerLink: '/features/fees'
+                        });
+                    }
+                } else if (routePath.includes('class/:id/schedule')) {
+                    // Thêm breadcrumb cho "Quản lý lớp học" và "Chi tiết lớp học" trước "Lịch học lớp"
+                    const classManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý lớp học');
+                    if (!classManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý lớp học',
+                            routerLink: '/features/class'
+                        });
+                    }
+                    const classDetailBreadcrumb = breadcrumbs.find(b => b.label === 'Chi tiết lớp học');
+                    if (!classDetailBreadcrumb) {
+                        // Extract class ID from URL
+                        const classId = child.snapshot.params['id'];
+                        breadcrumbs.push({
+                            label: 'Chi tiết lớp học',
+                            routerLink: `/features/class/detail/${classId}`
+                        });
+                    }
+                } else if (routePath.includes('class/:id/study-results')) {
+                    // Thêm breadcrumb cho "Quản lý lớp học" và "Chi tiết lớp học" trước "Kết quả học tập lớp"
+                    const classManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý lớp học');
+                    if (!classManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý lớp học',
+                            routerLink: '/features/class'
+                        });
+                    }
+                    const classDetailBreadcrumb = breadcrumbs.find(b => b.label === 'Chi tiết lớp học');
+                    if (!classDetailBreadcrumb) {
+                        // Extract class ID from URL
+                        const classId = child.snapshot.params['id'];
+                        breadcrumbs.push({
+                            label: 'Chi tiết lớp học',
+                            routerLink: `/features/class/detail/${classId}`
+                        });
+                    }
+                } else if (routePath.includes('study-result/:examId')) {
+                    // Thêm breadcrumb cho "Quản lý lớp học", "Chi tiết lớp học", và "Kết quả học tập lớp" trước "Chi tiết bài kiểm tra"
+                    const classManagementBreadcrumb = breadcrumbs.find(b => b.label === 'Quản lý lớp học');
+                    if (!classManagementBreadcrumb) {
+                        breadcrumbs.push({
+                            label: 'Quản lý lớp học',
+                            routerLink: '/features/class'
+                        });
+                    }
+                    const classDetailBreadcrumb = breadcrumbs.find(b => b.label === 'Chi tiết lớp học');
+                    if (!classDetailBreadcrumb) {
+                        // Extract class ID from URL
+                        const classId = child.snapshot.params['id'];
+                        breadcrumbs.push({
+                            label: 'Chi tiết lớp học',
+                            routerLink: `/features/class/detail/${classId}`
+                        });
+                    }
+                    const studyResultsBreadcrumb = breadcrumbs.find(b => b.label === 'Kết quả học tập lớp');
+                    if (!studyResultsBreadcrumb) {
+                        // Extract class ID from URL
+                        const classId = child.snapshot.params['id'];
+                        breadcrumbs.push({
+                            label: 'Kết quả học tập lớp',
+                            routerLink: `/features/class/${classId}/study-results`
+                        });
+                    }
                 }
                 
                 breadcrumbs.push({

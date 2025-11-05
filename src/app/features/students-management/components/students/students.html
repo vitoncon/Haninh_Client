@@ -1,1 +1,527 @@
-<p>students works!</p>
+<div class="students-container">
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng học viên</h6>
+          <h4 class="mb-0">{{ statistics.total_students }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-users"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đang học</h6>
+          <h4 class="mb-0">{{ statistics.active_students }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tạm dừng</h6>
+          <h4 class="mb-0">{{ statistics.inactive_students }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Hoàn thành</h6>
+          <h4 class="mb-0">{{ statistics.graduated_students }}</h4>
+        </div>
+        <div class="icon-container text-purple-500">
+          <i class="pi pi-graduation-cap"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Main Content -->
+  <p-card>
+    <div class="flex justify-content-between align-items-center header-with-buttons">
+      <h2 class="m-0">Quản lý học viên</h2>
+      <div class="flex gap-2 justify-content-end" style="display: flex !important; gap: 0.5rem !important; justify-content: flex-end !important; align-items: center !important; flex-direction: row !important; margin-left: auto !important;">
+        <p-button 
+          icon="pi pi-download" 
+          label="Xuất Excel" 
+          (click)="exportToExcel()"
+          [outlined]="true"
+          [disabled]="filteredStudents.length === 0"
+        >
+        </p-button>
+        <p-button 
+          icon="pi pi-refresh" 
+          label="Làm mới" 
+          (click)="forceRefresh()"
+          [outlined]="true"
+          [loading]="loading"
+        >
+        </p-button>
+        <p-button 
+          icon="pi pi-plus" 
+          label="Thêm học viên" 
+          (click)="onCreate()"
+          styleClass="p-button-primary">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="flex flex-wrap gap-3 mb-4">
+      <!-- Text Search -->
+      <div class="flex-1 min-w-0">
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+          <input 
+            pInputText 
+            type="text" 
+            placeholder="Tìm kiếm ..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearch($event)"
+            class="w-full">
+        </p-iconField>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex gap-2">
+        <p-select 
+          [ngModel]="filters.status"
+          (ngModelChange)="filters.status = $event; onFilterChange()"
+          [options]="statusOptions"
+          placeholder="Lọc theo trạng thái"
+          [showClear]="true"
+          class="min-w-0">
+        </p-select>
+
+        <p-select 
+          [ngModel]="filters.gender"
+          (ngModelChange)="filters.gender = $event; onFilterChange()"
+          [options]="genderOptions"
+          placeholder="Lọc theo giới tính"
+          [showClear]="true"
+          class="min-w-0">
+        </p-select>
+
+        <p-button 
+          icon="pi pi-filter"
+          text="true"
+          [label]="showAdvancedFilters ? 'Ẩn bộ lọc nâng cao' : 'Hiện bộ lọc nâng cao'"
+          (click)="showAdvancedFilters = !showAdvancedFilters"
+          styleClass="filter-toggle-btn">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Advanced Filters Panel -->
+    <div *ngIf="showAdvancedFilters" class="advanced-filters-panel">
+      <div class="grid">
+        <!-- Removed language and level filters as they are managed in class_students table -->
+        
+        <!-- Enrollment Date Range -->
+        <div class="filter-group">
+          <label>Ngày nhập học:</label>
+          <div class="flex gap-2">
+            <p-datePicker 
+              [(ngModel)]="filters.enrollment_date_from"
+              (ngModelChange)="filters.enrollment_date_from = $event; onFilterChange()"
+              placeholder="Từ ngày (dd/mm/yyyy)"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full">
+            </p-datePicker>
+            <p-datePicker 
+              [(ngModel)]="filters.enrollment_date_to"
+              (ngModelChange)="filters.enrollment_date_to = $event; onFilterChange()"
+              placeholder="Đến ngày (dd/mm/yyyy)"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full">
+            </p-datePicker>
+          </div>
+        </div>
+        
+        <!-- Age Range -->
+        <div class="filter-group">
+          <label>Độ tuổi:</label>
+          <div class="flex gap-2">
+            <p-inputNumber 
+              [(ngModel)]="filters.age_from"
+              (ngModelChange)="filters.age_from = $event; onFilterChange()"
+              placeholder="Từ"
+              [min]="0"
+              [max]="100"
+              class="w-full">
+            </p-inputNumber>
+            <p-inputNumber 
+              [(ngModel)]="filters.age_to"
+              (ngModelChange)="filters.age_to = $event; onFilterChange()"
+              placeholder="Đến"
+              [min]="0"
+              [max]="100"
+              class="w-full">
+            </p-inputNumber>
+          </div>
+        </div>
+
+        <!-- Clear Filters Button -->
+        <div class="filter-group">
+          <p-button 
+            label="Xóa bộ lọc"
+            icon="pi pi-times"
+            [outlined]="true"
+            [disabled]="!hasActiveFilters"
+            (click)="onClearFilters()"
+            [style]="{'width': '100%'}">
+          </p-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Table -->
+    <main class="main-content">
+      <p-table 
+        #dt
+        [value]="filteredStudents" 
+        [tableStyle]="{'min-width': '60rem'}"
+        [paginator]="true" 
+        [rows]="20"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} học viên"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [globalFilterFields]="['student_code', 'full_name', 'gender', 'phone', 'email', 'date_of_birth', 'status']"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-gridlines">
+        
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem">
+              <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
+            <th pSortableColumn="student_code">
+              Mã HV <p-sortIcon field="student_code"></p-sortIcon>
+            </th>
+            <th pSortableColumn="full_name">
+              Họ tên <p-sortIcon field="full_name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="gender">
+              Giới tính <p-sortIcon field="gender"></p-sortIcon>
+            </th>
+            <th pSortableColumn="date_of_birth">
+              Ngày sinh <p-sortIcon field="date_of_birth"></p-sortIcon>
+            </th>
+            <th pSortableColumn="phone">
+              Số điện thoại <p-sortIcon field="phone"></p-sortIcon>
+            </th>
+            <th pSortableColumn="enrollment_date">
+              Ngày nhập học <p-sortIcon field="enrollment_date"></p-sortIcon>
+            </th>
+            <th pSortableColumn="status">
+              Trạng thái <p-sortIcon field="status"></p-sortIcon>
+            </th>
+            <th style="width: 8rem">Thao tác</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-student>
+          <tr>
+            <td>
+              <p-tableCheckbox [value]="student"></p-tableCheckbox>
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <p-avatar 
+                  [image]="student.avatar_url" 
+                  [label]="getLastNameInitial(student.full_name)" 
+                  styleClass="mr-2" 
+                  size="normal" 
+                  shape="circle">
+                </p-avatar>
+                <code class="text-sm">{{ student.student_code }}</code>
+              </div>
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <div>
+                  <div class="font-semibold">{{ student.full_name }}</div>
+                  <div class="text-sm text-gray-600">{{ student.email || '-' }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ student.gender || '-' }}</td>
+            <td>{{ student.date_of_birth ? (student.date_of_birth | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>{{ student.phone || '-' }}</td>
+            <td>{{ student.enrollment_date ? (student.enrollment_date | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>
+              <p-tag 
+                [value]="student.status" 
+                [severity]="getStatusSeverity(student.status)">
+              </p-tag>
+            </td>
+            <td>
+              <div class="flex gap-2">
+                <p-button 
+                  icon="pi pi-eye" 
+                  [text]="true" 
+                  size="small"
+                  (click)="onView(student)"
+                  pTooltip="Xem chi tiết"
+                  tooltipPosition="top">
+                </p-button>
+                <p-button 
+                  icon="pi pi-pencil" 
+                  [text]="true" 
+                  size="small"
+                  (click)="onEdit(student)"
+                  pTooltip="Chỉnh sửa"
+                  tooltipPosition="top">
+                </p-button>
+                 <p-button 
+                   icon="pi pi-trash" 
+                   [text]="true" 
+                   severity="danger"
+                   size="small"
+                   (click)="onDelete(student)"
+                   pTooltip="Xóa"
+                   tooltipPosition="top">
+                 </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="text-center">
+              <div class="py-4">
+                <div class="text-center">
+                  <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                  <p class="mb-0">Không tìm thấy học viên nào</p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </main>
+  </p-card>
+
+  <!-- Drawer thêm/sửa học sinh -->
+  <p-drawer
+    header="Thêm/Sửa học viên"
+    [(visible)]="drawerVisible"
+    position="right"
+    (onHide)="onDrawerHide()"
+    [modal]="true"
+    [style]="{ width: '600px' }">
+    
+    <ng-template pTemplate="content">
+      <div class="student-form-grid p-fluid" *ngIf="formStudent; else noFormTemplate">
+        
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin cơ bản</h5>
+          
+          <!-- Student Code and Name -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mã học viên <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <div class="flex gap-2">
+                <input 
+                  pInputText 
+                  [(ngModel)]="formStudent.student_code"
+                  placeholder="Nhập mã học viên"
+                  class="flex-1"
+                  [readonly]="isEditMode()"
+                  [class.readonly-input]="isEditMode()">
+                <p-button 
+                  *ngIf="!isEditMode()"
+                  icon="pi pi-refresh" 
+                  (click)="generateNewStudentCode()"
+                  [outlined]="true"
+                  pTooltip="Tạo mã mới"
+                  tooltipPosition="top">
+                </p-button>
+              </div>
+              <small *ngIf="isEditMode()" class="text-gray-500">Mã học viên không thể thay đổi khi chỉnh sửa</small>
+            </div>
+            <div class="form-group">
+              <label>Họ và tên <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.full_name"
+                placeholder="Nhập họ và tên"
+                class="w-full">
+            </div>
+          </div>
+
+          <!-- Gender and DOB -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Giới tính</label>
+              <p-select 
+                [ngModel]="formStudent.gender"
+                (ngModelChange)="formStudent.gender = $event"
+                [options]="genderOptions"
+                placeholder="Chọn giới tính"
+                class="w-full">
+              </p-select>
+            </div>
+            <div class="form-group">
+              <label>Ngày sinh</label>
+              <p-datePicker 
+                [(ngModel)]="formStudent.date_of_birth"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                appendTo="body"
+                [touchUI]="false"
+                class="w-full"
+                [placeholder]="'dd/mm/yyyy'">
+              </p-datePicker>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số điện thoại</label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.phone"
+                placeholder="Nhập số điện thoại"
+                class="w-full">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.email"
+                placeholder="Nhập email"
+                class="w-full">
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="form-group">
+            <label>Địa chỉ</label>
+            <input 
+              pInputText 
+              [(ngModel)]="formStudent.address"
+              placeholder="Nhập địa chỉ"
+              class="w-full">
+          </div>
+
+          <!-- Avatar Upload -->
+          <div class="form-group">
+            <label>Hình đại diện</label>
+            <p-fileUpload 
+              mode="basic" 
+              name="avatar" 
+              accept="image/*" 
+              [maxFileSize]="1000000"
+              chooseLabel="Chọn hình"
+              chooseIcon="pi pi-upload"
+              (onError)="onFileUploadError($event)"
+              (onSelect)="onFileUploadSelect($event)"
+              (onBeforeUpload)="onFileUploadBeforeUpload($event)"
+              class="w-full">
+            </p-fileUpload>
+          </div>
+        </div>
+
+        <!-- Enrollment Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin nhập học</h5>
+          
+          <!-- Enrollment Date and Status in one row -->
+          <div class="form-row enrollment-row">
+            <div class="form-group">
+              <label>Ngày nhập học</label>
+              <p-datePicker 
+                [(ngModel)]="formStudent.enrollment_date"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                appendTo="body"
+                [touchUI]="false"
+                class="w-full"
+                [placeholder]="'dd/mm/yyyy'">
+              </p-datePicker>
+            </div>
+            <div class="form-group">
+              <label>Trạng thái <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <p-select 
+                [ngModel]="formStudent.status"
+                (ngModelChange)="formStudent.status = $event"
+                [options]="statusOptions"
+                placeholder="Chọn trạng thái"
+                class="w-full">
+              </p-select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin bổ sung</h5>
+          
+          <!-- Notes -->
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea 
+              pInputTextarea 
+              [(ngModel)]="formStudent.note"
+              rows="3"
+              placeholder="Nhập ghi chú"
+              class="w-full">
+            </textarea>
+          </div>
+        </div>
+        
+        <!-- Dialog Actions -->
+        <div class="dialog-actions">
+          <button 
+            pButton 
+            label="Hủy" 
+            class="p-button-text"
+            (click)="onDrawerHide()">
+          </button>
+          <button 
+            pButton 
+            label="{{ formStudent && formStudent.id ? 'Cập nhật' : 'Thêm mới' }}" 
+            class="p-button-success"
+            (click)="onSave()"
+            [loading]="saving">
+          </button>
+        </div>
+      </div>
+      
+      <ng-template #noFormTemplate>
+        <div class="empty-wrapper">
+          <i class="pi pi-exclamation-triangle empty-icon"></i>
+          <h3>Không có dữ liệu form</h3>
+          <p>Vui lòng thử lại sau.</p>
+        </div>
+      </ng-template>
+    </ng-template>
+  </p-drawer>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog></p-confirmDialog>
+</div>

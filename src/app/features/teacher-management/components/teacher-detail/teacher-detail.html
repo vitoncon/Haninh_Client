@@ -29,7 +29,7 @@
             icon="pi pi-pencil" 
             label="Chỉnh sửa" 
             (click)="onEdit()"
-            [outlined]="true">
+            styleClass="p-button-primary">
           </p-button>
         </div>
       </div>
@@ -256,17 +256,30 @@
         
         <!-- Teacher Code -->
         <div class="form-group">
-          <label>Mã giảng viên <span class="req">*</span></label>
-          <input 
-            pInputText 
-            [(ngModel)]="formTeacher.teacher_code"
-            placeholder="Nhập mã giảng viên"
-            class="w-full">
+          <label>Mã giảng viên <span class="req" style="color: #ef4444 !important;">*</span></label>
+          <div class="flex gap-2">
+            <input 
+              pInputText 
+              [(ngModel)]="formTeacher.teacher_code"
+              placeholder="Nhập mã giảng viên"
+              class="flex-1"
+              [readonly]="isEditMode()"
+              [class.readonly-input]="isEditMode()">
+            <p-button 
+              *ngIf="!isEditMode()"
+              icon="pi pi-refresh" 
+              (click)="generateNewCode()"
+              [outlined]="true"
+              pTooltip="Tạo mã mới"
+              tooltipPosition="top">
+            </p-button>
+          </div>
+          <small *ngIf="isEditMode()" class="text-gray-500">Mã giảng viên không thể thay đổi khi chỉnh sửa</small>
         </div>
 
         <!-- Teacher Name -->
         <div class="form-group">
-          <label>Họ và tên <span class="req">*</span></label>
+          <label>Họ và tên <span class="req" style="color: #ef4444 !important;">*</span></label>
           <input 
             pInputText 
             [(ngModel)]="formTeacher.teacher_name"
@@ -277,7 +290,7 @@
         <!-- Gender and DOB -->
         <div class="form-row">
           <div class="form-group">
-            <label>Giới tính</label>
+            <label>Giới tính <span class="req" style="color: #ef4444 !important;">*</span></label>
             <p-select 
               [ngModel]="formTeacher.gender"
               (ngModelChange)="formTeacher.gender = $event"
@@ -337,7 +350,7 @@
         <!-- Department and Specialization -->
         <div class="form-row">
           <div class="form-group">
-            <label>Khoa/Bộ môn</label>
+            <label>Khoa/Bộ môn <span class="req" style="color: #ef4444 !important;">*</span></label>
             <p-select 
               [ngModel]="formTeacher.department"
               (ngModelChange)="formTeacher.department = $event"
@@ -348,11 +361,11 @@
             </p-select>
           </div>
           <div class="form-group">
-            <label>Chuyên môn</label>
+            <label>Chuyên môn <span class="text-gray-500">(Tùy chọn)</span></label>
             <input 
               pInputText 
               [(ngModel)]="formTeacher.specialization"
-              placeholder="Nhập chuyên môn"
+              placeholder="Nhập chuyên môn (không bắt buộc)"
               class="w-full">
           </div>
         </div>
@@ -360,7 +373,7 @@
         <!-- Degree and Experience -->
         <div class="form-row">
           <div class="form-group">
-            <label>Bằng cấp</label>
+            <label>Bằng cấp <span class="req" style="color: #ef4444 !important;">*</span></label>
             <p-select 
               [ngModel]="formTeacher.degree"
               (ngModelChange)="formTeacher.degree = $event"
@@ -411,7 +424,7 @@
         <!-- Status and Contract Type -->
         <div class="form-row">
           <div class="form-group">
-            <label>Trạng thái <span class="req">*</span></label>
+            <label>Trạng thái <span class="req" style="color: #ef4444 !important;">*</span></label>
             <p-select 
               [ngModel]="formTeacher.status"
               (ngModelChange)="formTeacher.status = $event"
@@ -483,7 +496,7 @@
       </div>
       
       <!-- Dialog Actions -->
-      <div class="dialog-actions flex justify-content-end align-items-center gap-3 w-full">
+      <div class="dialog-actions">
         <button 
           pButton 
           label="Hủy" 

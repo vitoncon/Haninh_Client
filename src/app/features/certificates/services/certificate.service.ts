@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, map, switchMap, catchError } from 'rxjs';
+import { Observable, map, switchMap, catchError, of } from 'rxjs';
 import { Certificate, StudentCertificate, StudentCertificateWithDetails, CertificateFilters, CertificateStatistics } from '../models/certificates.model';
 
 @Injectable({
@@ -320,6 +320,69 @@ export class CertificateService {
     );
   }
 
+  getStudentsInClass(classId: number): Observable<any[]> {
+    const condition = encodeURIComponent(JSON.stringify([{
+      key: "class_id",
+      value: classId.toString(),
+      compare: "=",
+      orWhere: "and"
+    }]));
+    
+    // Sử dụng class_students endpoint để lấy học viên trong lớp
+    return this.http.get<any>(`http://localhost:10093/api/class_students?condition=${condition}`, this.getAuthHeaders()).pipe(
+      switchMap((res) => {
+        const classStudents = res?.data ?? res;
+        
+        // Handle case where no data is returned
+        if (!classStudents || !Array.isArray(classStudents)) {
+          return of([]);
+        }
+        
+        // Lấy danh sách student_id từ class_students
+        const studentIds = classStudents.map((cs: any) => cs.student_id).filter(id => id);
+        
+        if (studentIds.length === 0) {
+          return of([]);
+        }
+        
+        // Lấy thông tin chi tiết học viên từ API students
+        // Tạo multiple conditions với OR cho từng student_id
+        const studentConditions = studentIds.map((id, index) => ({
+          key: "id",
+          value: id.toString(),
+          compare: "=",
+          orWhere: index === 0 ? "and" : "or"
+        }));
+        
+        const studentCondition = encodeURIComponent(JSON.stringify(studentConditions));
+        
+        return this.http.get<any>(`http://localhost:10093/api/students?condition=${studentCondition}`, this.getAuthHeaders()).pipe(
+          map((studentRes) => {
+            const students = studentRes?.data ?? studentRes;
+            
+            if (!students || !Array.isArray(students)) {
+              return [];
+            }
+            
+            // Map student information với thông tin từ class_students
+            return students.map((student: any) => {
+              return {
+                id: student.id,
+                student_code: student.student_code || student.code || 'N/A',
+                full_name: student.full_name || student.name || 'N/A'
+              };
+            });
+          })
+        );
+      }),
+      catchError((error) => {
+        console.error('Error loading students in class:', error);
+        // Fallback: return empty array if class_students query fails
+        return of([]);
+      })
+    );
+  }
+
   getCertificateStatistics(filters?: CertificateFilters): Observable<CertificateStatistics> {
     return this.getStudentCertificatesWithDetails(filters).pipe(
       map((certificates) => {
@@ -437,74 +500,6 @@ export class CertificateService {
         status: certType.status || 'Hoạt động'
       }))
     );
-  }
-
-  // Create sample certificate types if none exist
-  createSampleCertificateTypes(): Observable<any> {
-    const sampleCertificates = [
-      {
-        certificate_code: 'CERT001',
-        certificate_name: 'Chứng chỉ Tiếng Anh A1',
-        description: 'Chứng chỉ hoàn thành khóa học Tiếng Anh trình độ A1',
-        criteria: 'Hoàn thành 80% bài học và đạt điểm thi cuối khóa >= 70%',
-        validity_period_months: 24,
-        is_permanent: 0,
-        status: 'Hoạt động' as 'Hoạt động' | 'Tạm dừng' | 'Đã hủy'
-      },
-      {
-        certificate_code: 'CERT002',
-        certificate_name: 'Chứng chỉ Tiếng Anh A2',
-        description: 'Chứng chỉ hoàn thành khóa học Tiếng Anh trình độ A2',
-        criteria: 'Hoàn thành 80% bài học và đạt điểm thi cuối khóa >= 70%',
-        validity_period_months: 24,
-        is_permanent: 0,
-        status: 'Hoạt động' as 'Hoạt động' | 'Tạm dừng' | 'Đã hủy'
-      },
-      {
-        certificate_code: 'CERT003',
-        certificate_name: 'Chứng chỉ Tiếng Hàn A1',
-        description: 'Chứng chỉ hoàn thành khóa học Tiếng Hàn trình độ A1',
-        criteria: 'Hoàn thành 80% bài học và đạt điểm thi cuối khóa >= 70%',
-        validity_period_months: 36,
-        is_permanent: 0,
-        status: 'Hoạt động' as 'Hoạt động' | 'Tạm dừng' | 'Đã hủy'
-      },
-      {
-        certificate_code: 'CERT004',
-        certificate_name: 'Chứng chỉ Vĩnh viễn',
-        description: 'Chứng chỉ vĩnh viễn không có thời hạn',
-        criteria: 'Hoàn thành xuất sắc khóa học',
-        validity_period_months: undefined,
-        is_permanent: 1,
-        status: 'Hoạt động' as 'Hoạt động' | 'Tạm dừng' | 'Đã hủy'
-      }
-    ];
-
-    // Create certificates one by one
-    return new Observable(observer => {
-      let completed = 0;
-      const total = sampleCertificates.length;
-      
-      sampleCertificates.forEach(cert => {
-        this.addCertificate(cert).subscribe({
-          next: (result) => {
-            completed++;
-            if (completed === total) {
-              observer.next({ message: 'Sample certificates created successfully' });
-              observer.complete();
-            }
-          },
-          error: (error) => {
-            console.error('Error creating certificate:', error);
-            completed++;
-            if (completed === total) {
-              observer.next({ message: 'Some certificates may already exist' });
-              observer.complete();
-            }
-          }
-        });
-      });
-    });
   }
 
   // Check if certificate number already exists

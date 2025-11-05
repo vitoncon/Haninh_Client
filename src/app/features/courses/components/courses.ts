@@ -112,7 +112,7 @@ export class Courses implements OnInit, OnDestroy {
   private createEmptyCourse(): Course {
     return {
       id: undefined,
-      course_code: '',
+      course_code: this.generateCourseCode(),
       course_name: '',
       description: '',
       language: 'Tiếng Anh',
@@ -128,6 +128,34 @@ export class Courses implements OnInit, OnDestroy {
       category: '',
       tags: []
     };
+  }
+
+  private generateCourseCode(): string {
+    // Tạo mã khóa học tự động theo format: KH + YYYY + số thứ tự
+    const currentYear = new Date().getFullYear();
+    const yearString = currentYear.toString();
+    
+    // Tìm khóa học có mã lớn nhất trong năm hiện tại
+    const currentYearCourses = this.courses.filter(course => 
+      course.course_code && course.course_code.startsWith(`KH${yearString}`)
+    );
+    
+    let maxNumber = 0;
+    currentYearCourses.forEach(course => {
+      const match = course.course_code?.match(/KH\d{4}(\d+)/);
+      if (match) {
+        const number = parseInt(match[1], 10);
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+    });
+    
+    // Tăng số thứ tự lên 1
+    const nextNumber = maxNumber + 1;
+    
+    // Format: KH + YYYY + số thứ tự (3 chữ số)
+    return `KH${yearString}${nextNumber.toString().padStart(3, '0')}`;
   }
 
   // Constants for better maintainability
@@ -194,6 +222,7 @@ export class Courses implements OnInit, OnDestroy {
   }
   onCreate() {
     this.selectedCourse = null;
+    // Tạo mã mới mỗi lần tạo khóa học mới
     this.formCourse = this.createEmptyCourse();
     this.drawerVisible = true;
   }
@@ -313,7 +342,8 @@ export class Courses implements OnInit, OnDestroy {
 
     const errors: string[] = [];
     
-    if (!this.formCourse.course_code?.trim()) {
+    // Chỉ kiểm tra mã khóa học khi tạo mới (nếu chưa có mã tự động)
+    if (!this.selectedCourse && !this.formCourse.course_code?.trim()) {
       errors.push('Mã khóa học');
     }
     

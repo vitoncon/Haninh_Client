@@ -1,0 +1,340 @@
+<div class="page-card">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-wrapper">
+    <i class="pi pi-spin pi-spinner loading-icon"></i>
+    <h3>Đang tải...</h3>
+    <p>Vui lòng chờ trong giây lát</p>
+  </div>
+
+  <!-- Exam Detail Content -->
+  <div *ngIf="!loading && examDetail" class="exam-detail-body">
+    <!-- Header -->
+    <div class="results-header">
+      <div class="header-content">
+        <div class="header-title-section">
+          <button
+            pButton
+            icon="pi pi-arrow-left"
+            class="p-button-text back-button"
+            pTooltip="Quay lại danh sách bài kiểm tra"
+            (click)="onBack()">
+          </button>
+          <div class="title-text">
+            <h3>{{ examDetail.exam_name }}</h3>
+            <p>{{ examDetail.class_name }} - {{ examDetail.exam_type }}</p>
+          </div>
+        </div>
+        
+        <!-- Approval Log -->
+        <div *ngIf="examDetail.status === 'published' && examDetail.approved_by_name" class="approval-log">
+          <i class="pi pi-check-circle text-green-500"></i>
+          <span class="approval-text">
+            Đã duyệt bởi <strong>{{ examDetail.approved_by_name }}</strong> 
+            lúc <strong>{{ formatApprovalDate(examDetail.approved_at!) }}</strong>
+          </span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Special Edit Button (only for admin) -->
+        <button
+          *ngIf="canEnterSpecialEditMode()"
+          pButton
+          label="Sửa điểm đặc biệt"
+          icon="pi pi-exclamation-triangle"
+          class="p-button-warning"
+          (click)="onEnterSpecialEditMode()"
+        ></button>
+        
+        <!-- Import Excel Button (only for teachers) -->
+        <button
+          *ngIf="canImportExcel()"
+          pButton
+          label="Import Excel"
+          icon="pi pi-file-excel"
+          class="p-button-success"
+          (click)="onImportExcel()"
+        ></button>
+        
+        <!-- Edit Button (only for teachers when draft and in_progress) -->
+        <button
+          *ngIf="!isEditMode && canEdit()"
+          pButton
+          label="Chỉnh sửa"
+          icon="pi pi-pencil"
+          class="p-button-primary"
+          (click)="onEdit()"
+        ></button>
+        
+        <!-- Approve Button (only for review status) -->
+        <button
+          *ngIf="canApprove()"
+          pButton
+          label="Duyệt & Công bố điểm"
+          icon="pi pi-check"
+          class="p-button-success"
+          (click)="onApprove()"
+        ></button>
+        
+        <!-- Unlock Button (only for published status) -->
+        <button
+          *ngIf="canUnlock()"
+          pButton
+          label="Mở khóa"
+          icon="pi pi-unlock"
+          class="p-button-warning"
+          (click)="onUnlock()"
+        ></button>
+        
+        <!-- Edit Mode Actions (for teachers and admin special mode) -->
+        <div *ngIf="isEditMode && (isTeacher || isSpecialEditMode)" class="edit-actions">
+          <!-- Special mode indicator for admin -->
+          <div *ngIf="isSpecialEditMode" class="special-mode-indicator">
+            <i class="pi pi-exclamation-triangle text-warning"></i>
+            <span class="text-warning font-semibold">Chế độ sửa đặc biệt</span>
+          </div>
+          
+          <button
+            pButton
+            label="Hủy"
+            icon="pi pi-times"
+            class="p-button-text"
+            (click)="isSpecialEditMode ? onExitSpecialEditMode() : onCancel()"
+          ></button>
+          <button
+            pButton
+            label="Lưu"
+            icon="pi pi-save"
+            class="p-button-success"
+            (click)="onSave()"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exam Info Card -->
+    <p-card class="exam-info-card">
+      <div class="exam-info-grid">
+        <div class="info-item">
+          <label>Loại kiểm tra:</label>
+          <p-tag [value]="examDetail.exam_type" severity="info"></p-tag>
+        </div>
+        <div class="info-item">
+          <label>Kỹ năng:</label>
+          <div class="skill-tags">
+            <p-tag *ngFor="let skill of examSkills" [value]="skill.skill_type" [severity]="getSkillSeverity(skill.skill_type)" styleClass="skill-tag"></p-tag>
+            <span *ngIf="examSkills.length === 0" class="text-muted">Chưa có kỹ năng</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Ngày thi:</label>
+          <span>{{ formatDate(examDetail.exam_date) }}</span>
+        </div>
+        <div class="info-item">
+          <label>Điểm tối đa:</label>
+          <span>{{ formatScore(getTotalMaxScore()) }}đ</span>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Statistics Cards Grid -->
+    <div class="statistics-cards-grid">
+      <p-card>
+        <div class="flex align-items-center">
+          <div class="flex-1">
+            <h6>Tổng học viên</h6>
+            <h4 class="mb-0">{{ totalStudents }}</h4>
+            <small class="text-muted">Số học viên của lớp</small>
+          </div>
+          <div class="icon-container text-blue-500">
+            <i class="pi pi-users"></i>
+          </div>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="flex align-items-center">
+          <div class="flex-1">
+            <h6>Đã có điểm</h6>
+            <h4 class="mb-0">{{ studentsWithScores }}</h4>
+            <small class="text-muted">Đã chấm điểm</small>
+          </div>
+          <div class="icon-container text-green-500">
+            <i class="pi pi-check-circle"></i>
+          </div>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="flex align-items-center">
+          <div class="flex-1">
+            <h6>Điểm trung bình</h6>
+            <h4 class="mb-0">{{ formatPercentage(averageScore) }}</h4>
+            <small class="text-muted">Điểm TB lớp</small>
+          </div>
+          <div class="icon-container text-orange-500">
+            <i class="pi pi-percentage"></i>
+          </div>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="flex align-items-center">
+          <div class="flex-1">
+            <h6>Tỷ lệ đạt</h6>
+            <h4 class="mb-0">{{ formatPercentage(passRate) }}</h4>
+            <small class="text-muted">Tỷ lệ đạt chuẩn</small>
+          </div>
+          <div class="icon-container text-purple-500">
+            <i class="pi pi-trophy"></i>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Students Scores Table -->
+    <p-card>
+      <h4>Danh sách học viên của lớp</h4>
+      <p class="text-muted mb-3">
+        Hiển thị tất cả học viên trong lớp {{ examDetail.class_name }}. 
+        Những học viên chưa có điểm sẽ hiển thị điểm 0.
+      </p>
+      <p-table
+        [value]="studentScores"
+        [loading]="loading"
+        styleClass="p-datatable-gridlines"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="500px"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>STT</th>
+            <th>Mã học viên</th>
+            <th>Họ và tên</th>
+            <th>Email</th>
+            <!-- Show skill columns if exam has multiple skills -->
+            <ng-container *ngIf="hasMultipleSkills">
+              <th *ngFor="let skill of examSkills" style="text-align: center;">
+                {{ skill.skill_type }}<br/>
+                <small style="font-weight: normal;">({{ formatScore(skill.max_score) }}đ)</small>
+              </th>
+            </ng-container>
+            <!-- Show single score column if exam has only one skill -->
+            <ng-container *ngIf="!hasMultipleSkills">
+              <th>Điểm số</th>
+              <th>Tỷ lệ %</th>
+            </ng-container>
+            <th>Đánh giá</th>
+            <th>Nhận xét</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-student let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td>{{ student.student_code }}</td>
+            <td>{{ student.full_name }}</td>
+            <td>{{ student.email }}</td>
+            <!-- Show skill scores if exam has multiple skills -->
+            <ng-container *ngIf="hasMultipleSkills">
+              <td *ngFor="let skill of examSkills" style="text-align: center;">
+                <!-- Read-only mode -->
+                <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)">
+                  <div class="text-bold">{{ getSkillScore(student, skill.skill_type) }}</div>
+                  <div 
+                    class="score-percentage-small"
+                    [ngClass]="'score-' + getScoreSeverity(getSkillPercentage(student, skill.skill_type))"
+                  >
+                    {{ getSkillPercentage(student, skill.skill_type).toFixed(1) }}%
+                  </div>
+                </div>
+                
+                <!-- Edit mode -->
+                <div *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)">
+                  <p-inputNumber
+                    [(ngModel)]="editedScores[getSkillKey(student.student_id, skill.skill_type)]"
+                    [min]="0"
+                    [max]="skill.max_score"
+                    [step]="1"
+                    [placeholder]="getSkillScore(student, skill.skill_type) > 0 ? getSkillScore(student, skill.skill_type).toString() : ''"
+                    (onInput)="onSkillScoreChange(student.student_id, skill.skill_type, $event.value)"
+                    (onBlur)="onSkillScoreBlur(student.student_id, skill.skill_type, skill.max_score)"
+                    styleClass="score-input-small"
+                  ></p-inputNumber>
+                </div>
+              </td>
+            </ng-container>
+            
+            <!-- Show single score if exam has only one skill -->
+            <ng-container *ngIf="!hasMultipleSkills">
+              <td>
+                <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)" class="score-display">
+                  {{ formatScore(student.score) }}
+                </div>
+                <p-inputNumber
+                  *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)"
+                  [(ngModel)]="editedScores[student.student_id]"
+                  [min]="0"
+                  [max]="examDetail.max_score"
+                  [step]="1"
+                  placeholder="Nhập điểm"
+                  (onInput)="onScoreChange(student.student_id, editedScores[student.student_id])"
+                  class="score-input"
+                ></p-inputNumber>
+              </td>
+              <td>
+                <span 
+                  class="percentage-badge"
+                  [ngClass]="'score-' + getScoreSeverity(student.percentage)"
+                >
+                  {{ formatPercentage(student.percentage) }}
+                </span>
+              </td>
+            </ng-container>
+            <td>
+              <p-tag
+                [value]="getPerformanceLevelText(student.percentage)"
+                [severity]="getScoreSeverity(student.percentage)"
+              ></p-tag>
+            </td>
+            <td>
+              <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)" class="comment-display">
+                {{ student.teacher_comment || '-' }}
+              </div>
+              <input
+                *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)"
+                pInputText
+                [(ngModel)]="editedComments[student.student_id]"
+                placeholder="Nhập nhận xét"
+                (input)="onCommentChange(student.student_id, editedComments[student.student_id])"
+                class="comment-input"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td [attr.colspan]="hasMultipleSkills ? examSkills.length + 5 : 8" class="text-center">
+              <div class="empty-state">
+                <i class="pi pi-users empty-icon"></i>
+                <h4>Không có học viên nào</h4>
+                <p>Lớp học này chưa có học viên nào được đăng ký</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !examDetail" class="error-wrapper">
+    <i class="pi pi-exclamation-triangle error-icon"></i>
+    <h3>Không tìm thấy dữ liệu bài kiểm tra</h3>
+    <p>Không có dữ liệu bài kiểm tra nào được tìm thấy trong hệ thống.</p>
+    <p class="text-muted">Vui lòng kiểm tra lại ID bài kiểm tra hoặc liên hệ quản trị viên.</p>
+    <button pButton label="Quay lại" icon="pi pi-arrow-left" class="p-button-primary" (click)="onBack()"></button>
+  </div>
+
+  <!-- Toast Messages -->
+  <p-toast></p-toast>
+  
+  <!-- Confirmation Dialog -->
+  <p-confirmDialog></p-confirmDialog>
+</div>

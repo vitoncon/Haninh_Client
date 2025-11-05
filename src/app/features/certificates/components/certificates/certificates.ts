@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@ang
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { CertificateService } from '../../services/certificate.service';
 import { Certificate, StudentCertificate, StudentCertificateWithDetails, CertificateStatistics } from '../../models/certificates.model';
+import { vi } from '../../../../config/translation-vi';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DrawerModule } from 'primeng/drawer';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -40,6 +42,7 @@ import * as XLSX from 'xlsx';
     InputTextModule,
     TextareaModule,
     SelectModule,
+    MultiSelectModule,
     DatePickerModule,
     DrawerModule,
     ConfirmDialogModule,
@@ -60,6 +63,9 @@ export class Certificates implements OnInit, OnDestroy {
   filteredCertificates: StudentCertificateWithDetails[] = [];
   selectedCertificates: StudentCertificateWithDetails[] = [];
   formCertificate: StudentCertificate | null = null;
+  
+  // Translation
+  vi = vi;
   drawerVisible: boolean = false;
   isEditMode: boolean = false;
   saving: boolean = false;
@@ -72,6 +78,9 @@ export class Certificates implements OnInit, OnDestroy {
   expirySearchOptions: any[] = [];
   selectedExpiryFilter: string = '';
   customDateRange: { from: Date | null, to: Date | null } = { from: null, to: null };
+  
+  // Class filter
+  selectedClassFilter: string = '';
   
   @ViewChild('dt', { static: false }) dt!: Table;
   
@@ -87,6 +96,12 @@ export class Certificates implements OnInit, OnDestroy {
 
   // Certificate type details for current form
   currentCertificateTypeDetails: any = null;
+
+  // New flow variables
+  currentStep: number = 1;
+  selectedClassId: number | null = null;
+  selectedStudentIds: number[] = [];
+  availableStudentsInClass: any[] = [];
 
   constructor(
     private certificateService: CertificateService,
@@ -140,6 +155,13 @@ export class Certificates implements OnInit, OnDestroy {
           certificate.note?.toLowerCase().includes(searchTerm)
         );
       });
+    }
+    
+    // Apply class filter
+    if (this.selectedClassFilter) {
+      filteredData = filteredData.filter(certificate => 
+        certificate.class_id === parseInt(this.selectedClassFilter)
+      );
     }
     
     // Apply expiry date filter
@@ -253,7 +275,6 @@ export class Certificates implements OnInit, OnDestroy {
         }));
       },
       error: (error) => {
-        console.error('Failed to load students:', error);
         this.availableStudents = [];
       }
     });
@@ -267,7 +288,6 @@ export class Certificates implements OnInit, OnDestroy {
         }));
       },
       error: (error) => {
-        console.error('Failed to load classes:', error);
         this.availableClasses = [];
       }
     });
@@ -281,7 +301,6 @@ export class Certificates implements OnInit, OnDestroy {
         }));
       },
       error: (error) => {
-        console.error('Failed to load certificate types:', error);
         this.availableCertificateTypes = [];
       }
     });
@@ -336,6 +355,11 @@ export class Certificates implements OnInit, OnDestroy {
     this.searchSubject$.next('');
   }
 
+  onClassFilterChange(): void {
+    // Apply current search query with new class filter
+    this.performSearch(this.searchQuery);
+  }
+
   onExpiryFilterChange(): void {
     // Apply current search query with new expiry filter
     this.performSearch(this.searchQuery);
@@ -348,6 +372,11 @@ export class Certificates implements OnInit, OnDestroy {
     }
   }
 
+  clearClassFilter(): void {
+    this.selectedClassFilter = '';
+    this.performSearch(this.searchQuery);
+  }
+
   clearExpiryFilter(): void {
     this.selectedExpiryFilter = '';
     this.customDateRange = { from: null, to: null };
@@ -356,22 +385,54 @@ export class Certificates implements OnInit, OnDestroy {
 
   openNew(): void {
     this.resetFormData();
+    this.resetNewFlowData();
     this.formCertificate = this.createEmptyCertificate();
     this.drawerVisible = true;
     this.cdr.detectChanges();
   }
 
+  private resetNewFlowData(): void {
+    this.currentStep = 1;
+    this.selectedClassId = null;
+    this.selectedStudentIds = [];
+    this.availableStudentsInClass = [];
+  }
+
   editCertificate(certificate: StudentCertificateWithDetails): void {
     this.resetFormData();
-    this.formCertificate = { ...certificate };
     this.isEditMode = true;
     this.drawerVisible = true;
     
-    if (certificate.certificate_id) {
-      this.onCertificateTypeChange(certificate.certificate_id);
-    }
-    
-    this.cdr.detectChanges();
+    // Load classes first to ensure dropdown has options
+    this.certificateService.getClasses().subscribe({
+      next: (classes) => {
+        this.availableClasses = classes.map((cls: any) => ({
+          label: `${cls.class_code} - ${cls.class_name}`,
+          value: cls.id
+        }));
+        
+        // Now set the form data
+        this.formCertificate = { ...certificate };
+        
+        // Load students for the class if class_id exists
+        if (certificate.class_id) {
+          this.loadStudentsInClass(certificate.class_id);
+        }
+        
+        if (certificate.certificate_id) {
+          this.onCertificateTypeChange(certificate.certificate_id);
+        }
+        
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: 'Không thể tải danh sách lớp học'
+        });
+      }
+    });
   }
 
   deleteCertificate(certificate: StudentCertificateWithDetails): void {
@@ -413,8 +474,8 @@ export class Certificates implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate certificate
-    const validationErrors = this.validateCertificate(this.formCertificate);
+    // Validate certificate (skip student_id validation for new mode as it's handled in createBatchCertificates)
+    const validationErrors = this.validateCertificate(this.formCertificate, this.isEditMode);
     if (validationErrors.length > 0) {
       this.messageService.add({
         severity: 'warn',
@@ -435,44 +496,87 @@ export class Certificates implements OnInit, OnDestroy {
     }
 
     this.saving = true;
-    const operation = this.isEditMode 
-      ? this.certificateService.updateStudentCertificate(this.formCertificate.id!, this.formCertificate)
-      : this.certificateService.addStudentCertificate(this.formCertificate);
 
-    operation.subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Thành công',
-          detail: this.isEditMode ? 'Đã cập nhật chứng chỉ thành công' : 'Đã thêm chứng chỉ thành công'
-        });
-        
-        // Reset form to initial state
-        this.resetFormToInitialState();
-        
-        // Force reload data to show updated information
-        this.forceRefresh();
-        this.saving = false;
-      },
-      error: (error) => {
-        let errorMessage = this.isEditMode ? 'Không thể cập nhật chứng chỉ' : 'Không thể thêm chứng chỉ';
-        
-        if (error.error?.message) {
-          errorMessage += ': ' + error.error.message;
-        } else if (error.message) {
-          errorMessage += ': ' + error.message;
-        } else if (error.status) {
-          errorMessage += ` (Status: ${error.status})`;
+    if (this.isEditMode) {
+      // Edit mode - single certificate
+      this.certificateService.updateStudentCertificate(this.formCertificate.id!, this.formCertificate).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: 'Đã cập nhật chứng chỉ thành công'
+          });
+          
+          this.resetFormToInitialState();
+          this.forceRefresh();
+          this.saving = false;
+        },
+        error: (error) => {
+          this.handleSaveError(error, 'Không thể cập nhật chứng chỉ');
         }
-        
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Lỗi',
-          detail: errorMessage
-        });
-        this.saving = false;
-      }
+      });
+    } else {
+      // New mode - batch certificate creation
+      this.createBatchCertificates();
+    }
+  }
+
+  private createBatchCertificates(): void {
+    if (!this.selectedStudentIds || this.selectedStudentIds.length === 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Vui lòng chọn ít nhất một học viên'
+      });
+      this.saving = false;
+      return;
+    }
+
+    // Create certificates for all selected students with unique certificate numbers
+    const certificatePromises = this.selectedStudentIds.map(studentId => {
+      const certificateData: StudentCertificate = {
+        ...this.formCertificate!,
+        student_id: studentId,
+        class_id: this.selectedClassId || undefined,
+        certificate_id: this.formCertificate!.certificate_id!,
+        certificate_number: this.certificateService.generateCertificateNumber() // Generate unique number for each student
+      };
+      
+      return this.certificateService.addStudentCertificate(certificateData).toPromise();
     });
+
+    Promise.all(certificatePromises).then(() => {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Thành công',
+        detail: `Đã tạo ${this.selectedStudentIds.length} mã chứng chỉ`
+      });
+      
+      this.resetFormToInitialState();
+      this.forceRefresh();
+      this.saving = false;
+    }).catch((error) => {
+      this.handleSaveError(error, 'Không thể cấp chứng chỉ cho một số học viên');
+    });
+  }
+
+  private handleSaveError(error: any, baseMessage: string): void {
+    let errorMessage = baseMessage;
+    
+    if (error.error?.message) {
+      errorMessage += ': ' + error.error.message;
+    } else if (error.message) {
+      errorMessage += ': ' + error.message;
+    } else if (error.status) {
+      errorMessage += ` (Status: ${error.status})`;
+    }
+    
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: errorMessage
+    });
+    this.saving = false;
   }
 
   cancelEdit(): void {
@@ -489,11 +593,98 @@ export class Certificates implements OnInit, OnDestroy {
     this.saving = false;
   }
 
+  // New flow methods
+  onClassSelectionChange(classId: number): void {
+    this.selectedClassId = classId;
+    this.selectedStudentIds = []; // Reset student selection
+    this.availableStudentsInClass = [];
+    
+    if (classId) {
+      this.currentStep = 2;
+      this.loadStudentsInClass(classId);
+      
+      // Update form certificate with class_id
+      if (this.formCertificate) {
+        this.formCertificate.class_id = classId;
+      }
+    } else {
+      this.currentStep = 1;
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  onStudentSelectionChange(event: any): void {
+    // p-multiSelect returns array of values (student IDs)
+    this.selectedStudentIds = event || [];
+    
+    this.cdr.detectChanges();
+  }
+
+  private loadStudentsInClass(classId: number): void {
+    this.certificateService.getStudentsInClass(classId).subscribe({
+      next: (data) => {
+        this.updateAvailableStudentsWithData(data);
+      },
+      error: (error) => {
+        this.availableStudentsInClass = [];
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: 'Không thể tải danh sách học viên trong lớp'
+        });
+      }
+    });
+  }
+
+  private updateAvailableStudents(): void {
+    if (!this.selectedClassId) return;
+    
+    this.certificateService.getStudentsInClass(this.selectedClassId).subscribe({
+      next: (data) => {
+        this.updateAvailableStudentsWithData(data);
+      },
+      error: (error) => {
+        // Handle error silently
+      }
+    });
+  }
+
+  private updateAvailableStudentsWithData(data: any[]): void {
+    if (!this.selectedClassId) return;
+    
+    // Lọc ra những học viên đã được cấp chứng chỉ
+    let studentsWithCertificates: number[] = [];
+    
+    if (this.formCertificate?.certificate_id) {
+      // Lọc theo loại chứng chỉ cụ thể
+      studentsWithCertificates = this.certificates
+        .filter(cert => 
+          cert.class_id === this.selectedClassId && 
+          cert.certificate_id === this.formCertificate!.certificate_id
+        )
+        .map(cert => cert.student_id);
+    } else {
+      // Lọc tất cả chứng chỉ trong lớp
+      studentsWithCertificates = this.certificates
+        .filter(cert => cert.class_id === this.selectedClassId)
+        .map(cert => cert.student_id);
+    }
+    
+    this.availableStudentsInClass = data
+      .filter(student => !studentsWithCertificates.includes(student.id))
+      .map(student => ({
+        label: `${student.student_code} - ${student.full_name}`,
+        value: student.id
+      }));
+  }
+
   /**
    * Reset form to initial state - clears all form data and closes drawer
    */
   private resetFormToInitialState(): void {
     this.resetFormData();
+    this.resetNewFlowData();
     this.drawerVisible = false;
     this.cdr.detectChanges();
   }
@@ -552,6 +743,11 @@ export class Certificates implements OnInit, OnDestroy {
             life: 5000
           });
         }
+        
+        // Cập nhật danh sách học viên để lọc ra những người đã có chứng chỉ loại này
+        if (this.selectedClassId) {
+          this.updateAvailableStudents();
+        }
       },
       error: (error) => {
         this.currentCertificateTypeDetails = null;
@@ -588,10 +784,11 @@ export class Certificates implements OnInit, OnDestroy {
   }
 
   // Validation methods
-  private validateCertificate(certificate: StudentCertificate): string[] {
+  private validateCertificate(certificate: StudentCertificate, isEditMode: boolean = true): string[] {
     const errors: string[] = [];
 
-    if (!certificate.student_id || certificate.student_id === 0) {
+    // Only validate student_id in edit mode (in new mode, it's handled by selectedStudentIds)
+    if (isEditMode && (!certificate.student_id || certificate.student_id === 0)) {
       errors.push('Vui lòng chọn học viên');
     }
 
@@ -697,12 +894,60 @@ export class Certificates implements OnInit, OnDestroy {
     // Reset search state
     this.searchQuery = '';
     this.showClearButton = false;
+    this.selectedClassFilter = '';
     this.selectedExpiryFilter = '';
     this.customDateRange = { from: null, to: null };
     
     // Reload data
     this.loadData();
     this.loadStatistics();
+  }
+
+  // Helper methods for new flow
+  getSelectedClassName(): string {
+    if (!this.selectedClassId) return '';
+    const selectedClass = this.availableClasses.find(cls => cls.value === this.selectedClassId);
+    return selectedClass ? selectedClass.label : '';
+  }
+
+  getSelectedCertificateTypeName(): string {
+    if (!this.formCertificate?.certificate_id) return '';
+    const selectedType = this.availableCertificateTypes.find(type => type.value === this.formCertificate!.certificate_id);
+    return selectedType ? selectedType.label : '';
+  }
+
+  getSaveButtonLabel(): string {
+    if (this.isEditMode) {
+      return 'Cập nhật';
+    }
+    
+    if (this.selectedStudentIds.length > 1) {
+      return `Cấp chứng chỉ cho ${this.selectedStudentIds.length} học viên`;
+    } else if (this.selectedStudentIds.length === 1) {
+      return 'Cấp chứng chỉ';
+    } else {
+      return 'Thêm mới';
+    }
+  }
+
+  getCertificateNumberDisplay(): string {
+    if (this.selectedStudentIds.length > 1) {
+      return `Đã tạo ${this.selectedStudentIds.length} mã chứng chỉ`;
+    } else {
+      return `${this.formCertificate?.certificate_number}`;
+    }
+  }
+
+  canSave(): boolean {
+    if (this.isEditMode) {
+      return !!(this.formCertificate?.student_id && this.formCertificate?.certificate_id);
+    }
+    
+    return !!(
+      this.selectedClassId &&
+      this.selectedStudentIds.length > 0 &&
+      this.formCertificate?.certificate_id
+    );
   }
 
   // Export certificates to Excel with beautiful formatting

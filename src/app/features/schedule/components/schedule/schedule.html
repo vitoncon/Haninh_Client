@@ -1,38 +1,293 @@
+<!-- Page content with layout system -->
 <div class="page-card">
-<full-calendar [options]="calendarOptions"></full-calendar>
-
-<p-dialog header="Thêm / Sửa buổi học" [(visible)]="displayDialog" [modal]="true" [style]="{width: '400px'}">
-  <div class="p-fluid">
-    <div class="p-field">
-      <label for="title">Tên buổi học</label>
-      <input id="title" type="text" pInputText [(ngModel)]="formSchedule.class_name" />
+  <div class="schedule-container">
+    <!-- Filter Bar -->
+    <div class="filter-bar" [class.collapsed]="!isFilterBarVisible">
+      <div class="filter-section">
+        <div class="filter-header">
+          <h5 class="filter-title">
+            <i class="pi pi-filter"></i>
+            Bộ lọc nhanh
+          </h5>
+          <p-button
+            [icon]="isFilterBarVisible ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+            [outlined]="true"
+            styleClass="filter-toggle-btn"
+            pTooltip="{{ isFilterBarVisible ? 'Ẩn bộ lọc' : 'Hiện bộ lọc' }}"
+            (click)="toggleFilterBar()">
+          </p-button>
+        </div>
+        
+        <div class="filter-controls" [class.hidden]="!isFilterBarVisible">
+          <div class="filter-group">
+            <label class="filter-label">Ngôn ngữ</label>
+            <p-select
+              [options]="languageOptions"
+              [(ngModel)]="selectedLanguage"
+              placeholder="Tất cả ngôn ngữ"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="filter-select"
+              (onChange)="onLanguageFilterChange()">
+            </p-select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Giáo viên</label>
+            <p-select
+              [options]="teacherOptions"
+              [(ngModel)]="selectedTeacher"
+              placeholder="Tất cả giáo viên"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="filter-select"
+              (onChange)="onTeacherFilterChange()">
+            </p-select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Phòng học</label>
+            <p-select
+              [options]="roomOptions"
+              [(ngModel)]="selectedRoom"
+              placeholder="Tất cả phòng học"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="filter-select"
+              (onChange)="onRoomFilterChange()">
+            </p-select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Lớp học</label>
+            <p-select
+              [options]="classOptions"
+              [(ngModel)]="selectedClass"
+              placeholder="Tất cả lớp học"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="filter-select"
+              (onChange)="onClassFilterChange()">
+            </p-select>
+          </div>
+          
+          <div class="filter-actions">
+            <p-button
+              *ngIf="hasActiveFilters()"
+              label="Xóa bộ lọc"
+              icon="pi pi-times"
+              [outlined]="true"
+              styleClass="filter-reset-btn"
+              pTooltip="Xóa tất cả bộ lọc"
+              (click)="resetFilters()">
+            </p-button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="p-field">
-      <label for="date">Ngày học</label>
-      <input id="date" type="date" pInputText [(ngModel)]="formSchedule.date" />
-    </div>
-
-    <div class="p-field">
-      <label for="start">Giờ bắt đầu</label>
-      <input id="start" type="time" pInputText [(ngModel)]="formSchedule.start_time" />
-    </div>
-
-    <div class="p-field">
-      <label for="end">Giờ kết thúc</label>
-      <input id="end" type="time" pInputText [(ngModel)]="formSchedule.end_time" />
-    </div>
-
-    <div class="p-field">
-      <label for="room">Phòng học</label>
-      <input id="room" type="text" pInputText [(ngModel)]="formSchedule.room" />
+    <!-- Full Calendar -->
+    <div class="calendar-wrapper">
+      <full-calendar #calendar [options]="calendarOptions"></full-calendar>
     </div>
   </div>
-
-  <ng-template pTemplate="footer">
-    <button pButton label="Lưu" icon="pi pi-check" (click)="onSave()"></button>
-    <button pButton label="Hủy" icon="pi pi-times" class="p-button-secondary" (click)="onCancel()"></button>
-    <button *ngIf="formSchedule?.id" pButton label="Xóa" icon="pi pi-trash" class="p-button-danger" (click)="onDelete()"></button>
-  </ng-template>
-</p-dialog>
 </div>
+
+<!-- Dialog (outside page-card) -->
+  <p-dialog 
+    header="Thêm / Sửa buổi học" 
+    [(visible)]="displayDialog" 
+    [modal]="true" 
+    [style]="{width: '600px'}"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="dialog-content">
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin cơ bản</h5>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lớp học <span class="req">*</span></label>
+            <p-select
+              [options]="classOptions"
+              [(ngModel)]="formSchedule.class_id"
+              placeholder="Chọn lớp học"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="w-full">
+            </p-select>
+          </div>
+          
+          <div class="form-group">
+            <label>Giáo viên</label>
+            <p-select
+              [options]="teacherOptions"
+              [(ngModel)]="formSchedule.teacher_id"
+              placeholder="Chọn giáo viên"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="w-full">
+            </p-select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Thứ trong tuần <span class="req">*</span></label>
+            <p-select
+              [(ngModel)]="formSchedule.day_of_week"
+              [options]="dayOptions"
+              placeholder="Chọn thứ"
+              class="w-full">
+            </p-select>
+          </div>
+          
+          <div class="form-group">
+            <label for="room_name">Phòng học</label>
+            <input 
+              id="room_name" 
+              type="text" 
+              pInputText 
+              [(ngModel)]="formSchedule.room_name" 
+              placeholder="Nhập phòng học" 
+              class="w-full" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ngày bắt đầu <span class="req">*</span></label>
+            <p-datePicker
+              [(ngModel)]="formSchedule.start_date"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full"
+              placeholder="dd/mm/yyyy">
+            </p-datePicker>
+          </div>
+          
+          <div class="form-group">
+            <label>Ngày kết thúc <span class="req">*</span></label>
+            <p-datePicker
+              [(ngModel)]="formSchedule.end_date"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full"
+              placeholder="dd/mm/yyyy">
+            </p-datePicker>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h5 class="form-section-title">Thời gian học</h5>
+        
+        <div class="schedule-time">
+          <label class="schedule-label">Giờ học:</label>
+          <div class="time-container">
+            <div class="time-inputs">
+              <div class="time-input">
+                <label for="start-time-picker" class="font-bold block mb-2">Từ:</label>
+                <p-datePicker 
+                  [(ngModel)]="startTimeDate"
+                  [iconDisplay]="'input'"
+                  [showIcon]="true"
+                  [timeOnly]="true"
+                  appendTo="body"
+                  inputId="start-time-picker"
+                  placeholder="Chọn giờ bắt đầu">
+                  <ng-template #inputicon let-clickCallBack="clickCallBack">
+                    <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+                  </ng-template>
+                </p-datePicker>
+              </div>
+              <div class="time-separator">-</div>
+              <div class="time-input">
+                <label for="end-time-picker" class="font-bold block mb-2">Đến:</label>
+                <p-datePicker 
+                  [(ngModel)]="endTimeDate"
+                  [iconDisplay]="'input'"
+                  [showIcon]="true"
+                  [timeOnly]="true"
+                  appendTo="body"
+                  inputId="end-time-picker"
+                  placeholder="Chọn giờ kết thúc">
+                  <ng-template #inputicon let-clickCallBack="clickCallBack">
+                    <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+                  </ng-template>
+                </p-datePicker>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin bổ sung</h5>
+        
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <p-select
+            [options]="statusOptions"
+            [(ngModel)]="formSchedule.status"
+            placeholder="Chọn trạng thái"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            class="w-full">
+          </p-select>
+        </div>
+
+        <div class="form-group">
+          <label for="note">Ghi chú</label>
+          <textarea
+            id="note"
+            pTextarea
+            [(ngModel)]="formSchedule.note"
+            placeholder="Nhập ghi chú (nếu có)"
+            rows="3"
+            class="w-full">
+          </textarea>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer">
+        <div class="footer-actions">
+          <p-button 
+            label="Hủy" 
+            icon="pi pi-times" 
+            styleClass="p-button-text p-button-secondary"
+            (click)="onCancel()">
+          </p-button>
+          <p-button 
+            *ngIf="formSchedule?.id" 
+            label="Xóa" 
+            icon="pi pi-trash" 
+            styleClass="p-button-text p-button-danger"
+            (click)="onDelete()">
+          </p-button>
+          <p-button 
+            [label]="formSchedule.id ? 'Cập nhật' : 'Thêm buổi học'" 
+            icon="pi pi-check" 
+            styleClass="p-button-primary"
+            (click)="onSave()" 
+            [loading]="saving">
+          </p-button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>

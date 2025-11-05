@@ -1,61 +1,50 @@
 
-  <!-- Statistics Dashboard -->
-  <div class="stats-grid-responsive" 
-       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;" 
-       [style.grid-template-columns]="'repeat(4, 1fr)'"
-       [style.gap]="'1.5rem'"
-       *ngIf="statistics">
-    <!-- Card 1: Tổng khóa học -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.total_courses }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Tổng khóa học</div>
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng khóa học</h6>
+          <h4 class="mb-0">{{ statistics.total_courses }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-graduation-cap"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dbeafe; box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15); flex-shrink: 0;">
-        <i class="pi pi-book" style="font-size: 1.8rem; color: #3b82f6;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đang hoạt động</h6>
+          <h4 class="mb-0">{{ statistics.active_courses }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 2: Đang hoạt động -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.active_courses }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Đang hoạt động</div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Không hoạt động</h6>
+          <h4 class="mb-0">{{ statistics.inactive_courses }}</h4>
+        </div>
+        <div class="icon-container text-red-500">
+          <i class="pi pi-times-circle"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dcfce7; box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15); flex-shrink: 0;">
-        <i class="pi pi-check-circle" style="font-size: 1.8rem; color: #22c55e;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Học phí TB</h6>
+          <h4 class="mb-0">{{ formatCurrency(statistics.average_tuition_fee) }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-money-bill"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 3: Không hoạt động -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.inactive_courses }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Không hoạt động</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fee2e2; box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15); flex-shrink: 0;">
-        <i class="pi pi-times-circle" style="font-size: 1.8rem; color: #ef4444;"></i>
-      </div>
-    </div>
-    
-    <!-- Card 4: Học phí trung bình -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ formatCurrency(statistics.average_tuition_fee) }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Học phí TB</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fef3c7; box-shadow: 0 4px 8px rgba(245, 158, 11, 0.15); flex-shrink: 0;">
-        <i class="pi pi-money-bill" style="font-size: 1.8rem; color: #f59e0b;"></i>
-      </div>
-    </div>
+    </p-card>
   </div>
   
   <div class="page-card">
@@ -101,7 +90,7 @@
         <button
           pButton
           type="button"
-          label="Tạo mới"
+          label="Tạo khóa học"
           icon="pi pi-plus"
           class="p-button-primary"
           (click)="onCreate()"
@@ -114,11 +103,20 @@
             position="right"
             (onHide)="onDrawerHide()" 
             [modal]="true" 
-            [style]="{ width: '450px' }">
+            [style]="{ width: '600px' }">
     <div class="form-grid p-fluid" *ngIf="formCourse">
       <div class="form-group">
         <label>Mã KH: <span class="req">*</span></label>
-        <input pInputText [(ngModel)]="formCourse!.course_code" placeholder="VD: EN101" />
+        <input 
+          pInputText 
+          [(ngModel)]="formCourse!.course_code" 
+          placeholder="VD: KH2024001" 
+          [readonly]="selectedCourse && selectedCourse.id"
+          [class.readonly-field]="selectedCourse && selectedCourse.id"
+        />
+        <small *ngIf="selectedCourse && selectedCourse.id" class="text-muted">
+          Mã khóa học không thể chỉnh sửa
+        </small>
       </div>   
       <div class="form-group">
         <label>Tên khóa học: <span class="req">*</span></label>
@@ -173,7 +171,7 @@
             placeholder="VD: 100">
         </p-inputNumber>
       </div>   
-      <div class="form-group full-width">
+      <div class="form-group">
         <label>Học phí:</label>
         <p-inputNumber 
             [(ngModel)]="formCourse!.tuition_fee" 
@@ -192,7 +190,7 @@
     </div>
     <div class="dialog-actions">
         <button pButton label="Hủy" class="p-button-text" (click)="drawerVisible=false" [disabled]="saving"></button>
-        <button pButton label="Lưu" (click)="onSave()" [disabled]="saving || !formCourse?.course_code || !formCourse?.course_name"></button>
+        <button pButton label="Lưu" (click)="onSave()" [disabled]="saving || !formCourse?.course_name"></button>
     </div>
   </p-drawer>
   
@@ -216,7 +214,7 @@
       <button
           pButton
           type="button"
-          label="Tạo mới"
+          label="Tạo khóa học"
           icon="pi pi-plus"
           class="p-button-primary mt-3"
           (click)="onCreate()"

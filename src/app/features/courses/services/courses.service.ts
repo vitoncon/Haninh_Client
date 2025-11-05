@@ -128,6 +128,47 @@ export class CoursesService {
     );
   }
 
+  getCoursesByIds(ids: number[]): Observable<Course[]> {
+    if (!ids || ids.length === 0) {
+      return throwError(() => new Error('No course IDs provided'));
+    }
+
+    // Check if we have valid cached data
+    const now = Date.now();
+    if (this.coursesCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+      const courses = this.coursesCache.filter(c => c.id && ids.includes(c.id));
+      if (courses.length > 0) {
+        return new Observable(observer => observer.next(courses));
+      }
+    }
+
+    // Build condition for multiple IDs using 'in' operator
+    const condition = JSON.stringify([{
+      key: 'id',
+      value: ids.join(','),
+      compare: 'in'
+    }]);
+    
+    const url = `${this.apiUrl}?condition=${encodeURIComponent(condition)}`;
+    
+    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
+      map((res) => {
+        const courses = res?.data ?? res;
+        
+        if (Array.isArray(courses)) {
+          // Update cache
+          this.coursesCache = courses as Course[];
+          this.cacheTimestamp = now;
+          
+          return courses as Course[];
+        } else {
+          throw new Error('Invalid response format');
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
   addCourse(course: Course): Observable<Course> {
     if (!course.course_code || !course.course_name) {
       return throwError(() => new Error('Course code and name are required'));

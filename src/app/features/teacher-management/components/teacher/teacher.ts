@@ -583,6 +583,18 @@ export class Teacher implements OnInit, OnDestroy {
     this.drawerVisible = false;
   }
 
+  // Check if we're in edit mode
+  isEditMode(): boolean {
+    return !!(this.formTeacher && this.formTeacher.id);
+  }
+
+  // Generate new teacher code
+  generateNewCode(): void {
+    if (this.formTeacher) {
+      this.formTeacher.teacher_code = this.teacherService.generateTeacherCode();
+    }
+  }
+
   onFileUploadError(event: any) {
     console.error('File upload error:', event);
     

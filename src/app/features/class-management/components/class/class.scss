@@ -1,58 +1,328 @@
-$color-primary: var(--primary-color, #3f51b5);
-$color-border: var(--surface-border, #dcdcdc);
-$color-text: var(--text-color, #212121);
-$color-text-secondary: var(--text-color-secondary, #666);
-
-// Bảng tổng thể
-:host ::ng-deep .p-datatable {
+// Main container - prevent horizontal overflow
+.class-management-container {
   width: 100%;
-  border-radius: 0.75rem;
-  overflow: visible; // allow dropdown/panels to overflow
-  background: var(--surface-card);
-  transition: all 0.2s ease-in-out;
-
-  th, td {
-    white-space: nowrap;
-    text-align: left;
-    vertical-align: middle;
-  }
-
-  th {
-    font-weight: 600;
-    background-color: var(--surface-ground);
-  }
-
-  tr:hover {
-    background-color: var(--surface-hover);
-  }
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-// Cột hành động
-:host ::ng-deep .action-column {
-  text-align: center;
-  min-width: 140px;
+// Statistics Cards Grid - following responsive patterns from other modules
+.statistics-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
 
-  button {
-    margin: 0 0.25rem;
-    transition: transform 0.15s ease;
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1400px) {
+    gap: 2rem;
+  }
+  
+  .p-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius, 0.75rem);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all var(--element-transition-duration, 0.25s);
+    height: 100%;
 
     &:hover {
-      transform: scale(1.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    // Reduce p-card-body padding to make it smaller
+    ::ng-deep .p-card-body {
+      padding: 0.5rem !important;
+    }
+
+    .flex {
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+
+      .flex-1 {
+        flex: 1;
+
+        h6 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0;
+          color: var(--text-color-secondary);
+          transition: color 0.3s ease;
+        }
+
+        h4 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 0;
+          color: var(--text-color);
+          transition: color 0.3s ease;
+        }
+
+        .mb-0 {
+          margin-top: 0.5rem !important;
+        }
+      }
+
+      // Icon container with rounded background
+      .icon-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        i {
+          font-size: 1.8rem;
+          transition: all 0.3s ease;
+        }
+      }
+
+      // Icon colors with semantic meaning and backgrounds
+      .text-blue-500 {
+        color: #3b82f6;
+        background: #dbeafe;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+      }
+      .text-green-500 {
+        color: #10b981;
+        background: #dcfce7;
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+      }
+      .text-orange-500 {
+        color: #f59e0b;
+        background: #fef3c7;
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.15);
+      }
+      .text-purple-500 {
+        color: #8b5cf6;
+        background: #e9d5ff;
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.15);
+      }
+    }
+
+    // Dark mode card adjustments
+    .app-dark & {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+
+      &:hover {
+        background: var(--surface-600);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+      }
     }
   }
 }
 
-// Loại bỏ thanh cuộn ngang nếu không cần
-:host ::ng-deep .p-datatable-wrapper {
-  overflow-x: auto; // Cho phép cuộn khi thực sự cần
-  scrollbar-width: thin; // Firefox
-  -ms-overflow-style: none; // IE/Edge
-
-  &::-webkit-scrollbar {
-    height: 6px;
+// Statistics Cards
+.stats-grid-responsive {
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
   }
 }
-// status badges
+
+// Header with buttons - make buttons flush with right edge
+.header-with-buttons {
+  position: relative;
+  
+  .flex.gap-2 {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    @media (max-width: 768px) {
+      position: static;
+      transform: none;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+  }
+}
+
+.stat-card-item {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color);
+  box-shadow: var(--surface-card-shadow);
+  transition: all 0.25s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--surface-card-shadow-hover);
+  }
+  
+  // Dark theme specific adjustments
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background: var(--surface-700);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.stat-number {
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.stat-label {
+  color: var(--text-muted-color);
+  transition: color 0.3s ease;
+}
+
+.stat-icon-wrapper {
+  transition: background-color 0.3s ease;
+  
+  // Dark theme adjustments for icon backgrounds
+  .app-dark & {
+    &.stat-icon-wrapper {
+      background: var(--surface-700) !important;
+      
+      i {
+        color: var(--text-color) !important;
+      }
+    }
+  }
+}
+
+// Table Styling
+:host ::ng-deep {
+  .p-datatable {
+    .p-datatable-header {
+      background: var(--surface-card) !important;
+      border-bottom: 1px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .p-datatable-thead > tr > th {
+      background: var(--surface-100) !important;
+      color: var(--text-color) !important;
+      font-weight: 600;
+      border-bottom: 2px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        color: var(--text-color) !important;
+        border-bottom-color: var(--surface-700) !important;
+      }
+    }
+    
+    .p-datatable-tbody > tr {
+      transition: background-color 0.15s ease-in-out;
+      color: var(--text-color) !important;
+      
+      // Light mode alternating rows
+      &:nth-child(odd) {
+        background: #ffffff !important;
+        
+        &:hover {
+          background: #f8fafc !important;
+        }
+      }
+      
+      &:nth-child(even) {
+        background: #f8fafc !important;
+        
+        &:hover {
+          background: #f1f5f9 !important;
+        }
+      }
+      
+      // Dark theme row styling
+      .app-dark & {
+        &:nth-child(odd) {
+          background: #1a1a1a !important;
+          
+          &:hover {
+            background: #2a2a2a !important;
+          }
+        }
+        
+        &:nth-child(even) {
+          background: #222222 !important;
+          
+          &:hover {
+            background: #333333 !important;
+          }
+        }
+      }
+    }
+    
+    .p-datatable-tbody > tr > td {
+      border-bottom: 1px solid var(--surface-border) !important;
+      color: var(--text-color) !important;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    // Compact pagination styling
+    .p-paginator {
+      background: var(--surface-card) !important;
+      border-top: 1px solid var(--surface-border) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800) !important;
+        border-top-color: var(--surface-700) !important;
+      }
+      
+      .p-paginator-current {
+        color: var(--text-muted-color) !important;
+        transition: color 0.3s ease;
+      }
+      
+      .p-paginator-page,
+      .p-paginator-prev,
+      .p-paginator-next,
+      .p-paginator-first,
+      .p-paginator-last {
+        color: var(--text-color) !important;
+        transition: color 0.3s ease, background-color 0.3s ease;
+        
+        &:hover {
+          background: var(--surface-hover) !important;
+        }
+        
+        &.p-highlight {
+          background: var(--primary-color) !important;
+          color: white !important;
+        }
+      }
+    }
+  }
+}
+
+// Status badges
 .status-open,
 .status-ongoing,
 .status-completed,
@@ -67,349 +337,577 @@ $color-text-secondary: var(--text-color-secondary, #666);
 .status-ongoing { background-color: #FEF9C3; color: #854D0E; }
 .status-completed { background-color: #E5E7EB; color: #374151; }
 .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
-// page card
-.page-card {
-    position: relative;
-    // In case a stray layout mask remains inside the page, hide it locally
-    .layout-mask {
-      display: none !important;
-    }
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      // Fill the remaining viewport height so content shows fully
-      min-height: calc(100vh - 220px);
-  
-      .loading-wrapper, .empty-wrapper {
-        position: relative;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 2rem 1rem;
-        color: var(--text-color-secondary, #666);
 
-        // Place action button at top-right of the empty card
-        .p-button {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-          }
-          
-          &:active {
-            transform: translateY(0);
-          }
-        }
-  
-        .loading-icon, .empty-icon {
-          font-size: 3rem;
-          color: var(--primary-color, #3f51b5);
-          display: block;
-        }
-  
-        h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin: 0 0 0.5rem 0;
-          color: var(--text-color);
-        }
-  
-        p {
-          max-width: 500px;
-          margin: 0 auto;
-          font-size: 1rem;
-          line-height: 1.5;
-          color: var(--text-color-secondary, #666);
-        }
-      }
-  
-      p-table {
-        width: 100%;
-      } 
-    }
-    // Spacing between toolbar and table
-    ::ng-deep .p-toolbar {
-      margin-bottom: 0.75rem;
-    }
-        // Style cho nút Xóa tìm kiếm
-        .p-button-outlined.p-button-secondary {
-          border-color: var(--orange-500, #f97316);
-          color: var(--orange-500, #f97316);
-          
-          &:hover {
-            background-color: var(--orange-50, #fff7ed);
-            border-color: var(--orange-600, #ea580c);
-            color: var(--orange-600, #ea580c);
-          }
-          
-          &:focus {
-            box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
-          }
-        }
+// Form Styling - Professional Design
+:host {
+  display: block;
+
+  ::ng-deep .p-drawer {
+    .p-drawer-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-bottom: none;
       
-  }
-  
-  // cua so them khoa hoc 
-  $color-required: #e63946;
-  $color-label: #333;
-  $spacing-sm: 0.5rem;
-  $spacing-md: 1rem;
-  $spacing-lg: 1.5rem;
-  
-  :host {
-    display: block;
-  
-    ::ng-deep .p-drawer {
       .p-drawer-header-content {
         font-size: 1.25rem;
         font-weight: 600;
-        color: $color-label;
-        padding: $spacing-md;
-        border-bottom: 1px solid $color-border;
+        margin: 0;
       }
-    
-      .p-drawer-content {
-        padding: $spacing-md;
+      
+      .p-drawer-header-icon {
+        color: white;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
       }
-    }    
+    }
+  
+    .p-drawer-content {
+      padding: 2rem;
+      background: var(--surface-card);
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      overflow-x: visible;
+    }
+  }
+
+}
+
+// Form Styles - y hệt student, fix horizontal scroll
+.class-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.form-section {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--content-border-radius);
+  padding: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  
+  // Dark theme adjustments
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
   }
   
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $spacing-md;
+  .form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-border);
+    transition: color 0.3s ease, border-color 0.3s ease;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
   
-    .form-group {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
   
-      label {
-        flex: 0 0 140px; // label cố định
-        text-align: right;
-        font-weight: 500;
-        color: $color-text;
-        white-space: nowrap;
-      }
+  &.full-width {
+    grid-column: 1 / -1;
+  }
   
-      input, textarea, .p-inputtext, .p-inputnumber, .p-dropdown {
-        flex: 1;
-        min-height: 40px;
-      }
-  
-      &.full-width {
-        grid-column: 1 / -1;
-      }
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    
+    .req {
+      color: #ef4444 !important;
     }
   }
   
+  // Fix input overflow
+  input, textarea, .p-inputtext, .p-inputnumber, .p-dropdown {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
   
-  .dialog-actions {
+  // Fix flex containers
+  .flex.gap-2 {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  transition: border-color 0.3s ease;
+}
+
+// Fix drawer horizontal scroll
+:host ::ng-deep .p-drawer {
+  .p-drawer-content {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .p-drawer-header {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+// Dark mode support
+.app-dark {
+  ::ng-deep .p-drawer {
+    .p-drawer-header {
+      background: linear-gradient(135deg, #4c63d2 0%, #5a4fcf 100%);
+    }
+    
+    .p-drawer-content {
+      background: var(--surface-900);
+    }
+  }
+  
+}
+
+
+
+// Toolbar styling like course management
+:host ::ng-deep .p-toolbar { 
+  margin-bottom: 0.75rem; 
+  
+  // Filter button on the left, outside the balanced layout
+  .p-toolbar-group-start {
+    display: flex;
+    justify-content: flex-start;
+    margin-right: 1rem;
+  }
+  
+  // Center and end groups for balanced layout
+  .p-toolbar-group-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    
+    .p-iconfield {
+      max-width: 400px;
+      width: 100%;
+    }
+  }
+  
+  .p-toolbar-group-end {
+    flex: 1;
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-md;
-    padding: $spacing-md;
-    border-top: 1px solid $color-border;
-    margin-top: 1rem; 
-  
-    button {
-      min-width: 100px;
-    }
   }
   
-  // Responsive
-  @media (max-width: 600px) {
-    .form-grid {
-      grid-template-columns: 1fr;
+  .p-button-outlined.p-button-secondary {
+    border-color: var(--orange-500, #f97316);
+    color: var(--orange-500, #f97316);
+    
+    &:hover {
+      background-color: var(--orange-50, #fff7ed);
+      border-color: var(--orange-600, #ea580c);
+      color: var(--orange-600, #ea580c);
+    }
+    
+    &:focus {
+      box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
     }
   }
-// cửa sổ chi tiết 
-.class-detail-body {
-    padding: 2.5rem;
-    max-width: 1200px;
-    margin: 2rem auto;
-    font-family: var(--font-family);
-    color: var(--text-color);
-    background-color: var(--surface-card);
-    border-radius: 20px;
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--surface-border);
-    animation: fadeIn 0.4s ease;
-    position: relative;
-    overflow: hidden;
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(15px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .flex.flex-wrap.gap-3.mb-4 {
+    .flex-1.min-w-0 {
+      ::ng-deep .p-iconfield {
+        height: 40px;
       }
     }
-    /* ========== HEADER ========== */
-    &__header {
-      position: relative;
-      background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-      padding: 1.75rem 2rem;
-      border-radius: 16px;
-      margin-bottom: 2.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    
+    .flex.gap-2 {
+      ::ng-deep .p-button {
+        height: 36px;
+        padding: 0.4rem 0.7rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .class-management-container {
+    padding: 1rem;
+  }
+  
+  .page-header {
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
       text-align: center;
-      h2 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--primary-color);
-        letter-spacing: 0.4px;
-      }
-      p {
-        margin-top: 0.5rem;
-        color: var(--text-color-secondary);
-        font-size: 1rem;
-      }
-      /* Đường ngăn */
-      &::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
-        height: 1px;
-        background: linear-gradient(
-          to right,
-          transparent,
-          var(--surface-border),
-          transparent
-        );
+      
+      .header-title h1 {
+        font-size: 2rem;
       }
     }
-    /* ========== NỘI DUNG CHÍNH ========== */
-    &__content {
-      display: grid;
-      grid-template-columns: 1.4fr 0.9fr;
-      gap: 2rem;
-      margin-bottom: 2.5rem;
-      @media (max-width: 992px) {
-        grid-template-columns: 1fr;
+  }
+  
+  .flex.flex-wrap.gap-3.mb-4 {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .flex-1.min-w-0.max-w-md {
+      order: 0;
+      width: 100%;
+      max-width: none;
+      
+      ::ng-deep .p-iconfield {
+        height: 40px;
       }
     }
-    /* ======= CỘT TRÁI ======= */
-    &__left {
-      background: var(--surface-section);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
-      border: 1px solid var(--surface-border);
-      transition: box-shadow 0.2s ease;
-  
-      &:hover {
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+    
+    .flex.gap-2 {
+      order: 1;
+      width: 100%;
+      justify-content: center;
+      
+      ::ng-deep .p-button {
+        flex: 1;
+        height: 36px;
+        padding: 0.4rem 0.7rem;
+        min-width: 120px;
       }
-      .course-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.85rem;
+    }
+  }
+}
+
+// Readonly input styling
+.readonly-input {
+  background-color: var(--surface-100) !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
   
-        p {
-          margin: 0;
-          font-size: 1rem;
-          color: var(--text-color-secondary);
-          line-height: 1.6;
-  
-          strong {
-            color: var(--text-color);
-            font-weight: 600;
-            display: inline-block;
-            min-width: 150px;
+  .app-dark & {
+    background-color: var(--surface-700) !important;
+  }
+}
+
+
+// Schedule Form Styles
+.schedule-form-group {
+  .schedule-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--surface-50);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+
+    // Override PrimeNG DatePicker styling
+    ::ng-deep .p-datepicker {
+      .p-inputtext {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0.5rem !important;
+        box-sizing: border-box !important;
+      }
+    }
+
+
+    .schedule-label {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .schedule-days {
+      .p-multiselect {
+        width: 100%;
+      }
+
+
+    }
+
+    .schedule-time {
+      .p-fluid {
+        .flex-auto {
+          .time-inputs {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            max-width: 500px;
+            width: 100%;
+
+            .time-input {
+              flex: 0 0 45%;
+              display: flex;
+              flex-direction: column;
+              gap: 0.25rem;
+              min-width: 0;
+
+              label {
+                font-size: 0.875rem;
+                color: var(--text-color-secondary);
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+              }
+
+              .p-datepicker {
+                width: 100%;
+                
+                .p-inputtext {
+                  padding: 0.5rem;
+                  border: 1px solid var(--surface-border);
+                  border-radius: 6px;
+                  background: var(--surface-0);
+                  color: var(--text-color);
+                  font-size: 0.875rem;
+                  transition: border-color 0.2s ease;
+                  width: 100%;
+                  box-sizing: border-box;
+
+                  &:focus {
+                    outline: none;
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 2px var(--primary-50);
+                  }
+                }
+
+                .p-datepicker-trigger {
+                  color: var(--primary-color);
+                  cursor: pointer;
+                  transition: color 0.2s ease;
+
+                  &:hover {
+                    color: var(--primary-color-dark);
+                  }
+                }
+              }
+            }
+
+            .time-separator {
+              font-weight: 600;
+              color: var(--text-color-secondary);
+              font-size: 1.125rem;
+              margin-top: 2rem;
+              align-self: center;
+              flex-shrink: 0;
+              padding: 0 0.5rem;
+            }
           }
         }
       }
     }
-    /* ======= CỘT PHẢI ======= */
-    &__right {
-      background: var(--surface-section);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
-      border: 1px solid var(--surface-border);
-      h3.sub-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-color);
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--primary-color);
-        padding-left: 0.75rem;
+
+    .schedule-preview {
+      .preview-text {
+        padding: 0.75rem;
+        background: var(--primary-50);
+        border: 1px solid var(--primary-200);
+        border-radius: 6px;
+        color: var(--primary-700);
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-align: center;
       }
-      .extra-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-  
-        .extra-item {
-          font-size: 1rem;
-          color: var(--text-color);
-          padding: 0.75rem 1rem;
-          border-radius: 12px;
-          background: var(--surface-card);
-          border: 1px solid var(--surface-border);
-          transition: all 0.25s ease;
-  
-          &:hover {
-            background: var(--surface-hover);
-            color: var(--primary-color);
-            transform: translateX(3px);
+    }
+  }
+}
+
+// Dark theme support
+.app-dark {
+  .schedule-form-group {
+    .schedule-input-container {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+
+      .schedule-preview {
+        .preview-text {
+          background: var(--primary-900);
+          border-color: var(--primary-700);
+          color: var(--primary-300);
+        }
+      }
+
+    .schedule-time {
+      .p-fluid {
+        .flex-auto {
+          .time-inputs {
+            .time-input {
+              label {
+                color: var(--text-color-secondary);
+              }
+
+              .p-datepicker {
+                .p-inputtext {
+                  background: var(--surface-600);
+                  border-color: var(--surface-500);
+                  color: var(--text-color);
+
+                  &:focus {
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 2px var(--primary-900);
+                  }
+                }
+
+                .p-datepicker-trigger {
+                  color: var(--primary-color);
+
+                  &:hover {
+                    color: var(--primary-color-light);
+                  }
+                }
+              }
+            }
           }
         }
       }
     }
-    /* ======= FOOTER ======= */
-    &__actions {
-      display: flex;
-      justify-content: flex-end;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--surface-border);
-      button {
-        border-radius: 12px;
-        padding: 0.7rem 1.6rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .p-button {
-        background-color: var(--primary-color);
-        color: var(--primary-color-text);
-        border: none;
-        &:hover {
-          background-color: var(--primary-600);
-          transform: translateY(-2px);
-        }
-        &.p-button-outlined {
-          background: transparent;
-          color: var(--primary-color);
-          border: 1px solid var(--primary-color);
-          &:hover {
-            background: var(--primary-50);
-            color: var(--primary-700);
-          }
-        }
-        &.p-button-text {
-          color: var(--primary-color);
-  
-          &:hover {
-            background: var(--surface-hover);
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .schedule-form-group {
+    .schedule-input-container {
+      .schedule-time {
+        .time-inputs {
+          flex-direction: column;
+          gap: 0.75rem;
+
+          .time-separator {
+            margin-top: 0;
+            transform: rotate(90deg);
           }
         }
       }
     }
   }
-  
+}
+
+// Schedule template form styling
+.schedule-form-group {
+  .schedule-templates-container {
+    .schedule-template-item {
+      background: var(--surface-50);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      
+      .template-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--surface-border);
+        
+        h6 {
+          margin: 0;
+          color: var(--text-color);
+          font-weight: 600;
+        }
+      }
+      
+      .template-fields {
+        .time-fields {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 1rem;
+          
+          @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+          }
+        }
+        
+        .form-group {
+          margin-bottom: 1rem;
+          
+          label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-size: 0.875rem;
+          }
+          
+          input, textarea, ::ng-deep .p-multiselect, ::ng-deep .p-select {
+            width: 100%;
+          }
+        }
+      }
+    }
+    
+    .schedule-preview {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-200);
+      border-radius: 6px;
+      
+      .schedule-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--primary-700);
+      }
+      
+      .preview-text {
+        font-size: 0.875rem;
+        color: var(--primary-600);
+        font-weight: 500;
+      }
+    }
+  }
+}

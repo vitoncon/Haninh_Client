@@ -377,6 +377,21 @@
   .form-group {
     margin-bottom: 1rem;
     
+    .readonly-input {
+      background-color: var(--surface-100) !important;
+      color: var(--text-color-secondary) !important;
+      cursor: not-allowed !important;
+      border-color: var(--surface-300) !important;
+    }
+
+    .text-gray-500 {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      font-weight: 400;
+      margin-left: 0.25rem;
+      display: inline;
+    }
+    
     label {
       display: block;
       margin-bottom: 0.5rem;
@@ -405,6 +420,11 @@
     border-top: 1px solid var(--surface-border);
     padding-top: 1rem;
     transition: border-color 0.3s ease;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
   }
 }
 

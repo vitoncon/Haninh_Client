@@ -12,7 +12,7 @@ export class ClassService {
   constructor(private http: HttpClient) {}
 
   private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
+    const token = sessionStorage.getItem('access_token') || localStorage.getItem('access_token') || localStorage.getItem('accessToken') || '';
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,
@@ -29,7 +29,39 @@ export class ClassService {
   }
 
   getClassById(id: number): Observable<ClassModel> {
-    return this.http.get<ClassModel>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
+    // Sử dụng condition parameter thay vì endpoint không tồn tại
+    const condition = JSON.stringify([{
+      key: 'id',
+      value: id.toString(),
+      compare: '='
+    }]);
+    const url = `${this.apiUrl}?condition=${encodeURIComponent(condition)}`;
+    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
+      map((res) => {
+        const data = res?.data ?? res;
+        // Trả về item đầu tiên vì chỉ có 1 class với ID này
+        return Array.isArray(data) ? data[0] : data;
+      })
+    );
+  }
+
+  getClassesByIds(ids: number[]): Observable<ClassModel[]> {
+    // Lấy nhiều classes theo danh sách IDs
+    // Sử dụng whereIn condition để lấy tất cả classes có ID trong danh sách
+    const condition = JSON.stringify([{
+      key: 'id',
+      value: ids.join(','),
+      compare: 'in'
+    }]);
+    
+    const url = `${this.apiUrl}?condition=${encodeURIComponent(condition)}`;
+    
+    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
+      map((res) => {
+        const data = res?.data ?? res;
+        return data;
+      })
+    );
   }
 
   addClass(classItem: ClassModel): Observable<ClassModel> {
@@ -42,5 +74,10 @@ export class ClassService {
 
   deleteClass(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
+  }
+
+  // Create class with schedule generation
+  createClassWithSchedule(classData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/with-schedule`, classData, this.getAuthHeaders());
   }
 }

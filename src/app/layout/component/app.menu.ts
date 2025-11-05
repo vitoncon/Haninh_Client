@@ -83,7 +83,7 @@ export class AppMenu implements OnInit {
                 items: [
                     { 
                         label: 'Quản lý giảng viên', 
-                        icon: 'pi pi-fw pi-credit-card', 
+                        icon: 'pi pi-fw pi-briefcase', 
                         routerLink: ['/features/teacher'],
                         permissions: [PermissionService.PERMISSIONS.TEACHER_VIEW]
                     },

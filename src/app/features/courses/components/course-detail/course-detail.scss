@@ -56,29 +56,107 @@
 
 
 
-// Form styles for edit drawer
+// Form styles for edit drawer - copied from courses.scss
+$color-required: #e63946;
+$color-label: #333;
+$color-border: #dcdcdc;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+
+:host {
+  display: block;
+
+  ::ng-deep .p-drawer {
+    overflow: hidden !important;
+    
+    .p-drawer-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $color-label;
+      padding: $spacing-md;
+      border-bottom: 1px solid $color-border;
+    }
+
+    .p-drawer-content {
+      padding: $spacing-md;
+      overflow: hidden !important;
+      height: auto !important;
+      max-height: none !important;
+    }
+    
+    .p-drawer-wrapper {
+      overflow: hidden !important;
+    }
+  }
+}
+
+// Global override for drawer scroll
+::ng-deep .p-drawer {
+  overflow: hidden !important;
+  
+  .p-drawer-content {
+    overflow: hidden !important;
+    max-height: none !important;
+  }
+  
+  .p-drawer-wrapper {
+    overflow: hidden !important;
+  }
+  
+  .p-drawer-mask {
+    overflow: hidden !important;
+  }
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  padding: 1rem 0;
-  
+  gap: $spacing-md;
+
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    
+    gap: $spacing-sm;
+
     label {
       font-weight: 500;
       color: var(--text-color);
-      font-size: 0.9rem;
-      
+
       .req {
-        color: var(--p-red-500);
+        color: var(--red-500, #f44336);
         margin-left: 0.25rem;
       }
     }
-    
+
+    input,
+    textarea,
+    .p-inputtext,
+    .p-inputnumber,
+    .p-dropdown {
+      width: 100%;
+    }
+
+    // Readonly field styling
+    .readonly-field {
+      background-color: var(--surface-100) !important;
+      color: var(--text-color-secondary) !important;
+      cursor: not-allowed !important;
+      opacity: 0.8;
+      
+      &:focus {
+        border-color: var(--surface-border) !important;
+        box-shadow: none !important;
+      }
+    }
+
+    small.text-muted {
+      color: var(--text-color-secondary);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      display: block;
+    }
+
     &.full-width {
       grid-column: 1 / -1;
     }
@@ -88,10 +166,14 @@
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--surface-border);
-  margin-top: 1rem;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  border-top: 1px solid $color-border;
+  margin-top: 1rem; 
+
+  button {
+    min-width: 100px;
+  }
 }
 
 // Responsive design

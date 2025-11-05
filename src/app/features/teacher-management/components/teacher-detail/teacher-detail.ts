@@ -19,6 +19,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DrawerModule } from 'primeng/drawer';
 import { FileUploadModule } from 'primeng/fileupload';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -43,7 +44,8 @@ import { Subject, takeUntil } from 'rxjs';
     InputNumberModule,
     DatePickerModule,
     DrawerModule,
-    FileUploadModule
+    FileUploadModule,
+    TooltipModule
   ],
   styleUrls: ['./teacher-detail.scss']
 })
@@ -368,6 +370,18 @@ export class TeacherDetail implements OnInit, OnDestroy {
   onDrawerHide(): void {
     this.formTeacher = null;
     this.drawerVisible = false;
+  }
+
+  // Check if we're in edit mode
+  isEditMode(): boolean {
+    return !!(this.formTeacher && this.formTeacher.id);
+  }
+
+  // Generate new teacher code
+  generateNewCode(): void {
+    if (this.formTeacher) {
+      this.formTeacher.teacher_code = this.teacherService.generateTeacherCode();
+    }
   }
 
   private validateTeacher(teacher: TeacherModel): string[] {

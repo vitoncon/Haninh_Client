@@ -6,6 +6,8 @@ import { StatsWidget } from './components/statswidget';
 import { RecentSalesWidget } from './components/recentsaleswidget';
 import { BestSellingWidget } from './components/bestsellingwidget';
 import { RevenueStreamWidget } from './components/revenuestreamwidget';
+import { ClassDistributionWidget } from './components/classdistributionwidget';
+import { PaymentStatusWidget } from './components/paymentstatuswidget';
 
 @Component({
     selector: 'app-dashboard',
@@ -16,19 +18,39 @@ import { RevenueStreamWidget } from './components/revenuestreamwidget';
         RecentSalesWidget,
         BestSellingWidget,
         RevenueStreamWidget,
-        NotificationsWidget
+        NotificationsWidget,
+        ClassDistributionWidget,
+        PaymentStatusWidget
     ],
    
     template: `
-        <div class="grid grid-cols-12 gap-8">
+        <div class="grid grid-cols-12 gap-6">
+
+            <!-- Statistics Cards -->
             <app-stats-widget class="contents" />
+            
+            <!-- Charts Row 1 -->
+            <div class="col-span-12 xl:col-span-8">
+                <app-revenue-stream-widget />
+            </div>
+            <div class="col-span-12 xl:col-span-4">
+                <app-payment-status-widget />
+            </div>
+
+            <!-- Charts Row 2 -->
             <div class="col-span-12 xl:col-span-6">
-                <app-recent-sales-widget />
-                <app-best-selling-widget />
+                <app-class-distribution-widget />
             </div>
             <div class="col-span-12 xl:col-span-6">
-                <app-revenue-stream-widget />
                 <app-notifications-widget />
+            </div>
+
+            <!-- Tables Row -->
+            <div class="col-span-12 xl:col-span-6">
+                <app-recent-sales-widget />
+            </div>
+            <div class="col-span-12 xl:col-span-6">
+                <app-best-selling-widget />
             </div>
         </div>
     `
@@ -43,7 +65,7 @@ export class Dashboard implements OnInit {
           this.messageService.add({
             severity: 'success',
             summary: 'Đăng nhập thành công',
-            detail: 'Chào mừng Admin!'
+            detail: 'Chào mừng đến với Hà Ninh Academy!'
           });
           history.replaceState({}, '');
         }

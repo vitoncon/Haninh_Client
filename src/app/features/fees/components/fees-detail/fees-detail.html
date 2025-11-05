@@ -1,0 +1,626 @@
+<div class="page-card">
+  <!-- Header mới - không dùng custom-toolbar -->
+  <div class="fees-detail-header">
+    <button
+      pButton
+      icon="pi pi-arrow-left"
+      class="p-button-text back-button"
+      pTooltip="Quay lại danh sách lớp học"
+      (click)="onBack()">
+    </button>
+    
+    <div class="header-content">
+      <h1 class="class-title">{{ classInfo?.name || classData?.class_name || 'Chi tiết học phí' }}</h1>
+      <div class="class-info">
+        <p class="class-code">Mã lớp: {{ classCode }}</p>
+        <div class="class-details" *ngIf="classData">
+          <span class="class-detail-item" *ngIf="classData.start_date">
+            <i class="pi pi-calendar"></i>
+            Bắt đầu: {{ formatDate(classData.start_date) }}
+          </span>
+          <span class="class-detail-item" *ngIf="getCourseName(classData)">
+            <i class="pi pi-graduation-cap"></i>
+            Khóa học: {{ getCourseName(classData) }}
+          </span>
+          <span class="class-detail-item" *ngIf="classData && students.length > 0">
+            <i class="pi pi-dollar"></i>
+            Học phí: {{ formatCurrency(headerTuitionFee) }}/học viên
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics || (totalTuition || collected || debt)">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng học phí</h6>
+          <h4 class="mb-0">{{ formatCurrency(getTotalTuitionAmount()) }}</h4>
+          <small class="text-muted">{{ getTotalStudents() }} học viên</small>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-dollar"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã thu</h6>
+          <h4 class="mb-0">{{ formatCurrency(getCollectedAmount()) }}</h4>
+          <small class="text-success">{{ getCollectionPercentage() }}% đã thu</small>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Chưa thu</h6>
+          <h4 class="mb-0">{{ formatCurrency(getUnpaidAmount()) }}</h4>
+          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getUnpaidCount() > 0">
+            {{ getOverdueCountOnly() }} quá hạn, {{ getUnpaidCount() }} chưa đóng
+          </small>
+          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getUnpaidCount() === 0">
+            {{ getOverdueCountOnly() }} học viên quá hạn
+          </small>
+          <small class="text-warning" *ngIf="getOverdueCountOnly() === 0 && getUnpaidCount() > 0">
+            {{ getUnpaidCount() }} học viên chưa đóng
+          </small>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Toolbar với search và filter -->
+  <div class="custom-toolbar">
+    <div class="toolbar-left">
+      <button
+        pButton
+        type="button"
+        label="Xóa lọc"
+        icon="pi pi-filter-slash"
+        [outlined]="true"
+        (click)="onClearFilters()"
+        *ngIf="hasActiveFilters"
+      ></button>
+    </div>
+    
+    <div class="toolbar-center">
+      <!-- Search input -->
+      <div class="search-field">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search" />
+          <input 
+            type="text" 
+            pInputText 
+            placeholder="Tìm kiếm học viên..." 
+            [(ngModel)]="searchQuery"
+            (input)="onGlobalFilter($event)"
+            class="search-input" 
+          />
+        </p-iconfield>
+      </div>
+    </div>
+    
+    <div class="toolbar-right">
+      <!-- Filter dropdown -->
+      <div class="filter-container">
+        <p-select
+          [ngModel]="selectedStatusFilter"
+          (ngModelChange)="selectedStatusFilter = $event; onFilterChange()"
+          [options]="statusOptions"
+          placeholder="Trạng thái"
+          optionLabel="label"
+          styleClass="filter-dropdown-picklist"
+          appendTo="body"
+          [showClear]="selectedStatusFilter !== '' && selectedStatusFilter !== null"
+          (onClear)="clearStatusFilter()"
+        ></p-select>
+      </div>
+      
+      <!-- Bulk Actions -->
+      <button
+        pButton
+        type="button"
+        icon="pi pi-send"
+        [outlined]="true"
+        pTooltip="Gửi nhắc nhở"
+        (click)="onSendReminders()"
+        [disabled]="getTotalUnpaidCount() === 0"
+        styleClass="mr-2"
+      ></button>
+      
+      <!-- Refresh button -->
+      <button
+        pButton
+        type="button"
+        icon="pi pi-refresh"
+        [outlined]="true"
+        pTooltip="Làm mới dữ liệu"
+        (click)="onRefresh()"
+        styleClass="mr-2"
+      ></button>
+      
+      <!-- Debug: Force refresh tuition amounts -->
+      <button
+        pButton
+        type="button"
+        icon="pi pi-dollar"
+        [outlined]="true"
+        pTooltip="Làm mới số tiền từ học phí"
+        (click)="refreshTuitionAmounts()"
+        styleClass="mr-2"
+      ></button>
+      
+      <!-- Export button -->
+      <button
+        pButton
+        type="button"
+        icon="pi pi-download"
+        [outlined]="true"
+        pTooltip="Xuất danh sách"
+        (click)="onExportStudents()"
+        [disabled]="!getTotalStudents()"
+        styleClass="mr-2"
+      ></button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-content-center align-items-center" style="height: 200px;">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <!-- Students View -->
+  <div *ngIf="!loading">
+
+    <!-- Students Table -->
+    <p-table 
+      #studentsTable
+      [value]="filteredTableData"
+      [paginator]="true"
+      [rows]="10"
+      [showCurrentPageReport]="true"
+      [currentPageReportTemplate]="currentPageReportTemplate"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [globalFilterFields]="['name', 'student_name', 'student_code']"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      [scrollable]="true"
+      scrollHeight="flex"
+      dataKey="id"
+      [rowHover]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 80px; text-align: center;" class="text-center">STT</th>
+          <th pSortableColumn="name" style="width: 200px">
+            Tên học viên
+            <p-sortIcon field="name"></p-sortIcon>
+          </th>
+          <th style="width: 160px; text-align: center;" class="text-center">Số tiền</th>
+          <th style="width: 160px; text-align: center;" class="text-center">Hạn nộp</th>
+          <th style="width: 160px; text-align: center;" class="text-center">Ngày thanh toán</th>
+          <th style="width: 140px; text-align: center;" class="text-center">Số ngày chậm</th>
+          <th pSortableColumn="payment_status" style="width: 160px; text-align: center;" class="text-center">
+            Trạng thái
+            <p-sortIcon field="payment_status"></p-sortIcon>
+          </th>
+          <th style="width: 140px; text-align: center;" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+        
+      <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
+        <tr>
+          <td style="text-align: center;" class="text-center">{{ rowIndex + 1 }}</td>
+          <td>
+            <div class="flex flex-column">
+              <span class="font-semibold">{{ getStudentName(item) }}</span>
+            </div>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="font-semibold text-blue-600">{{ formatCurrency(getStudentAmount(item)) }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="text-sm">{{ formatDate(getDueDate(item)) }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="text-sm" *ngIf="getPaidDate(item)">{{ formatDate(getPaidDate(item)) }}</span>
+            <span class="text-sm text-600" *ngIf="!getPaidDate(item)">-</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <ng-container *ngIf="getDaysOverdue(item) as daysOverdue">
+              <span 
+                *ngIf="daysOverdue > 0" 
+                class="text-danger font-semibold"
+                pTooltip="{{ daysOverdue }} ngày quá hạn"
+              >
+                {{ daysOverdue }} ngày
+              </span>
+              <span 
+                *ngIf="daysOverdue <= 0" 
+                class="text-success"
+              >
+                <ng-container *ngIf="getDaysUntilDue(item) as daysUntilDue; else todayCheck">
+                  {{ daysUntilDue }} ngày
+                </ng-container>
+                <ng-template #todayCheck>
+                  <ng-container *ngIf="isDueToday(item); else dash">
+                    Hôm nay
+                  </ng-container>
+                  <ng-template #dash>-</ng-template>
+                </ng-template>
+              </span>
+            </ng-container>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <p-tag 
+              [value]="getPaymentStatus(item)" 
+              [severity]="getPaymentStatusSeverity(getPaymentStatus(item))"
+            ></p-tag>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <div class="flex gap-1 action-buttons-container">
+              <!-- Xác nhận thanh toán - chỉ hiển thị khi chưa thanh toán -->
+              <button
+                *ngIf="getPaymentStatus(item) !== 'Đã thanh toán'"
+                pButton
+                type="button"
+                icon="pi pi-check"
+                class="action-button confirm-payment-btn"
+                pTooltip="Xác nhận thanh toán"
+                (click)="onConfirmPayment(item)"
+              ></button>
+              
+              <!-- Gửi nhắc nhở -->
+              <button
+                pButton
+                type="button"
+                icon="pi pi-send"
+                class="action-button"
+                [outlined]="true"
+                pTooltip="Gửi nhắc nhở"
+                (click)="onSendReminderToStudent(item)"
+                [disabled]="getPaymentStatus(item) === 'Đã thanh toán'"
+              ></button>
+              
+              <!-- Xem chi tiết - chỉ hiển thị khi đã thanh toán -->
+              <button
+                *ngIf="getPaymentStatus(item) === 'Đã thanh toán'"
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                class="action-button"
+                [outlined]="true"
+                pTooltip="Xem chi tiết thanh toán"
+                (click)="onViewPaymentDetails(item)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+        
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center">
+            <div class="py-4">
+              <div class="text-center">
+                <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                <p class="mb-0">Không tìm thấy học viên nào</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Confirm Payment Dialog -->
+<p-dialog 
+  header="Xác nhận thanh toán" 
+  [(visible)]="confirmPaymentDialogVisible" 
+  [modal]="true" 
+  [style]="editDialogStyle"
+  [draggable]="false" 
+  [resizable]="false"
+  (onHide)="onCancelConfirmPayment()"
+  styleClass="modern-dialog"
+>
+  <div class="payment-form" *ngIf="selectedStudent">
+    <div class="form-section">
+      <div class="form-field">
+        <label class="field-label">Học viên</label>
+        <input 
+          type="text" 
+          pInputText 
+          [value]="selectedStudent.name" 
+          readonly 
+          class="field-input readonly"
+        />
+      </div>
+
+      <div class="form-field">
+        <label class="field-label">Số tiền</label>
+        <input 
+          type="text" 
+          pInputText 
+          [value]="formatCurrency(getAmountAsNumber(selectedStudent.amount))" 
+          readonly 
+          class="field-input readonly"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-field form-field-half">
+          <label class="field-label">Ngày thanh toán <span class="required">*</span></label>
+          <p-datepicker 
+            [(ngModel)]="confirmForm.paid_date"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            appendTo="body"
+            placeholder="Chọn ngày thanh toán"
+            class="field-input"
+          ></p-datepicker>
+        </div> 
+        
+        <div class="form-field form-field-half">
+          <label class="field-label">Phương thức thanh toán <span class="required">*</span></label>
+          <p-select 
+            [(ngModel)]="confirmForm.payment_method"
+            [options]="paymentMethods"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Chọn phương thức thanh toán"
+            class="field-input"
+          ></p-select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="field-label">Ghi chú</label>
+        <textarea 
+          pInputTextarea 
+          rows="3"
+          [(ngModel)]="confirmForm.notes"
+          placeholder="Nhập ghi chú (tùy chọn)"
+          class="field-input"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Xác nhận thanh toán -->
+    <div class="form-section confirm-section">
+      <div class="confirm-info">
+        <i class="pi pi-info-circle text-blue-500"></i>
+        <span class="confirm-text">
+          Xác nhận rằng học viên <strong>{{ selectedStudent.name }}</strong> đã thanh toán số tiền 
+          <strong>{{ formatCurrency(getAmountAsNumber(selectedStudent.amount)) }}</strong> vào ngày đã chọn.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button 
+        pButton 
+        label="Hủy" 
+        icon="pi pi-times" 
+        class="p-button-text cancel-btn" 
+        (click)="onCancelConfirmPayment()"
+      ></button>
+      <button 
+        pButton 
+        label="Xác nhận thanh toán" 
+        icon="pi pi-check" 
+        class="confirm-payment-btn"
+        [disabled]="!isConfirmPaymentFormValid()"
+        (click)="onSaveConfirmPayment()"
+      ></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- View Payment Details Dialog -->
+<p-dialog 
+  header="Chi tiết thanh toán" 
+  [(visible)]="viewPaymentDialogVisible" 
+  [modal]="true" 
+  [style]="editDialogStyle"
+  [draggable]="false" 
+  [resizable]="false"
+  (onHide)="onCancelViewPayment()"
+  styleClass="modern-dialog"
+>
+  <div class="payment-details" *ngIf="selectedStudent">
+    <div class="detail-section">
+      <div class="detail-row">
+        <label class="detail-label">Học viên:</label>
+        <span class="detail-value">{{ selectedStudent.name }}</span>
+      </div>
+      
+      <div class="detail-row">
+        <label class="detail-label">Số tiền:</label>
+        <span class="detail-value amount">{{ formatCurrency(getAmountAsNumber(selectedStudent.amount)) }}</span>
+      </div>
+      
+      <div class="detail-row">
+        <label class="detail-label">Ngày thanh toán:</label>
+        <span class="detail-value">{{ formatDate(selectedStudent.paid_date) || 'Chưa có' }}</span>
+      </div>
+      
+      <div class="detail-row">
+        <label class="detail-label">Phương thức:</label>
+        <span class="detail-value">{{ selectedStudent.payment_method || 'Chưa có' }}</span>
+      </div>
+      
+      <div class="detail-row">
+        <label class="detail-label">Trạng thái:</label>
+        <span class="detail-value">
+          <p-tag 
+            [value]="getPaymentStatus(selectedStudent)" 
+            [severity]="getPaymentStatusSeverity(getPaymentStatus(selectedStudent))"
+          ></p-tag>
+        </span>
+      </div>
+      
+      <div class="detail-row" *ngIf="selectedStudent.notes">
+        <label class="detail-label">Ghi chú:</label>
+        <span class="detail-value">{{ selectedStudent.notes }}</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button 
+        pButton 
+        label="Đóng" 
+        icon="pi pi-times" 
+        class="cancel-btn" 
+        (click)="onCancelViewPayment()"
+      ></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Send Reminder Dialog -->
+<p-dialog 
+  header="Gửi nhắc nhở học phí" 
+  [(visible)]="reminderDialogVisible" 
+  [modal]="true" 
+  [style]="reminderDialogStyle"
+  [draggable]="false" 
+  [resizable]="false"
+  (onHide)="onCancelReminder()"
+  styleClass="modern-dialog"
+>
+  <div class="reminder-form" *ngIf="selectedReminderStudents">
+    <!-- Student Selection -->
+    <div class="form-section">
+      <label class="field-label">Gửi đến học viên</label>
+      <div class="students-list">
+        <div *ngIf="selectedReminderStudents.length === 1; else multipleStudents" class="selected-student">
+          <i class="pi pi-user"></i>
+          <span class="student-name">{{ selectedReminderStudents[0].name }}</span>
+          <span class="student-amount text-blue-600">{{ formatCurrency(getStudentAmount(selectedReminderStudents[0])) }}</span>
+        </div>
+        <ng-template #multipleStudents>
+          <div class="selected-students">
+            <div class="selected-count">
+              <i class="pi pi-users"></i>
+              <span>{{ selectedReminderStudents.length }} học viên chưa thanh toán</span>
+            </div>
+            <div class="students-summary">
+              <span class="total-amount">
+                Tổng số tiền: <strong>{{ formatCurrency(getReminderTotalAmount()) }}</strong>
+              </span>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Message Template -->
+    <div class="form-section">
+      <label class="field-label">Chọn mẫu tin nhắn</label>
+      <p-select
+        [(ngModel)]="selectedTemplate"
+        [options]="messageTemplates"
+        optionLabel="name"
+        placeholder="Chọn mẫu tin nhắn"
+        (ngModelChange)="onTemplateChange()"
+        class="w-full"
+      ></p-select>
+    </div>
+
+    <!-- Custom Message -->
+    <div class="form-section">
+      <label class="field-label">Nội dung tin nhắn</label>
+      <textarea 
+        pTextarea 
+        [(ngModel)]="reminderMessage"
+        (ngModelChange)="onReminderMessageChange()"
+        placeholder="Nhập nội dung tin nhắn..."
+        [rows]="6"
+        [autoResize]="true"
+        class="w-full"
+      ></textarea>
+      <small class="text-muted mt-1">
+        <i class="pi pi-info-circle"></i>
+        Sử dụng các biến: student_name, amount, due_date, class_name để tự động điền thông tin
+      </small>
+    </div>
+
+    <!-- Message Preview -->
+    <div class="form-section" *ngIf="processedReminderMessage">
+      <label class="field-label">Xem trước tin nhắn</label>
+      <div class="message-preview">
+        <div [innerHTML]="processedReminderMessage" class="preview-content"></div>
+      </div>
+    </div>
+
+    <!-- Send Options -->
+    <div class="form-section">
+      <label class="field-label">Gửi qua</label>
+      <div class="send-options">
+        <div class="option-item">
+          <p-checkbox 
+            [(ngModel)]="sendViaEmail" 
+            [binary]="true" 
+            inputId="sendEmail">
+          </p-checkbox>
+          <label for="sendEmail" class="option-label">
+            <i class="pi pi-envelope"></i>
+            Email
+          </label>
+        </div>
+        <div class="option-item">
+          <p-checkbox 
+            [(ngModel)]="sendViaSMS" 
+            [binary]="true" 
+            inputId="sendSMS">
+          </p-checkbox>
+          <label for="sendSMS" class="option-label">
+            <i class="pi pi-mobile"></i>
+            SMS (Sắp có)
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button 
+        pButton 
+        label="Hủy" 
+        icon="pi pi-times" 
+        (click)="onCancelReminder()"
+      ></button>
+      <button 
+        pButton 
+        label="Gửi nhắc nhở" 
+        icon="pi pi-send" 
+        class="send-btn"
+        [disabled]="!isReminderFormValid()"
+        [loading]="sendingReminder"
+        (click)="onSendReminder()"
+      ></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog></p-confirmDialog>

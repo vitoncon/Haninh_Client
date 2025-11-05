@@ -1,0 +1,1802 @@
+
+
+.student-detail-container {
+
+  background: var(--surface-ground);
+
+}
+
+// Loading State
+.loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+
+  .loading-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-color-secondary);
+  }
+}
+
+// Error State
+.error-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+
+  .error-icon {
+    font-size: 3rem;
+    color: var(--red-500);
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+  }
+
+  p {
+    margin: 0 0 2rem 0;
+    color: var(--text-color-secondary);
+    max-width: 400px;
+  }
+}
+
+// Student Detail Content
+.student-detail-content {
+  .header-section {
+    
+    .flex.justify-content-between {
+      align-items: center;
+      
+      // Đảm bảo nút chỉnh sửa ở bên phải
+      .flex.gap-2 {
+        flex-shrink: 0;
+        margin-left: auto; // Đẩy nút sang phải
+      }
+    }
+  }
+}
+
+// CSS cho nút nhỏ
+:host ::ng-deep .p-button-sm {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  min-height: auto !important;
+  
+  .p-button-label {
+    font-size: 0.875rem !important;
+  }
+}
+
+// Student Detail Content
+.student-detail-content {
+  .header-section {
+    .student-name {
+      margin: 0 0 0.25rem 0;
+      color: var(--text-color);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    
+    .student-code {
+      margin: 0;
+      color: var(--text-color-secondary);
+      font-size: 1rem;
+    }
+  }
+
+  .tabs-container {
+    margin-top: 1rem;
+    
+    // Force remove background từ tất cả elements của tab
+    :host ::ng-deep .p-tabs,
+    :host ::ng-deep .p-tablist,
+    :host ::ng-deep .p-tablist-tab-list,
+    :host ::ng-deep .p-tablist-tab-list * {
+      background: transparent !important;
+      background-color: transparent !important;
+      background-image: none !important;
+    }
+    
+    :host ::ng-deep .p-tabs {
+      .p-tablist {
+        background: transparent !important;
+        border: 1px solid var(--surface-border);
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 1rem;
+        
+        .p-tab {
+          color: var(--text-color-secondary);
+          border: 1px solid var(--surface-border);
+          border-radius: 20px;
+          padding: 1rem 1.5rem;
+          
+          &:hover {
+            color: var(--primary-color);
+            background: var(--surface-hover);
+          }
+          
+          &.p-tab-active {
+            color: var(--primary-color);
+            background: var(--surface-0);
+            border-bottom: 2px solid var(--primary-color);
+          }
+        }
+      }
+      
+      .p-tabpanels {
+        
+        background: var(--surface-0);
+        border: 1px solid var(--surface-border);
+        border-top: none;
+        border-radius: 20px;
+        padding: 2rem;
+      }
+    }
+  }
+
+  &__left {
+    .student-info,
+    .student-parent {
+      background: var(--surface-card);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+
+      h3 {
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+
+        .info-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 0;
+          border-bottom: 1px solid var(--surface-border);
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          label {
+            font-weight: 500;
+            color: var(--text-color-secondary);
+            min-width: 120px;
+          }
+
+          span {
+            color: var(--text-color);
+            text-align: right;
+            flex: 1;
+            margin-left: 1rem;
+
+            &.status-active {
+              color: var(--green-600);
+              font-weight: 500;
+            }
+
+            &.status-pause {
+              color: var(--orange-600);
+              font-weight: 500;
+            }
+
+            &.status-graduated {
+              color: var(--blue-600);
+              font-weight: 500;
+            }
+
+            &.status-inactive {
+              color: var(--red-600);
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+
+    .student-note {
+      background: var(--surface-card);
+      border-radius: 8px;
+      padding: 1.5rem;
+
+      h3 {
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0;
+        color: var(--text-color);
+        line-height: 1.6;
+      }
+    }
+  }
+
+  &__right {
+    .student-stats {
+      background: var(--surface-card);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+
+      h3 {
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+
+        .stat-item {
+          text-align: center;
+          padding: 1rem;
+          border: 1px solid var(--surface-border);
+          border-radius: 6px;
+          background: var(--surface-0);
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+          }
+
+          .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+          }
+        }
+      }
+    }
+
+    .student-timeline {
+      background: var(--surface-card);
+      border-radius: 8px;
+      padding: 1.5rem;
+
+      h3 {
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .timeline-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--surface-border);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .timeline-date {
+          font-size: 0.875rem;
+          color: var(--text-color-secondary);
+          min-width: 80px;
+          margin-right: 1rem;
+        }
+
+        .timeline-content {
+          color: var(--text-color);
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+}
+
+// Card Styles
+:host ::ng-deep {
+  .profile-card {
+    .p-card-header {
+      padding: 2rem 1.5rem 1rem 1.5rem;
+      text-align: center;
+      
+      .profile-header {
+        .profile-avatar {
+          margin-bottom: 1rem;
+        }
+      }
+    }
+    
+    .p-card-content {
+      padding: 1rem 1.5rem 2rem 1.5rem;
+      
+      .profile-info {
+        text-align: center;
+        
+        .profile-name {
+          margin: 0 0 0.5rem 0;
+          color: var(--text-color);
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+        
+        .profile-code {
+          margin: 0 0 1rem 0;
+          color: var(--text-color-secondary);
+          font-size: 1rem;
+        }
+        
+        .profile-status {
+          display: flex;
+          justify-content: center;
+        }
+      }
+    }
+  }
+
+  .info-card,
+  .note-card,
+  .classes-card,
+  .stats-card,
+  .all-classes-card {
+    .p-card-content {
+      padding: 1.5rem;
+    }
+  }
+}
+
+// Tab Content Styles
+.tab-content {
+  .profile-section {
+    margin-bottom: 2rem;
+    
+    .profile-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      
+      .profile-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        
+        .profile-avatar {
+          margin-bottom: 0.5rem;
+        }
+        
+        .profile-info {
+          .profile-name {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+            font-size: 1.75rem;
+            font-weight: 700;
+          }
+          
+          .profile-code {
+            margin: 0 0 1rem 0;
+            color: var(--text-color-secondary);
+            font-size: 1rem;
+          }
+          
+          .profile-status {
+            display: flex;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }
+
+  .info-section {
+    margin-bottom: 2rem;
+    
+    h4 {
+      margin: 0 0 1.5rem 0;
+      color: var(--text-color);
+      font-size: 1.25rem;
+      font-weight: 600;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-color);
+    }
+  }
+
+  .note-section {
+    margin-bottom: 2rem;
+    
+    h4 {
+      margin: 0 0 1rem 0;
+      color: var(--text-color);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .note-text {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-left: 4px solid var(--primary-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--surface-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        font-weight: 500;
+        color: var(--text-color-secondary);
+        min-width: 120px;
+      }
+
+      span {
+        color: var(--text-color);
+        text-align: right;
+        flex: 1;
+        margin-left: 1rem;
+
+        &.status-active {
+          color: var(--green-600);
+          font-weight: 500;
+        }
+
+        &.status-pause {
+          color: var(--orange-600);
+          font-weight: 500;
+        }
+
+        &.status-graduated {
+          color: var(--blue-600);
+          font-weight: 500;
+        }
+
+        &.status-inactive {
+          color: var(--red-600);
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .student-note {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--surface-card);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+
+    h4 {
+      margin: 0 0 1rem 0;
+      color: var(--text-color);
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+  }
+}
+
+// Current Classes
+.current-classes {
+  .class-item {
+    padding: 1rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: var(--surface-card);
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .class-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      
+      h4 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+    }
+    
+    .class-info {
+      p {
+        margin: 0.25rem 0;
+        color: var(--text-color);
+        font-size: 0.875rem;
+        
+        strong {
+          color: var(--text-color-secondary);
+        }
+      }
+    }
+  }
+}
+
+// Compact Table
+:host ::ng-deep .compact-table {
+  .p-datatable {
+    font-size: 0.875rem;
+    
+    .p-datatable-header {
+      padding: 0.75rem;
+    }
+    
+    .p-datatable-thead > tr > th {
+      padding: 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    .p-datatable-tbody > tr > td {
+      padding: 0.75rem;
+    }
+    
+    .p-paginator {
+      padding: 0.75rem;
+    }
+  }
+}
+
+// Classes Grid
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+
+  .class-card {
+    :host ::ng-deep .p-card {
+      height: 100%;
+      
+      .p-card-header {
+        .class-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          
+          h4 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.125rem;
+            font-weight: 600;
+          }
+        }
+      }
+      
+      .p-card-content {
+        .class-content {
+          .class-info {
+            p {
+              margin: 0.5rem 0;
+              color: var(--text-color);
+              
+              strong {
+                color: var(--text-color-secondary);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Stats Overview
+.stats-overview {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .stat-card {
+      :host ::ng-deep .p-card {
+        text-align: center;
+        
+        .stat-content {
+          .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+          }
+
+          .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+
+  .last-class-info {
+    padding: 1rem;
+    background: var(--surface-card);
+    border-radius: 8px;
+    border-left: 4px solid var(--green-500);
+
+    p {
+      margin: 0;
+      color: var(--text-color);
+
+      strong {
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  i {
+    font-size: 3rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 1.125rem;
+  }
+}
+
+// Dark mode support
+:host ::ng-deep .app-dark {
+  .page-card {
+    background: var(--surface-ground);
+    color: var(--text-color);
+  }
+
+  .p-tabview {
+    .p-tabview-nav {
+      background: var(--surface-card);
+      border-color: var(--surface-border);
+      
+      .p-tabview-nav-link {
+        color: var(--text-color-secondary);
+        
+        &:hover {
+          background: var(--surface-hover);
+        }
+        
+        &.p-tabview-nav-link-active {
+          background: var(--surface-0);
+        }
+      }
+    }
+    
+    .p-tabview-panels {
+      background: var(--surface-0);
+      border-color: var(--surface-border);
+    }
+  }
+
+  .p-table {
+    .p-datatable-header {
+      background: var(--surface-card);
+      border-color: var(--surface-border);
+      color: var(--text-color);
+    }
+
+    .p-datatable-thead > tr > th {
+      background: var(--surface-card);
+      border-color: var(--surface-border);
+      color: var(--text-color);
+    }
+
+    .p-datatable-tbody > tr > td {
+      background: var(--surface-0);
+      border-color: var(--surface-border);
+      color: var(--text-color);
+    }
+
+    .p-paginator {
+      background: var(--surface-card);
+      border-color: var(--surface-border);
+      color: var(--text-color);
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .page-card {
+    padding: 1rem;
+  }
+
+  .student-detail-body {
+    &__header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+
+      .header-actions {
+        justify-content: stretch;
+
+        button {
+          flex: 1;
+        }
+      }
+    }
+
+    &__left {
+      .student-info,
+      .student-parent {
+        .info-grid {
+          .info-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+
+            label {
+              min-width: auto;
+            }
+
+            span {
+              margin-left: 0;
+              text-align: left;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Current Classes Styling
+.current-classes {
+  .classes-summary {
+    background: var(--surface-50);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    
+    h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+      font-size: 1.1rem;
+    }
+    
+    p {
+      margin: 0;
+      color: var(--text-color-secondary);
+      
+      strong {
+        color: var(--primary-color);
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .classes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .class-item {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary-color);
+    }
+    
+    .class-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      
+      h4 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.2rem;
+        flex: 1;
+        
+        &.class-name-link {
+          cursor: pointer;
+          transition: color 0.2s ease;
+          
+          &:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+    
+    .class-info {
+      margin-bottom: 1rem;
+      
+      .info-row {
+        display: flex;
+        margin-bottom: 0.5rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .info-label {
+          font-weight: 500;
+          color: var(--text-color-secondary);
+          min-width: 100px;
+          margin-right: 0.5rem;
+        }
+        
+        .info-value {
+          color: var(--text-color);
+          flex: 1;
+        }
+      }
+    }
+    
+    .class-actions {
+      display: flex;
+      justify-content: flex-end;
+      
+      .p-button {
+        border-radius: 6px;
+      }
+    }
+  }
+}
+
+// Class name link styling
+.class-name-link {
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: underline;
+  
+  &:hover {
+    color: var(--primary-color-text);
+    text-decoration: none;
+  }
+}
+
+// ===== FORCE BORDER-RADIUS FOR P-TABPANELS =====
+:host ::ng-deep .p-tabpanels {
+  border-radius: 20px !important;
+  margin-top: 1rem;
+}
+
+// Alternative selectors
+::ng-deep .p-tabpanels {
+  border-radius: 20px !important;
+}
+
+::ng-deep p-tabpanels {
+  border-radius: 20px !important;
+}
+
+// Maximum specificity
+.student-detail-container .tabs-container ::ng-deep .p-tabpanels {
+  border-radius: 20px !important;
+}
+
+// FORCE REMOVE BACKGROUND - Maximum specificity
+.student-detail-container .tabs-container ::ng-deep .p-tablist-tab-list,
+.student-detail-container .tabs-container ::ng-deep .p-tablist-tab-list *,
+.student-detail-container .tabs-container ::ng-deep .p-tablist,
+.student-detail-container .tabs-container ::ng-deep .p-tabs .p-tablist {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+// Alternative approach - target by ID or any possible selector
+::ng-deep [class*="tab-list"],
+::ng-deep [class*="p-tablist"],
+::ng-deep div[class*="tab"] {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+
+// ===== CHUYÊN NGHIỆP TAB "LỚP HỌC" =====
+
+// Classes Summary Section
+.classes-summary {
+  background: linear-gradient(135deg, var(--surface-0) 0%, var(--surface-50) 100%);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+
+  .summary-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    i {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-right: 0.75rem;
+    }
+    
+    h4 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+  }
+  
+  .summary-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); // 3 cards: Đang học, Đã hoàn thành, Nghỉ học
+    gap: 1.5rem;
+    
+    .stat-item {
+      text-align: center;
+      padding: 1.25rem;
+      background: var(--surface-card);
+      border-radius: 12px;
+      border: 1px solid var(--surface-border);
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-color);
+      }
+      
+      .stat-value {
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.5rem;
+        color: #2563eb !important; /* Blue color */
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
+        background: none !important;
+        background-image: none !important;
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        -webkit-text-fill-color: initial !important;
+        text-shadow: none !important;
+      }
+      
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      
+      // Color coding for different stats
+      &:nth-child(1) .stat-value {
+        color: #22c55e !important; /* Green */
+      }
+      
+      &:nth-child(2) .stat-value {
+        color: #3b82f6 !important; /* Blue */
+      }
+      
+      &:nth-child(3) .stat-value {
+        color: #f59e0b !important; /* Orange for dropped classes */
+      }
+    }
+  }
+}
+
+// Classes List Section
+.classes-list {
+  .classes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    h4 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      
+      i {
+        font-size: 1.5rem !important;
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+      }
+    }
+  }
+  
+  .classes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Individual Class Card
+.class-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+    
+  }
+  
+  .class-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+    
+    .class-title {
+      flex: 1;
+      
+      h4 {
+        margin: 0 0 0.25rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.3;
+        cursor: pointer;
+        transition: color 0.2s ease;
+        
+        &:hover {
+          color: var(--primary-color);
+        }
+      }
+      
+      .class-code {
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: var(--surface-100);
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        display: inline-block;
+      }
+    }
+    
+    .class-status {
+      flex-shrink: 0;
+      margin-left: 1rem;
+    }
+  }
+  
+  .class-content {
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      
+      .info-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        
+        .info-icon {
+          width: 20px;
+          height: 20px;
+          margin-right: 0.75rem;
+          color: var(--text-color-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .info-content {
+          flex: 1;
+          
+          .info-label {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+          }
+          
+          .info-value {
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.875rem;
+          }
+        }
+      }
+    }
+    
+    .class-dates {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding: 1rem;
+      background: var(--surface-50);
+      border-radius: 10px;
+      border: 1px solid var(--surface-border);
+      
+      .date-item {
+        text-align: center;
+        flex: 1;
+        
+        .date-label {
+          font-size: 0.75rem;
+          color: var(--text-color-secondary);
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.5rem;
+        }
+        
+        .date-value {
+          font-size: 0.875rem;
+          color: var(--text-color);
+          font-weight: 600;
+        }
+      }
+    }
+    
+    .class-note {
+      background: var(--surface-100);
+      border-left: 3px solid var(--primary-color);
+      padding: 0.75rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 1rem;
+      
+      p {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        font-style: italic;
+      }
+    }
+  }
+  
+  .class-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    
+    .p-button {
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &.p-button-outlined {
+        border-width: 1.5px;
+        
+        &:hover {
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+}
+
+// Status Tags Enhancement - Match dashboard mini colors
+:host ::ng-deep .class-status,
+:host ::ng-deep .profile-status {
+  .p-tag {
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: none;
+    
+    &.p-tag-success {
+      background: #dcfce7; /* Light green background like dashboard mini */
+      color: #22c55e; /* Green text like dashboard mini */
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+    }
+    
+    &.p-tag-info {
+      background: #dbeafe; /* Light blue background like dashboard mini */
+      color: #3b82f6; /* Blue text like dashboard mini */
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+    
+    &.p-tag-warn {
+      background: #fef3c7; /* Light orange background like dashboard mini */
+      color: #f59e0b; /* Orange text like dashboard mini */
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    }
+    
+    &.p-tag-danger {
+      background: linear-gradient(135deg, var(--red-100), var(--red-200));
+      color: var(--red-700);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+    }
+  }
+}
+
+// Empty State Enhancement
+.classes-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--surface-50);
+  border-radius: 16px;
+  border: 2px dashed var(--surface-border);
+  
+  .empty-icon {
+    font-size: 4rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1.5rem;
+    opacity: 0.6;
+  }
+  
+  .empty-title {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .empty-description {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 1rem;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+}
+
+// Loading State Enhancement
+.classes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  
+  .loading-spinner {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    animation: spin 1s linear infinite;
+  }
+  
+  .loading-text {
+    color: var(--text-color-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Responsive Design for Classes Tab
+@media (max-width: 1024px) {
+  .classes-summary .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .classes-list .classes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .classes-summary {
+    padding: 1.5rem;
+    
+    .summary-stats {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+  
+  .class-card {
+    padding: 1.25rem;
+    
+    .class-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+      
+      .class-status {
+        margin-left: 0;
+      }
+    }
+    
+    .class-content .class-dates {
+      flex-direction: column;
+      gap: 0.75rem;
+      
+      .date-item {
+        text-align: left;
+      }
+    }
+  }
+}
+
+// Dark Mode Enhancements
+:host ::ng-deep .app-dark {
+  .classes-summary {
+    background: linear-gradient(135deg, var(--surface-800) 0%, var(--surface-900) 100%);
+    border-color: var(--surface-700);
+    
+  }
+  
+  .class-card {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+    
+    &:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .class-content .class-dates {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+    }
+    
+    .class-content .class-note {
+      background: var(--surface-700);
+    }
+  }
+  
+  .classes-empty-state {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+  }
+}
+
+// Statistics Tab Styles
+.stats-overview {
+  .main-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    
+    .main-stat-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+      
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        
+        i {
+          font-size: 25px;
+          color: var(--primary-color);
+        }
+      }
+      
+      .stat-info {
+        flex: 1;
+        
+        .stat-value {
+          font-size: 2rem;
+          font-weight: 700;
+          color: var(--text-color);
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+          font-size: 0.875rem;
+          color: var(--text-color-secondary);
+          font-weight: 500;
+        }
+      }
+    }
+  }
+  
+  .last-class-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .last-class-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      
+      .last-class-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--primary-50);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: var(--primary-color);
+
+        .pi-calendar {
+          font-size: 25px;
+        }
+      }
+      
+      .last-class-info {
+        .last-class-label {
+          font-size: 0.875rem;
+          color: var(--text-color-secondary);
+          margin-bottom: 0.25rem;
+          font-weight: 500;
+        }
+        
+        .last-class-date {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: var(--text-color);
+        }
+      }
+    }
+  }
+  
+  .module-navigation {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    
+    .module-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        border-color: var(--primary-color);
+      }
+      
+      .module-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        
+        .module-icon {
+          width: 50px;
+          height: 50px;
+          background: var(--primary-50);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.25rem;
+          color: var(--primary-color);
+
+          .pi{
+            font-size: 25px;
+          }
+        }
+        
+        .module-title {
+          h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-color);
+          }
+          
+          p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+          }
+        }
+      }
+      
+      .module-action {
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
+// Section Header Styles
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  
+  h4 {
+    margin: 0;
+    color: var(--text-color);
+  }
+}
+
+// Drawer Form Styles (matching students.scss exactly)
+.student-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.form-section {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--content-border-radius);
+  padding: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  
+  .form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-border);
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  
+  // Optimize for enrollment section - make status field slightly smaller
+  &.enrollment-row {
+    grid-template-columns: 1.1fr 0.9fr;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+    
+    .req {
+      color: #ef4444 !important;
+    }
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  margin-top: 2rem;
+}
+
+.readonly-input {
+  background-color: var(--surface-100);
+  color: var(--text-color-secondary);
+}
+
+.empty-wrapper {
+  text-align: center;
+  padding: 2rem;
+  
+  .empty-icon {
+    font-size: 3rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: var(--text-color-secondary);
+    margin: 0;
+  }
+}
+
+// Dark mode for statistics
+:host ::ng-deep .app-dark {
+  .stats-overview {
+    .main-stat-card {
+      background: var(--surface-800);
+      border-color: var(--surface-700);
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      }
+    }
+    
+    .last-class-card {
+      background: var(--surface-800);
+      border-color: var(--surface-700);
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      }
+      
+      .last-class-icon {
+        background: var(--surface-700);
+      }
+    }
+    
+    .module-card {
+      background: var(--surface-800);
+      border-color: var(--surface-700);
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      }
+      
+      .module-header .module-icon {
+        background: var(--surface-700);
+      }
+    }
+    
+    
+    .section-header {
+      h4 {
+        color: var(--text-color);
+      }
+    }
+    
+    .student-form-grid {
+      .form-section {
+        background: var(--surface-800);
+        border-color: var(--surface-700);
+        
+        .form-section-title {
+          color: var(--text-color);
+          border-bottom-color: var(--surface-700);
+        }
+      }
+      
+      .dialog-actions {
+        border-top-color: var(--surface-700);
+      }
+      
+      .readonly-input {
+        background-color: var(--surface-700);
+        color: var(--text-color-secondary);
+      }
+    }
+    
+    .empty-wrapper {
+      .empty-icon {
+        color: var(--text-color-secondary);
+      }
+      
+      h3 {
+        color: var(--text-color);
+      }
+      
+      p {
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+}

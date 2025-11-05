@@ -1,60 +1,50 @@
 <div class="certificates-container">
-  <div class="stats-grid-responsive" 
-       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;" 
-       [style.grid-template-columns]="'repeat(4, 1fr)'"
-       [style.gap]="'1.5rem'"
-       *ngIf="statistics">
-    <!-- Card 1: Tổng chứng chỉ -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.total_certificates }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Tổng chứng chỉ</div>
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng chứng chỉ</h6>
+          <h4 class="mb-0">{{ statistics.total_certificates }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-crown"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dbeafe; box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15); flex-shrink: 0;">
-        <i class="pi pi-crown" style="font-size: 1.8rem; color: #3b82f6;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã cấp</h6>
+          <h4 class="mb-0">{{ statistics.issued_certificates }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 2: Đã cấp -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.issued_certificates }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Đã cấp</div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Hết hạn</h6>
+          <h4 class="mb-0">{{ statistics.expired_certificates }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dcfce7; box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15); flex-shrink: 0;">
-        <i class="pi pi-check-circle" style="font-size: 1.8rem; color: #22c55e;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Chờ cấp</h6>
+          <h4 class="mb-0">{{ statistics.pending_certificates }}</h4>
+        </div>
+        <div class="icon-container text-purple-500">
+          <i class="pi pi-hourglass"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 3: Hết hạn -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.expired_certificates }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Hết hạn</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fed7aa; box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15); flex-shrink: 0;">
-        <i class="pi pi-clock" style="font-size: 1.8rem; color: #f97316;"></i>
-      </div>
-    </div>
-    
-    <!-- Card 4: Chờ cấp -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.pending_certificates }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Chờ cấp</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #e9d5ff; box-shadow: 0 4px 8px rgba(139, 92, 246, 0.15); flex-shrink: 0;">
-        <i class="pi pi-hourglass" style="font-size: 1.8rem; color: #8b5cf6;"></i>
-      </div>
-    </div>
+    </p-card>
   </div>
 
   <!-- Main Content -->
@@ -82,7 +72,7 @@
           icon="pi pi-plus" 
           label="Thêm chứng chỉ" 
           (click)="openNew()"
-          [outlined]="true">
+          styleClass="p-button-primary">
         </p-button>
       </div>
     </div>
@@ -103,6 +93,18 @@
         </p-iconField>
       </div>
       
+      <!-- Class Filter -->
+      <div class="min-w-0" style="min-width: 250px;">
+        <p-select 
+          [ngModel]="selectedClassFilter"
+          (ngModelChange)="selectedClassFilter = $event; onClassFilterChange()"
+          [options]="availableClasses"
+          placeholder="Tất cả lớp học"
+          [filter]="true"
+          class="w-full">
+        </p-select>
+      </div>
+      
       <!-- Expiry Date Filter -->
       <div class="min-w-0" style="min-width: 250px;">
         <p-select 
@@ -110,6 +112,7 @@
           (ngModelChange)="selectedExpiryFilter = $event; onExpiryFilterChange()"
           [options]="expirySearchOptions"
           placeholder="Lọc theo thời hạn"
+          [filter]="true"
           class="w-full">
         </p-select>
       </div>
@@ -268,9 +271,9 @@
       <ng-template pTemplate="emptymessage">
         <tr>
           <td colspan="8" class="text-center">
-            <div class="py-4">
-              <i class="pi pi-inbox text-4xl mb-2"></i>
-              <p>Không có chứng chỉ nào</p>
+            <div class="empty-state">
+              <i class="pi pi-inbox empty-icon"></i>
+              <p class="empty-text">Không có chứng chỉ nào</p>
             </div>
           </td>
         </tr>
@@ -282,214 +285,153 @@
   <p-drawer 
     [(visible)]="drawerVisible" 
     [position]="'right'" 
-    [style]="{ width: '500px' }"
-    [modal]="true">
+    [style]="{ width: '700px' }"
+    [modal]="true"
+    styleClass="certificate-drawer">
     
     <ng-template pTemplate="header">
       <h4 class="m-0">{{ isEditMode ? 'Chỉnh sửa chứng chỉ' : 'Thêm chứng chỉ mới' }}</h4>
     </ng-template>
     
     <ng-template pTemplate="content">
-      <div class="certificate-form-grid p-fluid" *ngIf="formCertificate; else noFormTemplate">
-        <!-- Student Selection -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Học viên <span class="req" style="color: #ef4444 !important;">*</span></label>
-          <p-select 
-            id="student_id"
-            name="student_id"
-            [ngModel]="formCertificate.student_id" 
-            (ngModelChange)="formCertificate && (formCertificate.student_id = $event)"
-            [options]="availableStudents"
-            placeholder="Chọn học viên"
-            [filter]="true"
-            filterBy="label"
-            class="w-full"
-            [required]="true">
-          </p-select>
-          <small *ngIf="!formCertificate.student_id || formCertificate.student_id === 0" style="color: #ef4444 !important;">
-            Vui lòng chọn học viên
-          </small>
-        </div>
-
-        <!-- Certificate Type Selection -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Loại chứng chỉ <span class="req" style="color: #ef4444 !important;">*</span></label>
-                <p-select 
-                  id="certificate_id"
-                  name="certificate_id"
-                  [ngModel]="formCertificate.certificate_id" 
-                  (ngModelChange)="formCertificate && (formCertificate.certificate_id = $event); onCertificateTypeChange($event)"
-                  [options]="availableCertificateTypes"
-                  placeholder="Chọn loại chứng chỉ"
-                  [filter]="true"
-                  filterBy="label"
-                  class="w-full"
-                  [required]="true">
-                </p-select>
-          <small *ngIf="!formCertificate.certificate_id || formCertificate.certificate_id === 0" style="color: #ef4444 !important;">
-            Vui lòng chọn loại chứng chỉ
-          </small>
-        </div>
-
-        <!-- Class Selection -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Lớp học</label>
-          <p-select 
-            id="class_id"
-            name="class_id"
-            [ngModel]="formCertificate.class_id" 
-            (ngModelChange)="formCertificate && (formCertificate.class_id = $event)"
-            [options]="availableClasses"
-            placeholder="Chọn lớp học"
-            [filter]="true"
-            filterBy="label"
-            class="w-full">
-          </p-select>
-        </div>
-
-        <!-- Certificate Number -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Số chứng chỉ <span class="req" style="color: #ef4444 !important;">*</span></label>
-          <input 
-            pInputText 
-            id="certificate_number"
-            name="certificate_number"
-            [ngModel]="formCertificate.certificate_number"
-            (ngModelChange)="formCertificate && (formCertificate.certificate_number = $event)"
-            placeholder="Nhập số chứng chỉ"
-            class="w-full"
-            pattern="[A-Z0-9-]+"
-            title="Chỉ được chứa chữ cái in hoa, số và dấu gạch ngang">
-          <small style="color: #ef4444 !important;">Chỉ được chứa chữ cái in hoa, số và dấu gạch ngang</small>
-        </div>
-
-        <!-- Issued Date -->
-        <div class="form-group full-width" style="margin-bottom: 0.5rem;">
-          <label>Ngày cấp <span class="req" style="color: #ef4444 !important;">*</span></label>
-          <p-datePicker 
-            id="issued_date"
-            name="issued_date"
-            [ngModel]="formCertificate.issued_date"
-            (ngModelChange)="formCertificate && (formCertificate.issued_date = $event); onIssuedDateChange()"
-            [showIcon]="true"
-            dateFormat="dd/mm/yy"
-            class="w-full">
-          </p-datePicker>
-        </div>
-
-        <!-- Expiry Date -->
-        <div class="form-group full-width" style="margin-bottom: 0.5rem;">
-          <label>
-            Ngày hết hạn
-            <span *ngIf="currentCertificateTypeDetails?.isPermanent" class="text-green-600">(Vĩnh viễn)</span>
-            <span *ngIf="!currentCertificateTypeDetails?.isPermanent && currentCertificateTypeDetails?.validityPeriod" 
-                  class="text-blue-600">({{currentCertificateTypeDetails.validityPeriod}} tháng)</span>
-          </label>
-          <p-datePicker 
-            id="expiry_date"
-            name="expiry_date"
-            [ngModel]="formCertificate.expiry_date"
-            (ngModelChange)="formCertificate && (formCertificate.expiry_date = $event)"
-            [showIcon]="true"
-            dateFormat="dd/mm/yy"
-            class="w-full"
-            [disabled]="currentCertificateTypeDetails?.isPermanent">
-          </p-datePicker>
-          <small *ngIf="currentCertificateTypeDetails?.isPermanent" class="text-green-600">
-            Chứng chỉ vĩnh viễn không có ngày hết hạn
-          </small>
-          <small *ngIf="!currentCertificateTypeDetails?.isPermanent && currentCertificateTypeDetails?.validityPeriod" class="text-blue-600">
-            Tự động tính dựa trên thời hạn {{currentCertificateTypeDetails.validityPeriod}} tháng
-          </small>
-        </div>
-
-        <!-- Certificate Type Information -->
-        <div *ngIf="currentCertificateTypeDetails" class="form-group full-width" style="margin-bottom: 0.5rem;">
-          <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 class="font-semibold text-blue-800 mb-2">Thông tin loại chứng chỉ</h4>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span class="font-medium">Loại:</span>
-                <span [class]="currentCertificateTypeDetails.isPermanent ? 'text-green-600' : 'text-orange-600'">
-                  {{currentCertificateTypeDetails.isPermanent ? 'Vĩnh viễn' : 'Có thời hạn'}}
-                </span>
-              </div>
-              <div *ngIf="!currentCertificateTypeDetails.isPermanent && currentCertificateTypeDetails.validityPeriod">
-                <span class="font-medium">Thời hạn:</span>
-                <span class="text-blue-600">{{currentCertificateTypeDetails.validityPeriod}} tháng</span>
-              </div>
-              <div>
-                <span class="font-medium">Trạng thái:</span>
-                <span [class]="currentCertificateTypeDetails.status === 'Hoạt động' ? 'text-green-600' : 'text-red-600'">
-                  {{currentCertificateTypeDetails.status}}
-                </span>
-              </div>
-            </div>
-            <div *ngIf="currentCertificateTypeDetails.criteria" class="mt-2">
-              <span class="font-medium text-sm">Tiêu chí:</span>
-              <p class="text-sm text-gray-700 mt-1">{{currentCertificateTypeDetails.criteria}}</p>
-            </div>
+      <div class="certificate-form p-fluid" *ngIf="formCertificate; else noFormTemplate">
+        <div class="form-card">
+          <!-- Row 1: Class và Certificate Type -->
+          <div class="form-row">
+          <div class="field">
+            <label>Lớp học <span class="required">*</span></label>
+            <p-select 
+              id="class_id"
+              name="class_id"
+              [ngModel]="isEditMode ? formCertificate.class_id : selectedClassId" 
+              (ngModelChange)="onClassSelectionChange($event)"
+              [options]="availableClasses"
+              placeholder="Chọn lớp học"
+              [filter]="true"
+              filterBy="label"
+              class="w-full"
+              [required]="true"
+              [disabled]="isEditMode">
+            </p-select>
+            <small *ngIf="isEditMode" class="text-gray-500">Lớp học không thể thay đổi khi chỉnh sửa</small>
+          </div>
+          
+          <div class="field">
+            <label>Loại chứng chỉ <span class="required">*</span></label>
+            <p-select 
+              id="certificate_id"
+              name="certificate_id"
+              [ngModel]="formCertificate.certificate_id" 
+              (ngModelChange)="formCertificate && (formCertificate.certificate_id = $event); onCertificateTypeChange($event)"
+              [options]="availableCertificateTypes"
+              placeholder="Chọn loại chứng chỉ"
+              [filter]="true"
+              filterBy="label"
+              class="w-full"
+              [required]="true">
+            </p-select>
           </div>
         </div>
 
-        <!-- Status -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Trạng thái <span class="req" style="color: #ef4444 !important;">*</span></label>
-          <p-select 
-            id="status"
-            name="status"
-            [ngModel]="formCertificate.status" 
-            (ngModelChange)="formCertificate && (formCertificate.status = $event)"
-            [options]="certificateStatusOptions"
-            placeholder="Chọn trạng thái"
-            class="w-full">
-          </p-select>
+        <!-- Row 2: Student Selection (full width) -->
+        <div class="form-row full-width" *ngIf="!isEditMode && selectedClassId">
+          <div class="field">
+            <label>Học viên trong lớp <span class="required">*</span></label>
+            <p-multiSelect 
+              id="student_ids"
+              name="student_ids"
+              [ngModel]="isEditMode ? [formCertificate.student_id] : selectedStudentIds" 
+              (ngModelChange)="onStudentSelectionChange($event)"
+              [options]="availableStudentsInClass"
+              placeholder="Chọn học viên để cấp chứng chỉ"
+              [filter]="true"
+              [showClear]="true"
+              class="w-full"
+              [required]="true"
+              [maxSelectedLabels]="0"
+              [selectedItemsLabel]="(isEditMode ? [formCertificate.student_id] : selectedStudentIds).length + ' ' + vi.selectedItems"
+              [disabled]="isEditMode">
+            </p-multiSelect>
+            <small *ngIf="isEditMode" class="text-gray-500">Học viên không thể thay đổi khi chỉnh sửa</small>
+          </div>
         </div>
 
-        <!-- Issued By -->
-        <div class="field" style="margin-bottom: 0.5rem;">
-          <label class="font-semibold">Người cấp</label>
-          <input 
-            pInputText 
-            id="issued_by"
-            name="issued_by"
-            [ngModel]="formCertificate.issued_by"
-            (ngModelChange)="formCertificate && (formCertificate.issued_by = $event)"
-            placeholder="Nhập tên người cấp"
-            class="w-full">
+        <!-- Row 3: Certificate Number và Status -->
+        <div class="form-row">
+          <div class="field">
+            <label for="certificate_number">Số chứng chỉ <span class="required">*</span></label>
+            <input 
+              pInputText 
+              id="certificate_number"
+              name="certificate_number"
+              [ngModel]="getCertificateNumberDisplay()"
+              [readonly]="selectedStudentIds.length > 1"
+              placeholder="Nhập số chứng chỉ"
+              class="w-full">
+          </div>
+          
+          <div class="field">
+            <label>Trạng thái <span class="required">*</span></label>
+            <p-select 
+              id="status"
+              name="status"
+              [ngModel]="formCertificate.status" 
+              (ngModelChange)="formCertificate && (formCertificate.status = $event)"
+              [options]="certificateStatusOptions"
+              placeholder="Chọn trạng thái"
+              class="w-full">
+            </p-select>
+          </div>
         </div>
 
-        <!-- Signature -->
-        <div class="certificate-form-field" style="margin-bottom: 0.5rem;">
-          <label>Chữ ký</label>
-          <input 
-            pInputText 
-            id="signature"
-            name="signature"
-            [ngModel]="formCertificate.signature"
-            (ngModelChange)="formCertificate && (formCertificate.signature = $event)"
-            placeholder="Nhập chữ ký"
-            class="w-full">
+        <!-- Row 4: Issued Date và Expiry Date -->
+        <div class="form-row">
+          <div class="field">
+            <label>Ngày cấp <span class="required">*</span></label>
+            <p-datePicker 
+              id="issued_date"
+              name="issued_date"
+              [ngModel]="formCertificate.issued_date"
+              (ngModelChange)="formCertificate && (formCertificate.issued_date = $event); onIssuedDateChange()"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              class="w-full">
+            </p-datePicker>
+          </div>
+          
+          <div class="field">
+            <label>Ngày hết hạn</label>
+            <p-datePicker 
+              id="expiry_date"
+              name="expiry_date"
+              [ngModel]="formCertificate.expiry_date"
+              (ngModelChange)="formCertificate && (formCertificate.expiry_date = $event)"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              class="w-full"
+              [disabled]="currentCertificateTypeDetails?.isPermanent">
+            </p-datePicker>
+          </div>
         </div>
 
-        <!-- Notes -->
-        <div class="form-group full-width" style="margin-bottom: 0.5rem;">
-          <label>Ghi chú</label>
-          <textarea 
-            pInputTextarea 
-            id="note"
-            name="note"
-            [ngModel]="formCertificate.note"
-            (ngModelChange)="formCertificate && (formCertificate.note = $event)"
-            rows="3"
-            placeholder="Nhập ghi chú"
-            class="w-full">
-          </textarea>
+        <!-- Row 5: Issued By (full width) -->
+        <div class="form-row full-width">
+          <div class="field">
+            <label for="issued_by">Người cấp</label>
+            <input 
+              pInputText 
+              id="issued_by"
+              name="issued_by"
+              [ngModel]="formCertificate.issued_by"
+              (ngModelChange)="formCertificate && (formCertificate.issued_by = $event)"
+              placeholder="Nhập tên người cấp"
+              class="w-full">
+          </div>
         </div>
-        
-        <!-- Dialog Actions -->
-        <div class="dialog-actions full-width flex justify-content-end align-items-center gap-3 w-full"
-             style="display: flex; justify-content: flex-end; width: 100%; margin-top: 1rem;">
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
           <button 
             pButton 
             label="Hủy" 
@@ -499,9 +441,10 @@
           </button>
           <button 
             pButton 
-            label="{{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}" 
+            [label]="getSaveButtonLabel()" 
             (click)="saveCertificate()"
-            [disabled]="saving || !formCertificate.student_id || !formCertificate.certificate_id">
+            [disabled]="saving || !canSave()"
+            [loading]="saving">
           </button>
         </div>
       </div>

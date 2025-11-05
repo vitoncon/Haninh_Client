@@ -1,5 +1,128 @@
 .certificates-container {
   
+  // Statistics Cards Grid - following responsive patterns from other modules
+  .statistics-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 1400px) {
+      gap: 2rem;
+    }
+    
+    .p-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--content-border-radius, 0.75rem);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all var(--element-transition-duration, 0.25s);
+      height: 100%;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      }
+
+      // Reduce p-card-body padding to make it smaller
+      ::ng-deep .p-card-body {
+        padding: 0.5rem !important;
+      }
+
+      .flex {
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+
+        .flex-1 {
+          flex: 1;
+
+          h6 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0;
+            color: var(--text-color-secondary);
+            transition: color 0.3s ease;
+          }
+
+          h4 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+          }
+
+          .mb-0 {
+            margin-top: 0.5rem !important;
+          }
+        }
+
+        // Icon container with rounded background
+        .icon-container {
+          width: 60px;
+          height: 60px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+
+          i {
+            font-size: 1.8rem;
+            transition: all 0.3s ease;
+          }
+        }
+
+        // Icon colors with semantic meaning and backgrounds
+        .text-blue-500 {
+          color: #3b82f6;
+          background: #dbeafe;
+          box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+        }
+        .text-green-500 {
+          color: #10b981;
+          background: #dcfce7;
+          box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+        }
+        .text-orange-500 {
+          color: #f59e0b;
+          background: #fed7aa;
+          box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+        }
+        .text-purple-500 {
+          color: #8b5cf6;
+          background: #e9d5ff;
+          box-shadow: 0 4px 8px rgba(139, 92, 246, 0.15);
+        }
+      }
+
+      // Dark mode card adjustments
+      .app-dark & {
+        background: var(--surface-700);
+        border-color: var(--surface-600);
+
+        &:hover {
+          background: var(--surface-600);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+        }
+      }
+    }
+  }
+  
   // Stats grid responsive background
   .stats-grid-responsive {
     background: transparent;
@@ -8,6 +131,39 @@
       background: rgba(255, 255, 255, 0.02);
       border-radius: 12px;
       padding: 1rem;
+    }
+  }
+  
+  // Dark mode table styling
+  .dark {
+    .p-datatable {
+      .p-datatable-tbody > tr {
+        transition: background-color 0.15s ease-in-out !important;
+        color: var(--text-color) !important;
+        
+        &:nth-child(odd) {
+          background: #1a1a1a !important; // Dòng lẻ: đen đậm
+          
+          &:hover {
+            background: #2a2a2a !important;
+          }
+        }
+        
+        &:nth-child(even) {
+          background: #222222 !important; // Dòng chẵn: đen sáng hơn
+          
+          &:hover {
+            background: #333333 !important;
+          }
+        }
+      }
+      
+      .p-datatable-tbody > tr > td {
+        border-bottom: 1px solid var(--surface-border) !important;
+        padding: 1rem 0.75rem;
+        color: var(--text-color) !important;
+        transition: color 0.3s ease, border-color 0.3s ease;
+      }
     }
   }
   
@@ -56,7 +212,6 @@
   .p-card {
     h2 {
       font-weight: 700;
-      font-size: 1.875rem;
     }
 
     // Header Section
@@ -98,7 +253,6 @@
           border-radius: 8px;
           border: 1px solid #d1d5db;
           padding: 0.75rem 1rem 0.75rem 2.5rem;
-          font-size: 0.875rem;
           transition: all 0.2s ease;
 
           &:focus {
@@ -130,32 +284,50 @@
 
   // Data Table
   .p-datatable {
-    .p-datatable-tbody > tr > td {
-      .font-semibold {
-        font-weight: 600;
-        font-size: 0.875rem;
+    .p-datatable-tbody > tr {
+      transition: background-color 0.15s ease-in-out !important;
+      color: var(--text-color) !important;
+      
+      // Light mode alternating rows
+      &:nth-child(odd) {
+        background: #ffffff !important; // Dòng lẻ: trắng
+        
+        &:hover {
+          background: #f8fafc !important;
+        }
       }
-
-      .text-sm {
-        font-size: 0.75rem;
+      
+      &:nth-child(even) {
+        background: #f8fafc !important; // Dòng chẵn: xám nhạt
+        
+        &:hover {
+          background: #f1f5f9 !important;
+        }
       }
+      
+      > td {
+        .font-semibold {
+          font-weight: 600;
+        }
 
-      code {
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      }
+   
 
-      .flex.gap-2 .p-button {
-        border-radius: 6px;
-        padding: 0.5rem;
-        min-width: auto;
-        height: auto;
+        code {
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        .flex.gap-2 .p-button {
+          border-radius: 6px;
+          padding: 0.5rem;
+          min-width: auto;
+          height: auto;
 
         &.p-button-sm {
           padding: 0.375rem;
         }
+      }
       }
     }
   }
@@ -164,7 +336,6 @@
   .p-drawer {
     .p-drawer-header h4 {
       font-weight: 700;
-      font-size: 1.25rem;
     }
 
     .p-drawer-content {
@@ -173,7 +344,6 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 3rem;
-        padding: 1rem; // Thêm padding cho certificate-form-grid để tách nội dung bên trong
         
         @media (max-width: 768px) {
           grid-template-columns: 1fr;
@@ -218,7 +388,6 @@
           display: block;
           margin-bottom: 0.75rem;
           font-weight: 600;
-          font-size: 0.875rem;
           color: var(--text-color, #374151);
           
           .req {
@@ -234,12 +403,29 @@
         textarea {
           width: 100%;
           margin-bottom: 0.5rem;
+          
+          // Disabled state styling
+          &:disabled {
+            background: var(--surface-hover);
+            border-color: var(--surface-border);
+            color: var(--text-color-secondary);
+            cursor: not-allowed;
+            opacity: 0.6;
+          }
+        }
+        
+        // Specific styling for PrimeNG components when disabled
+        .p-select:disabled,
+        .p-multiselect:disabled {
+          .p-select-label,
+          .p-multiselect-label {
+            cursor: not-allowed;
+          }
         }
         
         small {
           margin-top: 0.5rem;
           margin-bottom: 0.5rem;
-          font-size: 0.75rem;
           display: block;
           
           &:not(.text-green-600):not(.text-blue-600) {
@@ -346,7 +532,6 @@
   // Tags
   .p-tag {
     border-radius: 6px;
-    font-size: 0.75rem;
     font-weight: 600;
     padding: 0.25rem 0.75rem;
   }
@@ -411,9 +596,7 @@
   @media (max-width: 480px) {
     padding: 0.75rem;
 
-    h2 {
-      font-size: 1.5rem;
-    }
+
 
     .p-drawer .p-drawer-content {
       .certificate-form-field {
@@ -433,7 +616,7 @@
       .certificate-form-field.full-width {
         margin-top: 2rem;
         margin-bottom: 2rem;
-        padding: 1.25rem 0.75rem;
+        padding: 0 ;
       }
       
       .form-divider {
@@ -453,3 +636,147 @@
     }
   }
 }
+
+// Certificate drawer styling using layout system
+.certificate-drawer {
+  .p-drawer {
+    width: 700px;
+    height: 100vh;
+    
+    .p-drawer-content {
+      padding: 0;
+    }
+    
+    .p-drawer-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-card);
+      
+      h4 {
+        margin: 0;
+        color: var(--text-color);
+      }
+    }
+  }
+}
+
+.certificate-form {
+  padding: 1rem;
+  background: var(--surface-card);
+  height: auto;
+  overflow: hidden;
+  
+  // Card container cho form content
+  .form-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius);
+    padding: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  // 2 cột layout
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    
+    &.full-width {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .field {
+    margin-bottom: 0;
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+      
+      .required {
+        color: var(--p-red-500);
+        margin-left: 2px;
+      }
+    }
+    
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--surface-border);
+    background: var(--surface-card);
+  }
+}
+
+
+
+// Additional specificity for light mode
+:host ::ng-deep .p-datatable-tbody > tr:nth-child(odd) {
+  background: #ffffff !important;
+}
+
+:host ::ng-deep .p-datatable-tbody > tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+:host ::ng-deep .p-datatable-tbody > tr:nth-child(odd):hover {
+  background: #f8fafc !important;
+}
+
+:host ::ng-deep .p-datatable-tbody > tr:nth-child(even):hover {
+  background: #f1f5f9 !important;
+}
+
+// Dark mode table styling - global scope
+.app-dark :host ::ng-deep {
+  .p-datatable-tbody > tr {
+    &:nth-child(odd) {
+      background: #1a1a1a !important; // Dòng lẻ: đen đậm
+      
+      &:hover {
+        background: #2a2a2a !important;
+      }
+    }
+    
+    &:nth-child(even) {
+      background: #222222 !important; // Dòng chẵn: đen sáng hơn
+      
+      &:hover {
+        background: #333333 !important;
+      }
+    }
+  }
+}
+
+// Empty state styling
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1rem;
+  text-align: center;
+  
+  .empty-icon {
+    font-size: 2rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+  }
+  
+  .empty-text {
+    color: var(--text-color-secondary);
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+
+
+
+

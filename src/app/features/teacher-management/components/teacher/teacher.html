@@ -1,61 +1,50 @@
 <div class="teachers-container">
-  <!-- Statistics Dashboard -->
-  <div class="stats-grid-responsive" 
-       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;" 
-       [style.grid-template-columns]="'repeat(4, 1fr)'"
-       [style.gap]="'1.5rem'"
-       *ngIf="statistics">
-    <!-- Card 1: Tổng giảng viên -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.total_teachers }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Tổng giảng viên</div>
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng giảng viên</h6>
+          <h4 class="mb-0">{{ statistics.total_teachers }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-users"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dbeafe; box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15); flex-shrink: 0;">
-        <i class="pi pi-users" style="font-size: 1.8rem; color: #3b82f6;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đang dạy</h6>
+          <h4 class="mb-0">{{ statistics.active_teachers }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 2: Đang dạy -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.active_teachers }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Đang dạy</div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tạm nghỉ</h6>
+          <h4 class="mb-0">{{ statistics.on_leave_teachers }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
       </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #dcfce7; box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15); flex-shrink: 0;">
-        <i class="pi pi-check-circle" style="font-size: 1.8rem; color: #22c55e;"></i>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã nghỉ</h6>
+          <h4 class="mb-0">{{ statistics.inactive_teachers }}</h4>
+        </div>
+        <div class="icon-container text-red-500">
+          <i class="pi pi-times-circle"></i>
+        </div>
       </div>
-    </div>
-    
-    <!-- Card 3: Tạm nghỉ -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.on_leave_teachers }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Tạm nghỉ</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fed7aa; box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15); flex-shrink: 0;">
-        <i class="pi pi-clock" style="font-size: 1.8rem; color: #f97316;"></i>
-      </div>
-    </div>
-    
-    <!-- Card 4: Đã nghỉ -->
-    <div class="stat-card-item" style="border-radius: 12px; padding: 1.5rem; transition: all 0.25s ease-in-out; display: flex; align-items: center; justify-content: space-between;" 
-         onmouseover="this.style.transform='translateY(-4px)'"
-         onmouseout="this.style.transform='translateY(0)'">
-      <div style="flex: 1;">
-        <div class="stat-number" style="font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;">{{ statistics.inactive_teachers }}</div>
-        <div class="stat-label" style="font-size: 0.9rem; font-weight: 500;">Đã nghỉ</div>
-      </div>
-      <div style="width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fee2e2; box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15); flex-shrink: 0;">
-        <i class="pi pi-times-circle" style="font-size: 1.8rem; color: #ef4444;"></i>
-      </div>
-    </div>
+    </p-card>
   </div>
   <!-- Main Content -->
   <p-card>
@@ -80,9 +69,9 @@
         </p-button>
         <p-button 
           icon="pi pi-plus" 
-          label="Thêm giảng viên" 
+          label="Thêm giáo viên" 
           (click)="onCreate()"
-          [outlined]="true">
+          styleClass="p-button-primary">
         </p-button>
       </div>
     </div>
@@ -381,11 +370,24 @@
           <!-- Teacher Code -->
           <div class="form-group">
             <label>Mã giảng viên <span class="req" style="color: #ef4444 !important;">*</span></label>
-            <input 
-              pInputText 
-              [(ngModel)]="formTeacher.teacher_code"
-              placeholder="Nhập mã giảng viên"
-              class="w-full">
+            <div class="flex gap-2">
+              <input 
+                pInputText 
+                [(ngModel)]="formTeacher.teacher_code"
+                placeholder="Nhập mã giảng viên"
+                class="flex-1"
+                [readonly]="isEditMode()"
+                [class.readonly-input]="isEditMode()">
+              <p-button 
+                *ngIf="!isEditMode()"
+                icon="pi pi-refresh" 
+                (click)="generateNewCode()"
+                [outlined]="true"
+                pTooltip="Tạo mã mới"
+                tooltipPosition="top">
+              </p-button>
+            </div>
+            <small *ngIf="isEditMode()" class="text-gray-500">Mã giảng viên không thể thay đổi khi chỉnh sửa</small>
           </div>
 
           <!-- Teacher Name -->
@@ -401,7 +403,7 @@
           <!-- Gender and DOB -->
           <div class="form-row">
             <div class="form-group">
-              <label>Giới tính</label>
+              <label>Giới tính <span class="req" style="color: #ef4444 !important;">*</span></label>
               <p-select 
                 [ngModel]="formTeacher.gender"
                 (ngModelChange)="formTeacher.gender = $event"
@@ -461,7 +463,7 @@
           <!-- Department and Specialization -->
           <div class="form-row">
             <div class="form-group">
-              <label>Khoa/Bộ môn</label>
+              <label>Khoa/Bộ môn <span class="req" style="color: #ef4444 !important;">*</span></label>
               <p-select 
                 [ngModel]="formTeacher.department"
                 (ngModelChange)="formTeacher.department = $event"
@@ -472,7 +474,7 @@
               </p-select>
             </div>
             <div class="form-group">
-              <label>Chuyên môn <span class="text-gray-500 text-sm">(Tùy chọn)</span></label>
+              <label>Chuyên môn <span class="text-gray-500">(Tùy chọn)</span></label>
               <input 
                 pInputText 
                 [(ngModel)]="formTeacher.specialization"
@@ -484,7 +486,7 @@
           <!-- Degree and Experience -->
           <div class="form-row">
             <div class="form-group">
-              <label>Bằng cấp</label>
+              <label>Bằng cấp <span class="req" style="color: #ef4444 !important;">*</span></label>
               <p-select 
                 [ngModel]="formTeacher.degree"
                 (ngModelChange)="formTeacher.degree = $event"

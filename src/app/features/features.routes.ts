@@ -10,11 +10,14 @@ import { StudentDetail } from './students-management/components/student-detail/s
 import { Schedule } from './schedule/components/schedule/schedule';
 import { Students } from './students-management/components/students/students';
 import { StudyResults } from './study-results/components/study-results/study-results';
-import { StudyResultDetail } from './study-results/components/study-result-detail/study-result-detail';
+import { ClassStudyResults } from './class-management/components/class-study-results/class-study-results/class-study-results';
+import { ExamDetail } from './class-management/components/class-study-results/exam-detail/exam-detail';
+import { ClassSchedule } from './class-management/components/class-schedule/class-schedule';
 import { Certificates } from './certificates/components/certificates/certificates';
 import { Teacher } from './teacher-management/components/teacher/teacher';
 import { TeachingAssignments } from './teaching-assignments/components/teaching-assignments/teaching-assignments';
 import { Fees } from './fees/components/fees/fees';
+import { FeesDetail } from './fees/components/fees-detail/fees-detail';
 
 export default [   
     // quan ly khoa hoc
@@ -43,6 +46,24 @@ export default [
         component: ClassDetail 
     },
     { 
+        path: 'class/:id/study-results', 
+        data: { breadcrumb: 'Kết quả học tập lớp' }, 
+        canActivate: [permissionGuard([PermissionService.PERMISSIONS.CLASS_VIEW])], 
+        component: ClassStudyResults 
+    },
+    { 
+        path: 'class/:id/study-result/:examId', 
+        data: { breadcrumb: 'Chi tiết bài kiểm tra' }, 
+        canActivate: [permissionGuard([PermissionService.PERMISSIONS.CLASS_VIEW])], 
+        component: ExamDetail 
+    },
+    { 
+        path: 'class/:id/schedule', 
+        data: { breadcrumb: 'Lịch học lớp' }, 
+        canActivate: [permissionGuard([PermissionService.PERMISSIONS.CLASS_VIEW])], 
+        component: ClassSchedule 
+    },
+    { 
         path: 'schedule', 
         data: { breadcrumb: 'Lịch học' }, 
         canActivate: [permissionGuard([PermissionService.PERMISSIONS.SCHEDULE_VIEW])], 
@@ -66,12 +87,6 @@ export default [
         data: { breadcrumb: 'Kết quả học tập' }, 
         canActivate: [permissionGuard([PermissionService.PERMISSIONS.STUDY_RESULTS_VIEW])], 
         component: StudyResults 
-    },
-    {
-        path: 'study-results/detail/:id',
-        data: { breadcrumb: 'Chi tiết kết quả học tập' },
-        canActivate: [permissionGuard([PermissionService.PERMISSIONS.STUDY_RESULTS_VIEW])],
-        component: StudyResultDetail
     },
     { 
         path: 'certificates', 
@@ -104,6 +119,12 @@ export default [
         data: { breadcrumb: 'Quản lý học phí' }, 
         canActivate: [permissionGuard([PermissionService.PERMISSIONS.FEES_VIEW])], 
         component: Fees 
+    },
+    { 
+        path: 'fees/detail/:id', 
+        data: { breadcrumb: 'Chi tiết học phí' }, 
+        canActivate: [permissionGuard([PermissionService.PERMISSIONS.FEES_VIEW])], 
+        component: FeesDetail 
     },
     // default route
     { path: '**', redirectTo: '/notfound' },

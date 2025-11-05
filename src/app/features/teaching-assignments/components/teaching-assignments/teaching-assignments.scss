@@ -1,0 +1,2013 @@
+// Teaching Assignments Component Styles
+// Following layout system conventions
+
+// Page Header
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  transition: border-color var(--transition-duration);
+
+  .header-title {
+    h1 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+      
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    .header-subtitle {
+      margin: 0;
+      color: var(--text-color-secondary);
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+}
+
+// Standalone header actions for direct usage
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  
+  // First button (Tự động gợi ý) stays on the left
+  button:first-child {
+    margin-right: auto;
+  }
+  
+  // Last two buttons (Lưu tất cả, Xuất Excel) will be grouped on the right
+  // This happens automatically due to margin-right: auto on the first button
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    
+    button:first-child {
+      margin-right: 0;
+    }
+  }
+}
+
+// Filter Toggle Button
+.filter-toggle-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+  
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition-duration);
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Filter Bar using schedule component style
+.filter-bar {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--content-border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  &.collapsed {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-section {
+    .filter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .filter-title {
+      color: var(--text-color);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+      }
+    }
+
+    .filter-toggle-btn {
+      padding: 0.375rem;
+      min-width: auto;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      border: 1px solid var(--primary-color);
+      background: transparent;
+      color: var(--primary-color);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--primary-color);
+        color: var(--primary-contrast-color);
+        transform: scale(1.05);
+      }
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--primary-200);
+      }
+
+      i {
+        font-size: 0.875rem;
+      }
+    }
+
+    .filter-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr auto;
+      gap: 1rem;
+      align-items: end;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 1;
+      max-height: 200px;
+      overflow: hidden;
+
+      &.hidden {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        padding-top: 0;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .filter-label {
+          color: var(--text-color);
+          font-weight: 500;
+          font-size: 0.875rem;
+          margin: 0;
+        }
+
+        .filter-select {
+          width: 100%;
+
+          ::ng-deep {
+            .p-select {
+              width: 100%;
+              border-radius: 6px !important;
+
+              .p-select-label {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                border: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                color: var(--text-color);
+                border-radius: 6px;
+                transition: all var(--transition-duration);
+                height: 3rem;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+
+                &:focus {
+                  outline: none;
+                  border-color: var(--primary-color);
+                  box-shadow: var(--focus-ring-shadow);
+                }
+              }
+
+              .p-select-trigger {
+                border-left: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                color: var(--text-color-secondary);
+                border-radius: 0 6px 6px 0;
+              }
+            }
+          }
+        }
+
+        .search-field {
+          width: 100%;
+
+          ::ng-deep {
+            .p-iconfield {
+              width: 100%;
+              
+              .p-inputtext {
+                width: 100%;
+                padding: 0.75rem 1rem 0.75rem 2.5rem;
+                font-size: 0.875rem;
+                border: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                color: var(--text-color);
+                border-radius: 6px;
+                transition: all var(--transition-duration);
+                height: 3rem;
+                box-sizing: border-box;
+
+                &:focus {
+                  outline: none;
+                  border-color: var(--primary-color);
+                  box-shadow: var(--focus-ring-shadow);
+                }
+
+                &::placeholder {
+                  color: var(--text-color-secondary);
+                  font-size: 0.875rem;
+                }
+              }
+
+              .p-inputicon {
+                position: absolute;
+                left: 0.75rem;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-color-secondary);
+                font-size: 0.875rem;
+                pointer-events: none;
+              }
+            }
+          }
+        }
+      }
+
+      .filter-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: 2.5rem;
+        width: fit-content;
+
+        .filter-reset-btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--primary-color);
+          background: transparent;
+          border: 1px solid var(--primary-color);
+          border-radius: 6px;
+          transition: all var(--transition-duration);
+          cursor: pointer;
+          white-space: nowrap;
+          min-width: fit-content;
+          height: 3rem;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          &:hover {
+            color: var(--primary-contrast-color);
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+          }
+
+          &:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-200);
+          }
+
+          i {
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Tabs Container
+.tabs-container {
+  .p-tabview {
+    border-radius: var(--content-border-radius);
+    
+    .p-tabview-nav {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-bottom: none;
+      border-radius: var(--content-border-radius) var(--content-border-radius) 0 0;
+      transition: background-color var(--transition-duration), border-color var(--transition-duration);
+
+      .p-tabview-nav-link {
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: var(--text-color-secondary);
+        transition: background-color var(--transition-duration), color var(--transition-duration);
+
+        &.p-tabview-nav-link-active {
+          background: var(--surface-hover);
+          color: var(--primary-color);
+        }
+        
+        &:hover {
+          background: var(--surface-hover);
+        }
+      }
+    }
+
+    .p-tabview-panels {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-top: none;
+      border-radius: 0 0 var(--content-border-radius) var(--content-border-radius);
+      padding: 0;
+      transition: background-color var(--transition-duration), border-color var(--transition-duration);
+    }
+  }
+}
+
+// Loading Container
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+
+  p {
+    margin: 0;
+    color: var(--text-color-secondary);
+  }
+}
+
+// Assignment Table Container
+.assignment-table-container {
+  .table-wrapper {
+    overflow: auto;
+    border-radius: var(--content-border-radius);
+    border: 1px solid var(--surface-border);
+    transition: border-color var(--transition-duration);
+  }
+
+  .assignment-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-card);
+
+    thead {
+      background: var(--surface-hover);
+      
+      tr {
+        th {
+          padding: 1rem;
+          text-align: left;
+          font-weight: 600;
+      color: var(--text-color);
+          border-bottom: 1px solid var(--surface-border);
+          white-space: nowrap;
+          transition: background-color var(--transition-duration), color var(--transition-duration), border-color var(--transition-duration);
+
+          &.col-class {
+            width: 250px;
+            min-width: 150px;
+          }
+
+          &.col-status {
+            width: 180px;
+            text-align: center;
+          }
+
+          &.col-teacher {
+            width: 250px;
+            min-width: 220px;
+            text-align: center;
+            
+            .role-header {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 0.5rem;
+              
+              .role-icon {
+                font-size: 1.25rem;
+                opacity: 0.8;
+                transition: color var(--transition-duration);
+                
+                &.chủ-nhiệm {
+                  color: #059669;
+                }
+                
+                &.giảng-dạy {
+                  color: #2563eb;
+                }
+                
+                &.trợ-giảng {
+                  color: #d2108b;
+                }
+              }
+              
+              span {
+                font-size: 0.85rem;
+      font-weight: 600;
+                color: var(--text-color);
+                transition: color var(--transition-duration);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    tbody {
+      tr.class-row {
+        transition: background-color var(--transition-duration);
+        
+        &:hover {
+          background: var(--surface-hover);
+        }
+
+        &:nth-child(even) {
+          background: transparent;
+        }
+
+        td {
+          padding: 1rem;
+          border-bottom: 1px solid var(--surface-border);
+          vertical-align: middle;
+          transition: border-color var(--transition-duration);
+
+          &.class-info-cell {
+            .class-info {
+              .class-name {
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: var(--primary-color);
+                margin-bottom: 0.25rem;
+                transition: color var(--transition-duration);
+      
+      &:hover {
+                  color: var(--primary-color);
+                }
+              }
+
+              .class-code {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--text-color);
+                margin-bottom: 0.25rem;
+                line-height: 1.5;
+                transition: color var(--transition-duration);
+              }
+
+              .class-meta {
+                font-size: 0.75rem;
+                color: var(--text-color-secondary);
+                font-style: italic;
+                line-height: 1.5;
+                transition: color var(--transition-duration);
+              }
+            }
+          }
+
+          &.status-cell {
+            text-align: center;
+            
+            .assignment-status {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 0.75rem;
+              border-radius: var(--content-border-radius);
+              transition: all var(--transition-duration);
+              
+              .status-icon {
+                margin-bottom: 0.5rem;
+                
+                i {
+                  font-size: 1.5rem;
+                  
+                  &.status-icon-complete {
+                    color: #22c55e;
+                  }
+                  
+                  &.status-icon-incomplete {
+                    color: #f59e0b;
+                  }
+                  
+                  &.status-icon-empty {
+                    color: #ef4444;
+                  }
+                }
+              }
+              
+              .status-text {
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                transition: color var(--transition-duration);
+              }
+              
+              &.status-complete {
+                background: #dcfce7;
+                
+                .status-text {
+                  color: #16a34a;
+                }
+              }
+              
+              &.status-incomplete {
+                background: #fef3c7;
+                
+                .status-text {
+                  color: #d97706;
+                }
+              }
+              
+              &.status-empty {
+                background: #fee2e2;
+                
+                .status-text {
+                  color: #dc2626;
+                }
+              }
+            }
+          }
+
+          &.teacher-assignment-cell {
+            .assignment-cell-wrapper {
+              position: relative;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              
+              .teacher-select {
+                flex: 1;
+                width: 100%;
+                min-width: 200px;
+              }
+
+              .saving-indicator {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.25rem;
+                opacity: 0;
+                transition: opacity var(--transition-duration);
+
+                .saving-icon {
+                  font-size: 1rem;
+                  color: var(--primary-color);
+                  animation: pulse 1.5s ease-in-out infinite;
+                }
+
+                &.saving {
+                  opacity: 1;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // No data message styling
+    .no-data-cell {
+      text-align: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-card);
+      
+      .no-data-message {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        
+        i {
+          opacity: 0.6;
+          transition: opacity var(--transition-duration);
+        }
+        
+        h4 {
+          font-weight: 600;
+          transition: color var(--transition-duration);
+        }
+        
+        p {
+          font-size: 0.9rem;
+          line-height: 1.5;
+          transition: color var(--transition-duration);
+        }
+        
+        // Hover effect
+        &:hover i {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+}
+
+// Teacher Schedule Container
+.teacher-schedule-container {
+  padding: 1.5rem;
+
+  // Two-column layout
+  .schedule-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 2rem;
+    align-items: start;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 350px 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 992px) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  // Left Column Styles
+  .schedule-left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  // Right Column Styles
+  .schedule-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 600px;
+  }
+
+  // Card Styles
+  .teacher-selection-card,
+  .teacher-profile-card,
+  .schedule-header-card,
+  .schedule-table-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: all var(--transition-duration);
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-hover);
+
+      .card-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+          color: var(--primary-color);
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+  }
+
+  // Teacher Selector Styles
+  .teacher-selector {
+    .selector-label {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+
+    .teacher-selector-dropdown {
+      width: 100%;
+    }
+  }
+
+  // Global Filter Notice
+  .global-filter-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--primary-50);
+    border: 1px solid var(--primary-200);
+    border-radius: var(--content-border-radius);
+    color: var(--primary-700);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+
+    i {
+      color: var(--primary-color);
+      font-size: 1rem;
+    }
+
+    span {
+      font-weight: 500;
+    }
+  }
+
+  // Teacher Profile Styles
+  .teacher-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .teacher-avatar-section {
+      flex-shrink: 0;
+    }
+
+    .teacher-details {
+      flex: 1;
+      
+      .teacher-name-big {
+        margin: 0 0 0.5rem 0;
+        color: var(--text-color);
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      
+      .teacher-meta-info {
+        font-size: 0.85rem;
+        color: var(--text-color-secondary);
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+      }
+      
+      .teacher-status-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+    }
+  }
+
+  // Schedule Actions and Filters
+  .schedule-actions {
+    .schedule-filters {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .schedule-search {
+        .schedule-search-field {
+      width: 100%;
+      max-width: 400px;
+
+          ::ng-deep {
+            .p-iconfield {
+              width: 100%;
+              
+              .p-inputtext {
+                width: 100%;
+                padding: 0.75rem 1rem 0.75rem 2.5rem;
+                font-size: 0.875rem;
+                border: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                color: var(--text-color);
+                border-radius: 6px;
+                transition: all var(--transition-duration);
+
+                &:focus {
+                  outline: none;
+                  border-color: var(--primary-color);
+                  box-shadow: var(--focus-ring-shadow);
+                }
+
+                &::placeholder {
+                  color: var(--text-color-secondary);
+                  font-size: 0.875rem;
+                }
+              }
+
+              .p-inputicon {
+                position: absolute;
+                left: 0.75rem;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-color-secondary);
+                font-size: 0.875rem;
+                pointer-events: none;
+              }
+            }
+          }
+        }
+      }
+
+      .schedule-filter-selects {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+
+        .schedule-filter-select {
+          min-width: 150px;
+          flex: 1;
+
+          ::ng-deep {
+            .p-select {
+              width: 100%;
+              border-radius: 6px;
+
+              .p-select-label-container {
+                .p-select-label {
+                  padding: 0.75rem 1rem;
+                  font-size: 0.875rem;
+                  border: 1px solid var(--surface-border);
+                  background: var(--surface-card);
+        color: var(--text-color);
+                  border-radius: 6px;
+                  transition: all var(--transition-duration);
+
+                  &:focus {
+                    outline: none;
+                    border-color: var(--primary-color);
+                    box-shadow: var(--focus-ring-shadow);
+                  }
+                }
+              }
+
+              .p-select-trigger {
+                border-left: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                color: var(--text-color-secondary);
+                border-radius: 0 6px 6px 0;
+              }
+            }
+          }
+        }
+      }
+
+      @media (max-width: 768px) {
+        .schedule-filter-selects {
+          flex-direction: column;
+          gap: 0.75rem;
+
+          .schedule-filter-select {
+            min-width: auto;
+          }
+        }
+      }
+    }
+  }
+
+  // Schedule Table Container
+  .schedule-table-container {
+    overflow: auto;
+    border-radius: var(--content-border-radius);
+
+    // Remove border since it's now inside a card
+    border: none;
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface-card);
+
+      thead {
+        background: var(--surface-hover);
+
+        tr {
+          th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--surface-border);
+
+            &.col-actions {
+              width: 120px;
+              text-align: center;
+            }
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          transition: background-color var(--transition-duration);
+
+          &:hover {
+            background: var(--surface-hover);
+          }
+
+          &:nth-child(even) {
+            background: transparent;
+          }
+
+          td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--surface-border);
+
+            .class-cell {
+              .class-name {
+                font-weight: 600;
+                color: var(--text-color);
+                margin-bottom: 0.25rem;
+              }
+
+              .class-code {
+                font-size: 0.875rem;
+                color: var(--text-color-secondary);
+              }
+            }
+
+            &.col-actions {
+              text-align: center;
+              vertical-align: middle;
+
+              .action-buttons {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+
+                .action-btn {
+                  min-width: 2rem;
+                  height: 2rem;
+                  border-radius: 50%;
+                  padding: 0;
+                  
+                  &.edit-btn {
+                    color: var(--primary-color);
+                    border-color: var(--primary-color);
+                    
+                    &:hover {
+                      background: var(--primary-color);
+                      color: var(--primary-contrast-color);
+                      transform: scale(1.05);
+                    }
+                  }
+
+                  &.delete-btn {
+                    color: #dc2626 !important;
+                    border-color: #dc2626 !important;
+                    background: transparent !important;
+                    
+                    &:hover {
+                      background: #dc2626 !important;
+                      color: white !important;
+                      border-color: #dc2626 !important;
+                      transform: scale(1.05);
+                    }
+
+                    &:focus {
+                      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          &.schedule-row {
+            transition: all var(--transition-duration);
+
+            &:hover {
+              background: var(--surface-hover);
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .no-teacher-selected,
+  .no-schedule,
+  .no-schedule-filtered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    text-align: center;
+    color: var(--text-color-secondary);
+
+    i {
+    margin-bottom: 1rem;
+  }
+
+    h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+
+  // No schedule data in table
+  .no-schedule-data-cell {
+    text-align: center;
+    padding: 2rem;
+    border-bottom: 1px solid var(--surface-border);
+    background: var(--surface-card);
+    
+    .no-schedule-data-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      
+      i {
+        opacity: 0.6;
+        transition: opacity var(--transition-duration);
+      }
+      
+      h4 {
+        font-weight: 600;
+        transition: color var(--transition-duration);
+      }
+      
+      p {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        transition: color var(--transition-duration);
+      }
+      
+      // Hover effect
+      &:hover i {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  // No data states in cards
+  .no-schedule-data-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+    color: var(--text-color-secondary);
+    padding: 2rem;
+
+    i {
+      opacity: 0.6;
+      transition: opacity var(--transition-duration);
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-color-secondary);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    // Hover effect
+    &:hover i {
+      opacity: 0.8;
+    }
+  }
+}
+
+// Teacher Option Template
+.teacher-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// PrimeNG Component Overrides
+:host {
+  ::ng-deep {
+    // Select dropdown styling
+    .p-select {
+      .p-select-label-container {
+        .p-select-label {
+          display: flex;
+          align-items: center;
+      gap: 0.5rem;
+        }
+      }
+    }
+
+    // Avatar styling
+    .p-avatar {
+      &.p-avatar-sm {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.75rem;
+      }
+    }
+
+    // Icon field styling
+  .p-iconfield {
+      width: 100%;
+
+    .p-inputtext {
+      padding-left: 2.5rem;
+    }
+
+    .p-inputicon {
+      left: 0.75rem;
+      color: var(--text-color-secondary);
+    }
+  }
+
+  // Progress spinner
+  .p-progressspinner {
+    width: 2rem;
+    height: 2rem;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .assignment-table-container {
+    .assignment-table {
+      thead th.col-class {
+        width: 280px;
+        min-width: 240px;
+      }
+
+      thead th.col-teacher,
+      tbody td.teacher-assignment-cell {
+        min-width: 220px;
+      }
+
+      thead th.col-status,
+      tbody td.status-cell {
+        min-width: 120px;
+      }
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  // Teacher Schedule Layout Responsive
+  .teacher-schedule-container {
+    padding: 1rem;
+
+    .schedule-layout {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .schedule-left-column {
+      order: 2;
+    }
+
+    .schedule-right-column {
+      order: 1;
+    }
+  }
+
+  .page-header {
+      flex-direction: column;
+    align-items: flex-start;
+      gap: 1rem;
+
+    .header-actions {
+        width: 100%;
+      justify-content: flex-end;
+    }
+  }
+
+  .filter-bar {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    &.collapsed {
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .filter-section {
+      .filter-controls {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        max-height: 300px;
+
+        &.hidden {
+          max-height: 0;
+        }
+
+        .filter-group {
+          .filter-label {
+            font-size: 0.8rem;
+          }
+        }
+
+        .filter-actions {
+          justify-content: center;
+          margin-top: 0.5rem;
+
+          .filter-reset-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }
+
+  .assignment-table-container {
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    .assignment-table {
+      thead th.col-class {
+        width: 260px;
+        min-width: 220px;
+      }
+
+      thead th.col-teacher,
+      tbody td.teacher-assignment-cell {
+        min-width: 200px;
+        
+        .role-header {
+          .role-icon {
+            font-size: 1rem;
+          }
+          
+          span {
+            font-size: 0.75rem;
+          }
+        }
+      }
+
+      thead th.col-status,
+      tbody td.status-cell {
+        min-width: 110px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    &.collapsed {
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .filter-section {
+      .filter-header {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.25rem;
+      }
+
+      .filter-title {
+        font-size: 0.9rem;
+      }
+
+      .filter-toggle-btn {
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0.25rem;
+
+        i {
+          font-size: 0.75rem;
+        }
+      }
+
+      .filter-controls {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        max-height: 300px;
+
+        &.hidden {
+          max-height: 0;
+        }
+
+        .filter-group {
+          .filter-label {
+            font-size: 0.8rem;
+          }
+        }
+
+        .filter-actions {
+          justify-content: center;
+          margin-top: 0.5rem;
+
+          .filter-reset-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }
+
+  .assignment-table-container {
+    .assignment-table {
+      thead th,
+      tbody td {
+        padding: 0.75rem 0.5rem;
+      }
+
+      thead th.col-class {
+        width: 240px;
+        min-width: 200px;
+      }
+
+      thead th.col-teacher,
+      tbody td.teacher-assignment-cell {
+        min-width: 180px;
+      }
+
+      thead th.col-status,
+      tbody td.status-cell {
+        min-width: 100px;
+      }
+    }
+  }
+
+  .teacher-schedule-container {
+    padding: 0.75rem;
+
+    // Card adjustments for mobile
+    .teacher-selection-card,
+    .teacher-profile-card,
+    .schedule-header-card,
+    .schedule-table-card {
+      .card-header {
+        padding: 0.75rem 1rem;
+      }
+
+      .card-content {
+    padding: 1rem;
+      }
+    }
+
+    // Teacher profile adjustments
+    .teacher-profile-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+
+      .teacher-details {
+        .teacher-name-big {
+          font-size: 1.1rem;
+        }
+
+        .teacher-status-badges {
+          justify-content: center;
+        }
+      }
+    }
+
+    // Schedule table adjustments
+      .schedule-table-container {
+        .schedule-table {
+          font-size: 0.875rem;
+
+          thead th,
+          tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .assignment-table-container {
+    .table-wrapper {
+      font-size: 0.875rem;
+    }
+
+    .assignment-table {
+      thead th.col-teacher,
+      tbody td.teacher-assignment-cell {
+        min-width: 150px;
+      }
+    }
+  }
+}
+
+// Teacher Option Styles - consistent with teacher management
+.teacher-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  width: 100%;
+  min-height: 60px;
+
+  .teacher-info {
+    flex: 1;
+    min-width: 0; // Allow text truncation
+    
+    .teacher-name {
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .teacher-meta {
+      font-size: 0.8rem;
+      color: var(--text-color-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .teacher-badges {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    
+    .text-xs {
+      font-size: 0.7rem;
+      padding: 0.125rem 0.375rem;
+    }
+  }
+}
+
+.teacher-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  span {
+    font-weight: 500;
+    color: var(--text-color);
+  }
+}
+
+// Teacher Profile Header for Schedule Tab
+.teacher-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--content-border-radius);
+  margin-bottom: 1.5rem;
+
+  .teacher-avatar-section {
+    flex-shrink: 0;
+  }
+
+  .teacher-details {
+    flex: 1;
+    
+    .teacher-name-big {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .teacher-meta-info {
+      font-size: 0.9rem;
+      color: var(--text-color-secondary);
+      margin-bottom: 0.75rem;
+    }
+    
+    .teacher-status-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+.schedule-title {
+  margin: 1.5rem 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding-left: 0.5rem;
+  border-left: 4px solid var(--primary-color);
+}
+
+// Enhanced teacher select styling - Fixed for dark mode
+.teacher-select {
+  ::ng-deep {
+    .p-select {
+      width: 100%;
+      border-radius: 6px;
+
+      &.p-select-panel {
+        background: var(--surface-card) !important;
+        border: 1px solid var(--surface-border) !important;
+      }
+
+      .p-select-label-container {
+  .p-select-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          border: 1px solid var(--surface-border) !important;
+          background: var(--surface-card) !important;
+          color: var(--text-color) !important;
+          border-radius: 6px;
+          transition: all var(--transition-duration);
+          height: 3rem;
+          box-sizing: border-box;
+
+          &:focus,
+          &:focus-within {
+            outline: none;
+            border-color: var(--primary-color) !important;
+            box-shadow: var(--focus-ring-shadow) !important;
+          }
+
+          &.p-placeholder {
+            color: var(--text-color-secondary) !important;
+          }
+
+          // Force dark mode for input state
+          .p-select-input {
+            background: transparent !important;
+            color: var(--text-color) !important;
+            border: none !important;
+            outline: none !important;
+
+            &::placeholder {
+              color: var(--text-color-secondary) !important;
+            }
+          }
+        }
+      }
+
+      .p-select-trigger {
+        border-left: 1px solid var(--surface-border) !important;
+        background: var(--surface-card) !important;
+        color: var(--text-color-secondary) !important;
+        border-radius: 0 6px 6px 0;
+      }
+
+      // When in input mode (not selected)
+      .p-select-input {
+        background: var(--surface-card) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--surface-border) !important;
+
+        &:focus {
+          border-color: var(--primary-color) !important;
+          box-shadow: var(--focus-ring-shadow) !important;
+          outline: none !important;
+        }
+
+        &::placeholder {
+          color: var(--text-color-secondary) !important;
+        }
+      }
+    }
+
+    // Global overlay styling for dark mode
+    .p-select-overlay {
+      background: var(--surface-card) !important;
+      border: 1px solid var(--surface-border) !important;
+      box-shadow: var(--tw-shadow-lg) !important;
+      
+      .p-select-items {
+        background: var(--surface-card) !important;
+
+        .p-select-item {
+          background: var(--surface-card) !important;
+          color: var(--text-color) !important;
+          border-bottom: 1px solid var(--surface-border);
+
+          &:hover {
+            background: var(--surface-hover) !important;
+            color: var(--text-color) !important;
+          }
+
+          &.p-highlight,
+          &.p-select-item-selected {
+            background: var(--primary-color) !important;
+            color: var(--primary-contrast-color) !important;
+          }
+        }
+
+        .p-select-empty-message {
+          color: var(--text-color-secondary) !important;
+          background: var(--surface-card) !important;
+        }
+      }
+
+      .p-select-filter-container {
+        background: var(--surface-card) !important;
+        border-bottom: 1px solid var(--surface-border) !important;
+
+        .p-select-filter {
+          background: var(--surface-card) !important;
+          border: 1px solid var(--surface-border) !important;
+          color: var(--text-color) !important;
+
+          &::placeholder {
+            color: var(--text-color-secondary) !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Global styling for all p-select components in this component to ensure dark mode
+:host ::ng-deep {
+  // Target all p-select components within this component - following project patterns
+  .p-select {
+    // Main select container
+    background: var(--surface-card) !important;
+    border-color: var(--surface-border) !important;
+
+    .p-select-label-container {
+      .p-select-label {
+        background: var(--surface-card) !important;
+        color: var(--text-color) !important;
+        border-color: var(--surface-border) !important;
+        
+        // Input inside label container (when input mode)
+        .p-select-input {
+          background: transparent !important;
+          color: var(--text-color) !important;
+          border: none !important;
+          
+          &::placeholder {
+            color: var(--text-color-secondary) !important;
+          }
+        }
+      }
+    }
+
+    .p-select-trigger {
+      background: var(--surface-card) !important;
+      border-color: var(--surface-border) !important;
+      color: var(--text-color-secondary) !important;
+    }
+
+    // Direct input styling when in input mode (not selected)
+    &.p-select-input {
+      background: var(--surface-card) !important;
+      color: var(--text-color) !important;
+      border-color: var(--surface-border) !important;
+      
+      &::placeholder {
+        color: var(--text-color-secondary) !important;
+      }
+    }
+
+    // Focus states
+    &:focus-within,
+    &.p-focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: var(--focus-ring-shadow) !important;
+    }
+  }
+
+  // Overlay styling for all select dropdowns - following project patterns  
+  .p-select-overlay {
+    background: var(--surface-card) !important;
+    border: 1px solid var(--surface-border) !important;
+    box-shadow: var(--tw-shadow-lg) !important;
+    
+    .p-select-items {
+      background: var(--surface-card) !important;
+
+      .p-select-item {
+        background: var(--surface-card) !important;
+        color: var(--text-color) !important;
+        border-bottom: 1px solid var(--surface-border);
+        
+        &:hover {
+          background: var(--surface-hover) !important;
+          color: var(--text-color) !important;
+        }
+
+        &.p-highlight,
+        &.p-select-item-selected {
+          background: var(--primary-color) !important;
+          color: var(--primary-contrast-color) !important;
+        }
+      }
+
+      .p-select-empty-message {
+        color: var(--text-color-secondary) !important;
+        background: var(--surface-card) !important;
+      }
+    }
+
+    .p-select-filter-container {
+      background: var(--surface-card) !important;
+      border-bottom: 1px solid var(--surface-border) !important;
+
+      .p-select-filter {
+        background: var(--surface-card) !important;
+        border: 1px solid var(--surface-border) !important;
+        color: var(--text-color) !important;
+
+        &::placeholder {
+          color: var(--text-color-secondary) !important;
+        }
+
+        &:focus {
+          border-color: var(--primary-color) !important;
+          box-shadow: var(--focus-ring-shadow) !important;
+        }
+      }
+    }
+  }
+}
+
+// Global delete button styling for all delete buttons in the component
+:host ::ng-deep {
+  // Ensure all delete buttons are red by default
+  .p-button.delete-btn,
+  .delete-btn,
+  button.delete-btn,
+  .action-btn.delete-btn {
+    color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    background: transparent !important;
+    
+    &:hover,
+    &:focus {
+      background: #dc2626 !important;
+      color: white !important;
+      border-color: #dc2626 !important;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+    }
+  }
+}
+
+// Additional dark mode specific overrides - following project patterns
+:host ::ng-deep {
+  .app-dark & {
+    .p-select {
+      .p-select-label-container .p-select-label,
+      .p-select-input {
+        background: var(--surface-card) !important;
+        color: var(--text-color) !important;
+        border-color: var(--surface-border) !important;
+      }
+
+      .p-select-trigger {
+        background: var(--surface-card) !important;
+        border-color: var(--surface-border) !important;
+        color: var(--text-color-secondary) !important;
+      }
+    }
+  }
+}
+
+// Drawer Styling - following project patterns
+:host ::ng-deep {
+  .p-drawer {
+    .p-drawer-header {
+      background: var(--surface-50);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 1.5rem;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-800);
+        border-bottom-color: var(--surface-700);
+      }
+      
+      h4 {
+        color: var(--text-color);
+        margin: 0;
+        transition: color 0.3s ease;
+      }
+    }
+    
+    .p-drawer-content {
+      padding: 1.5rem;
+      max-height: calc(100vh - 120px);
+      overflow: hidden; // Ẩn thanh trượt ngang và dọc
+      background: var(--surface-card);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      
+      // Dark theme adjustments
+      .app-dark & {
+        background: var(--surface-900);
+        color: var(--text-color);
+      }
+    }
+
+    // Auto-adjust drawer width based on content
+    @media (max-width: 900px) {
+      width: 500px !important;
+    }
+
+    @media (max-width: 600px) {
+      width: 400px !important;
+    }
+  }
+}
+
+// Assignment Form Grid Layout
+.assignment-form-grid {
+  display: grid;
+  grid-template-columns: 1fr; // Changed to single column
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+
+      .course-info-display {
+        padding: 0.75rem;
+        background: var(--surface-50);
+        border: 1px solid var(--surface-200);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+
+        .course-tag {
+          font-weight: 500;
+          font-size: 0.9rem;
+        }
+
+        // Dark theme adjustments
+        .app-dark & {
+          background: var(--surface-700);
+          border-color: var(--surface-600);
+        }
+      }
+    }
+  }
+
+}
+
+// Form Actions - Ensure buttons are aligned to the right
+.form-actions-right {
+  justify-content: flex-end !important;
+  align-items: center;
+  gap: 0.5rem;
+  
+  button {
+    margin: 0;
+  }
+}
+
+// Hide scrollbars completely in drawer
+:host ::ng-deep {
+  .p-drawer-content {
+    // Hide all scrollbars
+    scrollbar-width: none; // Firefox
+    -ms-overflow-style: none; // IE and Edge
+    
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Opera
+    }
+  }
+  
+  // Also hide scrollbars for all drawer wrappers
+  .p-drawer-wrapper {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  
+  .p-drawer-mask {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+}
+
+// Responsive improvements for teacher options
+@media (max-width: 768px) {
+  .teacher-option {
+    padding: 0.375rem;
+    min-height: 50px;
+    
+    .teacher-info {
+      .teacher-name {
+        font-size: 0.9rem;
+      }
+      
+      .teacher-meta {
+        font-size: 0.75rem;
+      }
+    }
+    
+    .teacher-badges {
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+  }
+  
+  .teacher-profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+    padding: 1rem;
+    
+    .teacher-details {
+      .teacher-name-big {
+        font-size: 1.25rem;
+      }
+      
+      .teacher-status-badges {
+        justify-content: center;
+      }
+    }
+  }
+  
+
+  // Drawer responsive adjustments
+  .p-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+    
+    .p-drawer-header {
+      padding: 1rem;
+    }
+    
+    .p-drawer-content {
+      padding: 1rem;
+      overflow: hidden !important; // Ensure no scrollbars on mobile
+    }
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}

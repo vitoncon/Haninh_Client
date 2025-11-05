@@ -1,1 +1,212 @@
-<p>fees works!</p>
+<div class="page-card">
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="statistics || classes.length > 0">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng số tiền</h6>
+          <h4 class="mb-0">{{ formatCurrency(statistics?.total_amount || 0) }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-dollar"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã thu</h6>
+          <h4 class="mb-0">{{ formatCurrency(statistics?.paid_amount || 0) }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Chưa thu</h6>
+          <h4 class="mb-0">{{ formatCurrency(statistics?.unpaid_amount || 0) }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="custom-toolbar">
+    <div class="toolbar-left">
+      <button
+        pButton
+        type="button"
+        label="Xóa lọc"
+        icon="pi pi-filter-slash"
+        [outlined]="true"
+        (click)="onClearFilters()"
+        *ngIf="hasActiveFilters"
+      ></button>
+    </div>
+    
+    <div class="toolbar-center">
+      <!-- Search input -->
+      <div class="search-field">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search" />
+          <input 
+            type="text" 
+            pInputText 
+            placeholder="Tìm kiếm lớp học..." 
+            [(ngModel)]="searchQuery"
+            (input)="onGlobalFilter($event)"
+            class="search-input" 
+          />
+        </p-iconfield>
+      </div>
+    </div>
+    
+    <div class="toolbar-right">
+      <!-- Filter dropdown with appendTo="body" -->
+      <div class="filter-container">
+        <p-select
+          [ngModel]="selectedStatusFilter"
+          (ngModelChange)="selectedStatusFilter = $event; onFilterChange()"
+          [options]="statusOptions"
+          placeholder="Trạng thái"
+          optionLabel="label"
+          styleClass="filter-dropdown-picklist"
+          appendTo="body"
+          [showClear]="selectedStatusFilter !== '' && selectedStatusFilter !== null"
+          (onClear)="clearStatusFilter()"
+        ></p-select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-content-center align-items-center" style="height: 200px;">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <!-- Classes View -->
+  <div *ngIf="!loading">
+    <!-- Classes Table -->
+    <p-table 
+      #classesTable
+      [value]="filteredClasses"
+      [paginator]="true"
+      [rows]="10"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} lớp học"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [globalFilterFields]="['class_name', 'class_code', 'course_name']"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      [scrollable]="true"
+      scrollHeight="flex"
+      dataKey="id"
+      [rowHover]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px; text-align: center;" class="text-center">STT</th>
+          <th pSortableColumn="class_name" style="width: 250px">
+            Tên lớp
+            <p-sortIcon field="class_name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="course_name" style="width: 200px">
+            Khóa học
+            <p-sortIcon field="course_name"></p-sortIcon>
+          </th>
+          <th style="width: 130px; text-align: center;" class="text-center">Mã lớp</th>
+          <th style="width: 150px; text-align: center;" class="text-center">Học phí (VNĐ)</th>
+          <th style="width: 100px; text-align: center;" class="text-center">Tổng HV</th>
+          <th style="width: 180px; text-align: center;" class="text-center">Tổng cần thu</th>
+          <th style="width: 180px; text-align: center;" class="text-center">Còn nợ</th>
+          <th pSortableColumn="status" style="width: 150px; text-align: center;" class="text-center">
+            Trạng thái thu
+            <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th style="width: 80px; text-align: center;" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-classData let-rowIndex="rowIndex">
+        <tr style="cursor: pointer" (click)="onClassRowClick(classData)">
+          <td style="text-align: center;" class="text-center">{{ rowIndex + 1 }}</td>
+          <td>
+            <div class="flex flex-column">
+              <span class="font-semibold">{{ classData.class_name }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="font-semibold">{{ classData.course_name || 'N/A' }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="font-semibold">{{ classData.class_code || 'N/A' }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="font-semibold">
+              <ng-container *ngIf="getCourseTuitionFee(classData) !== null; else noFee">
+                {{ formatCurrency(getCourseTuitionFee(classData)!) }}
+              </ng-container>
+              <ng-template #noFee>N/A</ng-template>
+            </span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="font-semibold">{{ getTotalStudents(classData.id) }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <p-tag 
+              [value]="formatCurrency(getTotalAmountToCollect(classData))" 
+              severity="success"
+            ></p-tag>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <ng-container *ngIf="getRemainingDebt(classData) > 0; else noDebt">
+              <p-tag 
+                [value]="formatCurrency(getRemainingDebt(classData))" 
+                severity="danger"
+              ></p-tag>
+            </ng-container>
+            <ng-template #noDebt>
+              <p-tag 
+                [value]="formatCurrency(getRemainingDebt(classData))" 
+                severity="success"
+              ></p-tag>
+            </ng-template>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <p-tag 
+              [value]="getClassPaymentStatus(classData.id)" 
+              [severity]="getPaymentStatusSeverity(getClassPaymentStatus(classData.id))"
+            ></p-tag>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-eye"
+              class="action-button"
+              pTooltip="Xem chi tiết"
+              (click)="onClassRowClick(classData); $event.stopPropagation()"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="text-center">
+            <div class="py-4">
+              <div class="text-center">
+                <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                <p class="mb-0">Không tìm thấy lớp học nào</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

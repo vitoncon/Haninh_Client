@@ -1,0 +1,583 @@
+<div class="page-card">
+  <!-- Header -->
+  <div class="results-header">
+    <div class="header-content">
+      <div class="header-title-section">
+        <button
+          pButton
+          icon="pi pi-arrow-left"
+          class="p-button-text back-button"
+          pTooltip="Quay lại chi tiết lớp học"
+          (click)="onBackToClassDetail()">
+        </button>
+        <div class="title-text">
+          <h3>Kết quả học tập - {{ effectiveClassName }}</h3>
+          <p>Quản lý và theo dõi các bài kiểm tra của lớp học</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <p-splitButton
+        label="Thêm bài kiểm tra"
+        icon="pi pi-plus"
+        class="p-button-primary"
+        (onClick)="onAddExam('single')"
+        [model]="examMenuItems"
+      ></p-splitButton>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="statistics-cards-grid">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng bài kiểm tra</h6>
+          <h4 class="mb-0">
+            <span *ngIf="loading" class="loading-skeleton">--</span>
+            <span *ngIf="!loading">{{ classExams.length }}</span>
+          </h4>
+          <small class="text-muted">Tổng số bài thi</small>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-file"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã hoàn thành</h6>
+          <h4 class="mb-0">
+            <span *ngIf="loading" class="loading-skeleton">--</span>
+            <span *ngIf="!loading">{{ getCompletedExams() }}</span>
+          </h4>
+          <small class="text-muted">Bài đã chấm điểm</small>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Điểm trung bình</h6>
+          <h4 class="mb-0">
+            <span *ngIf="loading" class="loading-skeleton">--</span>
+            <span *ngIf="!loading">{{ formatPercentage(getAverageScore()) }}</span>
+          </h4>
+          <small class="text-muted">Điểm TB lớp</small>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-percentage"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tỷ lệ đạt</h6>
+          <h4 class="mb-0">
+            <span *ngIf="loading" class="loading-skeleton">--</span>
+            <span *ngIf="!loading">{{ formatPercentage(getPassRate()) }}</span>
+          </h4>
+          <small class="text-muted">Tỷ lệ đạt chuẩn</small>
+        </div>
+        <div class="icon-container text-purple-500">
+          <i class="pi pi-trophy"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Results Table -->
+  <div class="results-table">
+    <!-- Toolbar with search -->
+    <p-toolbar *ngIf="!loading && classExams.length > 0">
+      <ng-template pTemplate="start">
+        <div class="flex items-center gap-2">
+          <button
+            pButton
+            type="button"
+            label="Làm mới"
+            icon="pi pi-refresh"
+            class="p-button-outlined p-button-primary"
+            (click)="onRefresh()"
+            [loading]="loading"
+            pTooltip="Làm mới danh sách bài kiểm tra"
+          ></button>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="center">
+        <div class="flex items-center gap-3">
+          <p-iconfield iconPosition="left">
+            <p-inputicon class="pi pi-search" />
+            <input 
+              type="text" 
+              pInputText 
+              placeholder="Tìm kiếm bài kiểm tra..." 
+              [(ngModel)]="searchQuery"
+              (input)="searchSubject$.next($event.target.value)"
+              class="search-input"
+            />
+            <p-inputicon 
+              *ngIf="showClearButton" 
+              class="pi pi-times clear-search" 
+              (click)="clearSearch()"
+              pTooltip="Xóa tìm kiếm"
+              tooltipPosition="bottom"
+            />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="end">
+        <div class="flex items-center gap-2">
+          <button
+            pButton
+            type="button"
+            label="Xuất Excel"
+            icon="pi pi-download"
+            class="p-button-outlined p-button-success"
+            [disabled]="classExams.length === 0"
+            (click)="exportToExcel()"
+            pTooltip="Xuất dữ liệu ra Excel"
+          ></button>
+        </div>
+      </ng-template>
+    </p-toolbar>
+    
+    <p-table
+      #dt
+      [value]="classExams"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="20"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} bài kiểm tra"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [globalFilterFields]="['exam_name', 'exam_type', 'language']"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-gridlines"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="exam_name">
+            Tên bài kiểm tra
+            <p-sortIcon field="exam_name"></p-sortIcon>
+          </th>
+          <th>Kỹ năng</th>
+          <th pSortableColumn="exam_date">
+            Ngày thi
+            <p-sortIcon field="exam_date"></p-sortIcon>
+          </th>
+          <th pSortableColumn="average_score">
+            Điểm trung bình
+            <p-sortIcon field="average_score"></p-sortIcon>
+          </th>
+          <th>Tổng học viên</th>
+          <th>Trạng thái</th>
+          <th class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-exam>
+        <tr>
+          <td>
+            <div class="exam-info">
+              <div class="exam-name">{{ exam.exam_name }}</div>
+              <div class="exam-type">{{ exam.exam_type }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="skills-container">
+              <div class="skills-list">
+                <p-tag
+                  *ngFor="let skill of exam.exam_skills"
+                  [value]="skill.skill_type"
+                  [severity]="getSkillSeverity(skill.skill_type)"
+                  class="skill-tag"
+                ></p-tag>
+                <span *ngIf="!exam.exam_skills || exam.exam_skills.length === 0" class="no-skills">
+                  Chưa có kỹ năng
+                </span>
+              </div>
+              <div class="skills-count" *ngIf="exam.exam_skills && exam.exam_skills.length > 0">
+                {{ exam.exam_skills.length }} kỹ năng
+              </div>
+            </div>
+          </td>
+          <td>{{ formatDate(exam.exam_date) }}</td>
+          <td>
+            <div class="score-info">
+              <div class="average-score" [ngClass]="'score-' + getScoreSeverity(exam.average_score)">
+                {{ formatPercentage(exam.average_score) }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="student-count">
+              {{ getClassStudentsCount() }} học viên
+            </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="getStatusLabel(exam.status)"
+              [severity]="getStatusSeverity(exam.status)"
+            ></p-tag>
+          </td>
+          <td class="text-center" >
+            <div class="action-buttons">
+              <button
+                pButton
+                icon="pi pi-eye"
+                class="p-button-rounded p-button-text p-button-primary"
+                [pTooltip]="canViewExamDetail(exam) ? 'Xem chi tiết các kỹ năng' : 'Không thể xem chi tiết (chưa có kỹ năng hoặc đã hủy)'"
+                [disabled]="!canViewExamDetail(exam)"
+                (click)="onViewExamDetail(exam)"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-pencil"
+                class="p-button-rounded p-button-text p-button-info"
+                pTooltip="Chỉnh sửa"
+                (click)="onEditExam(exam)"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-trash"
+                class="p-button-rounded p-button-text p-button-danger"
+                pTooltip="Xóa"
+                (click)="onDeleteExam(exam)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center">
+            <div class="empty-state">
+              <i class="pi pi-inbox empty-icon"></i>
+              <h4>Chưa có bài kiểm tra nào</h4>
+              <p>Lớp học này chưa có bài kiểm tra nào</p>
+              <div class="empty-actions">
+                <p-splitButton
+                  label="Thêm bài kiểm tra"
+                  icon="pi pi-plus"
+                  class="p-button-outlined"
+                  (onClick)="onAddExam('single')"
+                  [model]="examMenuItems"
+                ></p-splitButton>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Exam Form Drawer -->
+  <p-drawer
+    [(visible)]="drawerVisible"
+    [modal]="true"
+    position="right"
+    [style]="{width: '600px'}"
+    [closable]="true"
+  >
+    <ng-template pTemplate="header">
+      <h4>{{ isEditMode ? 'Chỉnh sửa bài kiểm tra' : 'Thêm bài kiểm tra mới' }}</h4>
+    </ng-template>
+
+    <div class="exam-form" *ngIf="formExam">
+      <!-- Basic Information Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin cơ bản</h5>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exam_name">Tên bài kiểm tra <span class="req">*</span></label>
+            <input
+              id="exam_name"
+              pInputText
+              [(ngModel)]="formExam.exam_name"
+              placeholder="Nhập tên bài kiểm tra"
+              class="w-full"
+              [disabled]="isExamEditingDisabled()"
+            />
+          </div>
+          <div class="form-group">
+            <label>Loại kiểm tra <span class="req">*</span></label>
+            <p-select
+              [(ngModel)]="formExam.exam_type"
+              [options]="examTypeOptions"
+              [appendTo]="'body'"  
+              placeholder="Chọn loại kiểm tra"
+              class="w-full"
+              [disabled]="isExamEditingDisabled()"
+            ></p-select>
+          </div> 
+
+          <div class="form-group">
+            <label>Ngày thi <span class="req" style="color: #ef4444 !important;">*</span></label>
+            <p-datePicker 
+              [(ngModel)]="formExam.exam_date"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full"
+              [placeholder]="'dd/mm/yyyy'"
+              [disabled]="isExamEditingDisabled()">
+            </p-datePicker>
+          </div>
+
+          <div class="form-group">
+            <label>Trạng thái <span class="req">*</span></label>
+            <p-select
+              [(ngModel)]="formExam.status"
+              [options]="getAvailableStatusOptions()"
+              [appendTo]="'body'"  
+              placeholder="Chọn trạng thái"
+              class="w-full"
+              [disabled]="isExamEditingDisabled() || !canChangeStatus()"
+              (onChange)="onStatusChange($event)"
+            ></p-select>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Mô tả</label>
+          <textarea
+            id="description"
+            pInputTextarea
+            [(ngModel)]="formExam.description"
+            placeholder="Nhập mô tả bài kiểm tra"
+            class="w-full"
+            rows="3"
+            [disabled]="isExamEditingDisabled()"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Skills Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Kỹ năng kiểm tra <span class="req">*</span></h5>
+        
+        <div class="skills-selection">
+          <div class="skills-checkboxes">
+            <div *ngFor="let skill of skillTypeOptions; let i = index" 
+                 class="skill-checkbox-item" 
+                 [class.selected]="getSkillSelected(i)"
+                 [class.disabled]="!canUncheckSkill(i) && getSkillSelected(i)">
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="getSkillSelected(i)"
+                (ngModelChange)="setSkillSelected(i, $event)"
+                [inputId]="'skill_' + i"
+                [disabled]="isExamEditingDisabled() || (!canUncheckSkill(i) && getSkillSelected(i))"
+                [pTooltip]="getSkillTooltip(i)"
+                tooltipPosition="top"
+              ></p-checkbox>
+              <label [for]="'skill_' + i" class="skill-label">{{ skill.label }}</label>
+              <div *ngIf="getSkillSelected(i)" class="skill-score-input">
+                <label class="score-label">Điểm tối đa:</label>
+                <div class="score-input">
+                  <p-inputNumber
+                    [ngModel]="getSkillMaxScore(i)"
+                    (ngModelChange)="setSkillMaxScore(i, $event)"
+                    [min]="1"
+                    [max]="100"
+                    placeholder="Điểm"
+                    (onChange)="updateTotalMaxScore()"
+                    [disabled]="isExamEditingDisabled()"
+                  ></p-inputNumber>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="skills-summary" *ngIf="getSelectedSkillsCount() > 0">
+            <small>
+              Đã chọn {{ getSelectedSkillsCount() }} kỹ năng | 
+              Tổng điểm: {{ formExam.total_max_score }}
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score and Students Section -->
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin điểm số và học viên</h5>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tổng điểm tối đa</label>
+            <div class="total-score-display">
+              <div class="score-value">{{ formExam.total_max_score || 0 }}</div>
+              <small class="text-muted">Tự động tính từ các kỹ năng đã chọn</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Học viên trong lớp</label>
+            <div class="students-info">
+              <div class="students-count">
+                <i class="pi pi-users"></i>
+                <span>{{ getClassStudentsCount() }} học viên</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="dialog-actions">
+        <button
+          pButton
+          label="Hủy"
+          icon="pi pi-times"
+          class="p-button-text"
+          (click)="onCancelExam()"
+        ></button>
+        <button
+          pButton
+          [label]="isEditMode ? 'Cập nhật' : 'Thêm'"
+          [icon]="isEditMode ? 'pi pi-check' : 'pi pi-plus'"
+          class="p-button-success"
+          [loading]="saving"
+          [disabled]="isExamEditingDisabled()"
+          (click)="onSaveExam()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-drawer>
+
+  <!-- Bulk Exam Form Drawer -->
+  <p-drawer
+    [(visible)]="showBulkExamDrawer"
+    [modal]="true"
+    position="right"
+    [style]="{width: '600px'}"
+    [closable]="true"
+  >
+    <ng-template pTemplate="header">
+      <h4>Tạo bài kiểm tra 4 kỹ năng</h4>
+    </ng-template>
+
+    <div class="bulk-exam-form">
+      <div class="form-section">
+        <h5 class="form-section-title">Thông tin bài kiểm tra</h5>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bulk_exam_name">Tên bài kiểm tra <span class="req">*</span></label>
+            <input
+              id="bulk_exam_name"
+              pInputText
+              [(ngModel)]="bulkExamForm.exam.exam_name"
+              placeholder="Nhập tên bài kiểm tra"
+              class="w-full"
+            />
+          </div>
+          <div class="form-group">
+            <label>Loại kiểm tra <span class="req">*</span></label>
+            <p-select
+              [(ngModel)]="bulkExamForm.exam.exam_type"
+              [options]="examTypeOptions"
+              appendTo="body" 
+              placeholder="Chọn loại kiểm tra"
+              class="w-full"
+            ></p-select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ngày thi <span class="req">*</span></label>
+            <p-datePicker 
+              [(ngModel)]="bulkExamForm.exam.exam_date"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              appendTo="body"
+              [touchUI]="false"
+              class="w-full"
+              [placeholder]="'dd/mm/yyyy'">
+            </p-datePicker>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="bulk_description">Mô tả</label>
+          <textarea
+            id="bulk_description"
+            pInputTextarea
+            [(ngModel)]="bulkExamForm.exam.description"
+            placeholder="Nhập mô tả bài kiểm tra"
+            class="w-full"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h5 class="form-section-title">Cấu hình điểm số cho từng kỹ năng</h5>
+        
+        <div class="skills-config" *ngFor="let skill of bulkExamForm.skills; let i = index">
+          <div class="skill-item">
+            <div class="skill-header">
+              <h6>{{ skill.skill_type }}</h6>
+            </div>
+            <div class="skill-config">
+              <div class="form-group">
+                <label>Điểm tối đa</label>
+                <p-inputNumber
+                  [(ngModel)]="skill.max_score"
+                  [min]="1"
+                  [max]="100"
+                  placeholder="Điểm tối đa"
+                  class="w-full"
+                ></p-inputNumber>
+              </div>
+              <div class="form-group">
+                <label>Trọng số</label>
+                <p-inputNumber
+                  [(ngModel)]="skill.weight"
+                  [min]="0.1"
+                  [max]="2.0"
+                  [step]="0.1"
+                  placeholder="Trọng số"
+                  class="w-full"
+                ></p-inputNumber>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="dialog-actions">
+        <button
+          pButton
+          label="Hủy"
+          icon="pi pi-times"
+          class="p-button-text"
+          (click)="onCancelBulkExam()"
+        ></button>
+        <button
+          pButton
+          label="Tạo bài kiểm tra"
+          icon="pi pi-plus-circle"
+          class="p-button-success"
+          [loading]="saving"
+          (click)="onSaveBulkExam()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-drawer>
+
+  <!-- Toast Messages -->
+  <p-toast></p-toast>
+  
+  <!-- Confirmation Dialog -->
+  <p-confirmDialog></p-confirmDialog>
+</div>

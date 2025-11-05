@@ -1,1 +1,207 @@
-<p>study-results works!</p>
+<div class="study-results-container">
+  <!-- Statistics Cards - Dashboard Mini -->
+  <div class="statistics-cards-grid" *ngIf="!loading && summary.total_classes > 0">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng số lớp học</h6>
+          <h4 class="mb-0">{{ summary.total_classes }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-graduation-cap"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng số học viên</h6>
+          <h4 class="mb-0">{{ summary.total_students }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-users"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Điểm trung bình</h6>
+          <h4 class="mb-0" *ngIf="hasValidAverageScore()">{{ formatScore(summary.average_score) }}</h4>
+          <h4 class="mb-0 text-color-secondary" *ngIf="!hasValidAverageScore()">Chưa có dữ liệu</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-chart-line"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tỷ lệ đạt yêu cầu</h6>
+          <h4 class="mb-0" *ngIf="hasValidAverageScore()">{{ formatPercentage(summary.pass_rate) }}</h4>
+          <h4 class="mb-0 text-color-secondary" *ngIf="!hasValidAverageScore()">Chưa có dữ liệu</h4>
+        </div>
+        <div class="icon-container text-purple-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-container" *ngIf="!loading && classAnalytics.length > 0">
+    <div class="chart-row">
+      <p-card class="chart-card">
+        <div class="card-header">
+          <h4>Điểm Trung Bình Theo Lớp (Top 10)</h4>
+        </div>
+        <div class="chart-container">
+          <p-chart *ngIf="classAverageChart" type="bar" [data]="classAverageChart" [options]="chartOptions" height="300px"></p-chart>
+          <div *ngIf="loading" class="chart-skeleton">
+            <p-skeleton height="300px" styleClass="mb-3"></p-skeleton>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="chart-row-two">
+      <p-card class="chart-card">
+        <div class="card-header">
+          <h4>So Sánh Kỹ Năng</h4>
+        </div>
+        <div class="chart-container">
+          <p-chart *ngIf="skillComparisonChart" type="doughnut" [data]="skillComparisonChart" [options]="chartOptions" height="300px"></p-chart>
+          <div *ngIf="loading" class="chart-skeleton">
+            <p-skeleton height="300px" styleClass="mb-3"></p-skeleton>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card class="chart-card">
+        <div class="card-header">
+          <h4>Xu Hướng Điểm Số</h4>
+        </div>
+        <div class="chart-container">
+          <p-chart *ngIf="trendChart" type="line" [data]="trendChart" [options]="chartOptions" height="300px"></p-chart>
+          <div *ngIf="loading" class="chart-skeleton">
+            <p-skeleton height="300px" styleClass="mb-3"></p-skeleton>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <p-card>
+    <!-- Search and Filters Toolbar -->
+    <p-toolbar *ngIf="!loading && filteredClasses.length > 0">
+      <ng-template pTemplate="start">
+        <div class="flex items-center gap-2">
+          <button
+            pButton
+            type="button"
+            label="Làm mới"
+            icon="pi pi-refresh"
+            class="p-button-outlined"
+            (click)="refreshData()"
+            [loading]="loading"
+            pTooltip="Làm mới dữ liệu"
+          ></button>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="center">
+        <div class="flex items-center gap-3">
+          <p-iconfield iconPosition="left">
+            <p-inputicon class="pi pi-search" />
+            <input 
+              type="text" 
+              pInputText 
+              placeholder="Tìm kiếm lớp học..." 
+              (input)="filterClasses($event)"
+              class="search-input"
+            />
+          </p-iconfield>
+        </div>
+      </ng-template>
+    </p-toolbar>
+
+    <p-table
+      [value]="filteredClasses"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} lớp học"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      styleClass="p-datatable-gridlines"
+      responsiveLayout="scroll"
+      dataKey="id"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 5rem">Mã lớp</th>
+          <th>Tên lớp</th>
+          <th style="width: 10rem">Số học viên</th>
+          <th style="width: 10rem">Số bài kiểm tra</th>
+          <th style="width: 10rem">Điểm trung bình</th>
+          <th style="width: 8rem">Thao tác</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-classItem>
+        <tr>
+          <td>
+            <span class="font-semibold var(--text-color)">{{ classItem.class_code }}</span>
+          </td>
+          <td>
+            <span class="font-semibold">{{ classItem.class_name }}</span>
+          </td>
+          <td class="text-center">
+            <span class="font-semibold">{{ classItem.total_students }}</span>
+          </td>
+          <td class="text-center">
+            <span class="font-semibold">{{ classItem.total_exams }}</span>
+          </td>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <span class="font-semibold" [ngClass]="'text-' + getScoreSeverityColor(classItem.average_score)">
+                {{ formatScore(classItem.average_score) }}
+              </span>
+            </div>
+          </td>
+          <td class="text-center">
+            <button
+              pButton
+              type="button"
+              label="Xem"
+              icon="pi pi-eye"
+              class="p-button-sm p-button-outlined"
+              (click)="viewClassDetails(classItem.id)"
+              pTooltip="Xem kết quả chi tiết"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="flex align-items-center justify-content-center p-6">
+              <div class="text-center">
+                <i class="pi pi-inbox" style="font-size: 3rem; color: var(--text-color-secondary)"></i>
+                <p class="text-lg font-semibold mt-3">Không có dữ liệu</p>
+                <p class="text-sm text-color-secondary">Chưa có lớp học nào</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="loadingbody">
+        <tr>
+          <td colspan="6">
+            <p-skeleton height="50px" styleClass="mb-2"></p-skeleton>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

@@ -1,32 +1,52 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
 import { debounceTime, Subscription } from 'rxjs';
 import { LayoutService } from '../../../layout/service/layout.service';
+import { DashboardService } from '../services/dashboard.service';
 
 @Component({
     standalone: true,
     selector: 'app-revenue-stream-widget',
     imports: [ChartModule],
     template: `<div class="card mb-8!">
-        <div class="font-semibold text-xl mb-4">Revenue Stream</div>
-        <p-chart type="bar" [data]="chartData" [options]="chartOptions" class="h-100" />
+        <div class="font-semibold text-xl mb-4">Doanh Thu Theo Tháng</div>
+        <div class="relative" style="height: 400px;">
+            <p-chart type="line" [data]="chartData" [options]="chartOptions" style="height: 100%; width: 100%;" />
+        </div>
     </div>`
 })
-export class RevenueStreamWidget {
-    chartData: any;
-
+export class RevenueStreamWidget implements OnInit {
+    chartData: any = {
+        labels: [],
+        datasets: []
+    };
     chartOptions: any;
-
     subscription!: Subscription;
 
-    constructor(public layoutService: LayoutService) {
+    constructor(
+        public layoutService: LayoutService,
+        private dashboardService: DashboardService
+    ) {
         this.subscription = this.layoutService.configUpdate$.pipe(debounceTime(25)).subscribe(() => {
             this.initChart();
         });
     }
 
     ngOnInit() {
-        this.initChart();
+        this.loadRevenueData();
+    }
+
+    loadRevenueData() {
+        this.dashboardService.getRevenueChartData().subscribe({
+            next: (data) => {
+                this.chartData = data;
+                this.initChart();
+            },
+            error: (err) => {
+                console.error('Error loading revenue data:', err);
+                this.initChart();
+            }
+        });
     }
 
     initChart() {
@@ -34,56 +54,34 @@ export class RevenueStreamWidget {
         const textColor = documentStyle.getPropertyValue('--text-color');
         const borderColor = documentStyle.getPropertyValue('--surface-border');
         const textMutedColor = documentStyle.getPropertyValue('--text-color-secondary');
-
-        this.chartData = {
-            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'Subscriptions',
-                    backgroundColor: documentStyle.getPropertyValue('--p-primary-400'),
-                    data: [4000, 10000, 15000, 4000],
-                    barThickness: 32
-                },
-                {
-                    type: 'bar',
-                    label: 'Advertising',
-                    backgroundColor: documentStyle.getPropertyValue('--p-primary-300'),
-                    data: [2100, 8400, 2400, 7500],
-                    barThickness: 32
-                },
-                {
-                    type: 'bar',
-                    label: 'Affiliate',
-                    backgroundColor: documentStyle.getPropertyValue('--p-primary-200'),
-                    data: [4100, 5200, 3400, 7400],
-                    borderRadius: {
-                        topLeft: 8,
-                        topRight: 8,
-                        bottomLeft: 0,
-                        bottomRight: 0
-                    },
-                    borderSkipped: false,
-                    barThickness: 32
-                }
-            ]
-        };
+        const isDark = this.layoutService.isDarkTheme();
 
         this.chartOptions = {
             maintainAspectRatio: false,
             aspectRatio: 0.8,
+            responsive: true,
             plugins: {
                 legend: {
                     labels: {
-                        color: textColor
+                        color: isDark ? '#f3f4f6' : '#1f2937' // Explicit color based on theme
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context: any) => {
+                            return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                                maximumFractionDigits: 0
+                            }).format(context.parsed.y)}`;
+                        }
                     }
                 }
             },
             scales: {
                 x: {
-                    stacked: true,
                     ticks: {
-                        color: textMutedColor
+                        color: isDark ? '#9ca3af' : '#6b7280' // Explicit muted color based on theme
                     },
                     grid: {
                         color: 'transparent',
@@ -91,9 +89,15 @@ export class RevenueStreamWidget {
                     }
                 },
                 y: {
-                    stacked: true,
                     ticks: {
-                        color: textMutedColor
+                        color: isDark ? '#9ca3af' : '#6b7280', // Explicit muted color based on theme
+                        callback: (value: any) => {
+                            return new Intl.NumberFormat('vi-VN', {
+                                notation: 'compact',
+                                style: 'currency',
+                                currency: 'VND'
+                            }).format(value);
+                        }
                     },
                     grid: {
                         color: borderColor,

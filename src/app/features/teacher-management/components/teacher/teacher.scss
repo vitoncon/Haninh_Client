@@ -9,6 +9,129 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+// Statistics Cards Grid - following responsive patterns from other modules
+.statistics-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1400px) {
+    gap: 2rem;
+  }
+  
+  .p-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius, 0.75rem);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all var(--element-transition-duration, 0.25s);
+    height: 100%;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    // Reduce p-card-body padding to make it smaller
+    ::ng-deep .p-card-body {
+      padding: 0.5rem !important;
+    }
+
+    .flex {
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+
+      .flex-1 {
+        flex: 1;
+
+        h6 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0;
+          color: var(--text-color-secondary);
+          transition: color 0.3s ease;
+        }
+
+        h4 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 0;
+          color: var(--text-color);
+          transition: color 0.3s ease;
+        }
+
+        .mb-0 {
+          margin-top: 0.5rem !important;
+        }
+      }
+
+      // Icon container with rounded background
+      .icon-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        i {
+          font-size: 1.8rem;
+          transition: all 0.3s ease;
+        }
+      }
+
+      // Icon colors with semantic meaning and backgrounds
+      .text-blue-500 {
+        color: #3b82f6;
+        background: #dbeafe;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+      }
+      .text-green-500 {
+        color: #10b981;
+        background: #dcfce7;
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+      }
+      .text-orange-500 {
+        color: #f59e0b;
+        background: #fed7aa;
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+      }
+      .text-red-500 {
+        color: #ef4444;
+        background: #fee2e2;
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15);
+      }
+    }
+
+    // Dark mode card adjustments
+    .app-dark & {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+
+      &:hover {
+        background: var(--surface-600);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+      }
+    }
+  }
+}
+
 // Statistics Cards
 .stats-grid-responsive {
   @media (max-width: 1200px) {
@@ -115,10 +238,8 @@
      
      label {
        color: var(--text-color);
-       font-weight: 500;
        margin-bottom: 0.2rem;
        display: block;
-       font-size: 0.8rem;
        transition: color 0.3s ease;
      }
    }
@@ -138,7 +259,6 @@
     
     span {
       color: var(--text-muted-color);
-      font-weight: 500;
       transition: color 0.3s ease;
       white-space: nowrap;
       flex-shrink: 0;
@@ -269,8 +389,6 @@
     
     .form-section-title {
       color: var(--text-color);
-      font-size: 1.125rem;
-      font-weight: 600;
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
       border-bottom: 2px solid var(--primary-color);
@@ -280,6 +398,24 @@
   
   .form-group {
     margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    
+    .readonly-input {
+      background-color: var(--surface-100) !important;
+      color: var(--text-color-secondary) !important;
+      cursor: not-allowed !important;
+      border-color: var(--surface-300) !important;
+    }
+
+    .text-gray-500 {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      font-weight: 400;
+      margin-left: 0.25rem;
+      display: inline;
+    }
     
     label {
       display: block;
@@ -287,6 +423,7 @@
       color: var(--text-color);
       font-weight: 500;
       transition: color 0.3s ease;
+      line-height: 1.4;
       
       .req {
         color: var(--red-500);
@@ -299,6 +436,19 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    align-items: start;
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      min-height: auto;
+      
+      label {
+        margin-bottom: 0.5rem;
+        height: auto;
+        min-height: 1.4rem;
+      }
+    }
     
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
@@ -319,19 +469,17 @@
   .p-fileupload {
     .p-fileupload-filename {
       // Default styling for filename display
-      font-size: 0.875rem !important;
+
       color: var(--text-color) !important;
       visibility: visible !important;
       
       // Only override when showing "No file chosen" (empty state)
       &:empty {
-        font-size: 0 !important;
         visibility: hidden !important;
         position: relative !important;
         
         &::before {
           content: "Chưa chọn tệp nào" !important;
-          font-size: 0.875rem !important;
           color: var(--text-muted-color) !important;
           display: block !important;
           visibility: visible !important;
@@ -343,7 +491,6 @@
       
       // When file is selected, ensure filename is visible
       &:not(:empty) {
-        font-size: 0.875rem !important;
         color: var(--text-color) !important;
         visibility: visible !important;
         position: static !important;
@@ -357,18 +504,15 @@
     // Also target content area
     .p-fileupload-content {
       .p-fileupload-filename {
-        font-size: 0.875rem !important;
         color: var(--text-color) !important;
         visibility: visible !important;
         
         &:empty {
-          font-size: 0 !important;
           visibility: hidden !important;
           position: relative !important;
           
           &::before {
             content: "Chưa chọn tệp nào" !important;
-            font-size: 0.875rem !important;
             color: var(--text-muted-color) !important;
             display: block !important;
             visibility: visible !important;
@@ -379,7 +523,6 @@
         }
         
         &:not(:empty) {
-          font-size: 0.875rem !important;
           color: var(--text-color) !important;
           visibility: visible !important;
           position: static !important;
@@ -399,11 +542,10 @@
   .p-fileupload .p-inline-message {
     .p-message-text,
     .p-inline-message-text {
-      font-size: 0 !important;
+
       
       &::before {
         content: "Kích thước tệp vượt quá giới hạn cho phép (1MB)" !important;
-        font-size: 0.875rem !important;
         color: var(--red-500) !important;
         display: block !important;
       }
@@ -412,11 +554,10 @@
   
   // Target any error message in file upload
   .p-fileupload *[class*="message"] {
-    font-size: 0 !important;
+
     
     &::before {
       content: "Kích thước tệp vượt quá giới hạn cho phép (1MB)" !important;
-      font-size: 0.875rem !important;
       color: var(--red-500) !important;
       display: block !important;
     }
@@ -509,7 +650,6 @@
       }
       
       .p-paginator-current {
-        font-size: 0.875rem;
         margin-right: 1rem;
         color: var(--text-muted-color) !important;
         transition: color 0.3s ease;
@@ -537,7 +677,6 @@
         .p-paginator-page {
           min-width: 1.75rem;
           height: 1.75rem;
-          font-size: 0.875rem;
         }
         
         .p-paginator-prev,
@@ -546,7 +685,6 @@
         .p-paginator-last {
           min-width: 1.75rem;
           height: 1.75rem;
-          font-size: 0.875rem;
         }
       }
       
@@ -556,7 +694,6 @@
         width: 50px !important;
         
         .p-dropdown-label {
-          font-size: 0.875rem;
           padding: 0.25rem 0.25rem !important;
           text-align: center !important;
         }
@@ -570,7 +707,6 @@
   }
   
   .p-tag {
-    font-size: 0.75rem;
     font-weight: 500;
     padding: 0.25rem 0.5rem;
     border-radius: 0.375rem;
@@ -583,7 +719,6 @@
     
     &.p-button-sm {
       padding: 0.375rem 0.75rem;
-      font-size: 0.875rem;
     }
     }
   }
@@ -705,11 +840,9 @@
      
      // Override "No file chosen" text to Vietnamese
      .p-fileupload-filename {
-       font-size: 0 !important;
        
        &::before {
          content: "Chưa chọn tệp nào" !important;
-         font-size: 0.875rem !important;
          color: var(--text-muted-color) !important;
          display: block !important;
        }

@@ -1,0 +1,544 @@
+<div class="page-card">
+  <!-- Header -->
+  <div class="schedule-header">
+    <div class="header-content">
+      <div class="header-title-section">
+        <button
+          pButton
+          icon="pi pi-arrow-left"
+          class="p-button-text back-button"
+          pTooltip="Quay lại chi tiết lớp học"
+          (click)="onBackToClassDetail()">
+        </button>
+        <div class="title-text">
+          <h3>Lịch học - {{ className }}</h3>
+          <p>Quản lý và theo dõi lịch học của lớp</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <div class="tab-buttons">
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'hybrid'"
+        (click)="switchTab('hybrid')">
+        <i class="pi pi-calendar"></i>
+        <span>Lịch học</span>
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'weekly'"
+        (click)="switchTab('weekly')">
+        <i class="pi pi-calendar-plus"></i>
+        <span>Lịch tuần</span>
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'monthly'"
+        (click)="switchTab('monthly')">
+        <i class="pi pi-calendar-clock"></i>
+        <span>Lịch tháng</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab 1: Hybrid View (Table + Mini Calendar) -->
+  <div *ngIf="activeTab === 'hybrid'" class="tab-content">
+      <div class="hybrid-container">
+        <!-- Mini Calendar Filter -->
+        <div class="mini-calendar-section">
+          <div class="calendar-filter-header">
+            <h4><i class="pi pi-calendar-clock"></i> Bộ lọc lịch học</h4>
+          </div>
+          
+          <!-- Quick Action Buttons -->
+          <div class="quick-actions-row">
+            <p-button 
+              label="Hôm nay" 
+              icon="pi pi-calendar" 
+              size="small" 
+              (click)="goToToday()"
+              [styleClass]="!isShowingAll && selectedDate && isToday(selectedDate) ? 'p-button-sm p-button-success' : 'p-button-outlined p-button-sm'">
+            </p-button>
+            <p-button 
+              label="Tất cả" 
+              icon="pi pi-list" 
+              size="small" 
+              (click)="showAllSchedules()"
+              [styleClass]="isShowingAll ? 'p-button-sm p-button-success' : 'p-button-outlined p-button-sm'">
+            </p-button>
+          </div>
+          
+          <!-- Date Picker -->
+          <div class="date-picker-container">
+            <label>Chọn ngày cụ thể:</label>
+            <p-datePicker 
+              [(ngModel)]="selectedDate" 
+              (onSelect)="onDateSelect($event)"
+              [maxDate]="maxDate"
+              [minDate]="minDate"
+              placeholder="Chọn ngày"
+              dateFormat="dd/mm/yy"
+              styleClass="w-full">
+            </p-datePicker>
+          </div>
+          
+          <!-- Current Filter Status -->
+          <div class="filter-status" *ngIf="!isShowingAll">
+            <div class="status-badge">
+              <i class="pi pi-filter"></i>
+              <span>{{ getCurrentFilterInfo() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-section">
+          <div class="table-header">
+            <div class="table-title"> 
+              <h4><i class="pi pi-list"></i> Danh sách buổi học</h4>
+              <div class="schedule-info">
+                <span class="schedule-count">{{ filteredSchedules.length }} buổi học</span>
+                <span class="filter-info" *ngIf="!isShowingAll">{{ getCurrentFilterInfo() }}</span>
+              </div>
+            </div>
+            <div class="table-actions">
+              <p-button 
+                label="Thêm buổi học" 
+                icon="pi pi-plus" 
+                (click)="onAddNew()"
+                size="small">
+              </p-button>
+            </div>
+          </div>
+
+          <p-table 
+            [value]="filteredSchedules" 
+            [paginator]="true" 
+            [rows]="10"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Hiển thị {first} đến {last} của {totalRecords} buổi học"
+            [globalFilterFields]="['date', 'start_time', 'end_time', 'teacher_name', 'room_name', 'status']"
+            styleClass="p-datatable-sm">
+            
+            <ng-template pTemplate="caption">
+              <div class="enhanced-search-section">
+                <!-- Search Input -->
+                <div class="search-input-group">
+                  <span class="p-input-icon-left">
+                    <i class="pi pi-search"></i>
+                    <input 
+                      pInputText 
+                      type="text" 
+                      placeholder="Tìm kiếm theo ngày, giáo viên, phòng, trạng thái..." 
+                      [value]="searchQuery"
+                      (input)="onSearch($event)"
+                      class="p-inputtext-sm search-input">
+                  </span>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                  <div class="filter-group">
+                    <label>Trạng thái:</label>
+                    <p-select 
+                      [options]="statusOptions" 
+                      [(ngModel)]="selectedStatus"
+                      (onChange)="onStatusFilterChange($event.value)"
+                      placeholder="Tất cả trạng thái"
+                      [showClear]="true"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="filter-select">
+                    </p-select>
+                  </div>
+
+                  <div class="filter-group">
+                    <label>Phòng học:</label>
+                    <p-select 
+                      [options]="roomOptions" 
+                      [(ngModel)]="selectedRoom"
+                      (onChange)="onRoomFilterChange($event.value)"
+                      placeholder="Tất cả phòng"
+                      [showClear]="true"
+                      class="filter-select">
+                    </p-select>
+                  </div>
+
+                  <div class="filter-actions" *ngIf="hasActiveFilters">
+                    <p-button 
+                      label="Xóa bộ lọc" 
+                      icon="pi pi-times" 
+                      size="small"
+                      (click)="clearAllFilters()"
+                      styleClass="p-button-outlined p-button-sm">
+                    </p-button>
+                  </div>
+                </div>
+
+                <!-- Active Filters Summary -->
+                <div class="active-filters-summary" *ngIf="hasActiveFilters">
+                  <span class="filter-summary-text">
+                    <i class="pi pi-filter"></i>
+                    Đang áp dụng {{ getActiveFilterCount() }} bộ lọc
+                  </span>
+                </div>
+              </div>
+            </ng-template>
+
+              <ng-template pTemplate="header">
+                <tr>
+                  <th pSortableColumn="date">
+                    Ngày học <p-sortIcon field="date"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="start_time">
+                    Giờ bắt đầu <p-sortIcon field="start_time"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="end_time">
+                    Giờ kết thúc <p-sortIcon field="end_time"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="teacher_name">
+                    Giáo viên <p-sortIcon field="teacher_name"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="room_name">
+                    Phòng học <p-sortIcon field="room_name"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="status">
+                    Trạng thái <p-sortIcon field="status"></p-sortIcon>
+                  </th>
+                  <th>Thao tác</th>
+                </tr>
+              </ng-template>
+
+            <ng-template pTemplate="body" let-schedule>
+              <tr>
+                <td>
+                  <span class="date-cell">
+                    {{ formatDate(schedule.date) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="time-cell">
+                    {{ schedule.start_time }}
+                  </span>
+                </td>
+                <td>
+                  <span class="time-cell">
+                    {{ schedule.end_time }}
+                  </span>
+                </td>
+                <td>
+                  <span class="teacher-cell">
+                    {{ schedule.teacher_name || '-' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="room-cell">
+                    {{ schedule.room_name || '-' }}
+                  </span>
+                </td>
+                <td>
+                  <p-tag 
+                    [value]="schedule.status" 
+                    [severity]="getStatusSeverity(schedule.status)">
+                  </p-tag>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <p-button 
+                      icon="pi pi-pencil" 
+                      size="small" 
+                      styleClass="p-button-text p-button-sm"
+                      (click)="onEdit(schedule)"
+                      pTooltip="Sửa">
+                    </p-button>
+                    <p-button 
+                      icon="pi pi-trash" 
+                      size="small" 
+                      styleClass="p-button-text p-button-sm p-button-danger"
+                      (click)="onDelete(schedule)"
+                      pTooltip="Xóa">
+                    </p-button>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="7" class="text-center">
+                  <div class="empty-state" [ngClass]="{'search-empty': hasActiveFilters && filteredSchedules.length === 0, 'no-data-empty': !hasActiveFilters && filteredSchedules.length === 0}">
+                    <!-- Search Empty State -->
+                    <div *ngIf="hasActiveFilters && filteredSchedules.length === 0" class="search-empty-content">
+                      <div class="empty-icon search-icon">
+                        <i class="pi pi-search"></i>
+                      </div>
+                      <h4>Không tìm thấy buổi học nào</h4>
+                      <p>Không có buổi học nào phù hợp với điều kiện tìm kiếm/lọc của bạn.</p>
+                      <div class="empty-actions">
+                        <p-button 
+                          label="Xóa bộ lọc" 
+                          icon="pi pi-refresh"
+                          (click)="clearAllFilters()"
+                          styleClass="p-button-outlined">
+                        </p-button>
+                        <p-button 
+                          label="Xem tất cả" 
+                          icon="pi pi-list"
+                          (click)="showAllSchedules()"
+                          styleClass="p-button-primary">
+                        </p-button>
+                      </div>
+                    </div>
+
+                    <!-- No Data Empty State -->
+                    <div *ngIf="filteredSchedules.length === 0 && !hasActiveFilters" class="no-data-empty-content">
+                      <div class="empty-icon no-data-icon">
+                        <i class="pi pi-calendar-times"></i>
+                      </div>
+                      <h4>Chưa có buổi học nào</h4>
+                      <p>Lớp học này chưa có buổi học nào được lên lịch.</p>
+                      <div class="empty-actions">
+                        <p-button 
+                          label="Thêm buổi học đầu tiên" 
+                          icon="pi pi-plus"
+                          (click)="onAddNew()"
+                          styleClass="p-button-primary">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+  </div>
+
+  <!-- Tab 2: Weekly Calendar View -->
+  <div *ngIf="activeTab === 'weekly'" class="tab-content">
+      <div class="weekly-calendar-container">
+        <div class="calendar-controls">
+          <div class="calendar-nav">
+            <p-button 
+              icon="pi pi-chevron-left" 
+              (click)="onPreviousWeek()"
+              styleClass="p-button-text">
+            </p-button>
+            <h4>{{ getCurrentWeekRange() }}</h4>
+            <p-button 
+              icon="pi pi-chevron-right" 
+              (click)="onNextWeek()"
+              styleClass="p-button-text">
+            </p-button>
+          </div>
+          <p-button 
+            label="Hôm nay" 
+            icon="pi pi-calendar" 
+            (click)="goToCurrentWeek()"
+            styleClass="p-button-outlined p-button-sm">
+          </p-button>
+  </div>
+
+        <div class="full-calendar-wrapper">
+          <full-calendar 
+            *ngIf="calendarKey >= 0" 
+            [options]="weeklyCalendarOptions">
+          </full-calendar>
+        </div>
+      </div>
+  </div>
+
+  <!-- Tab 3: Monthly View -->
+  <div *ngIf="activeTab === 'monthly'" class="tab-content">
+    <div class="monthly-calendar-container">
+      <div class="calendar-controls">
+        <div class="calendar-nav">
+          <p-button 
+            icon="pi pi-chevron-left" 
+            (click)="previousMonth()"
+            styleClass="p-button-text">
+          </p-button>
+          <h4>{{ getCurrentMonthRange() }}</h4>
+          <p-button 
+            icon="pi pi-chevron-right" 
+            (click)="nextMonth()"
+            styleClass="p-button-text">
+          </p-button>
+        </div>
+        <p-button 
+          label="Hôm nay" 
+          icon="pi pi-calendar" 
+          (click)="goToCurrentMonth()"
+          styleClass="p-button-outlined p-button-sm">
+        </p-button>
+      </div>
+
+      <div class="full-calendar-wrapper">
+        <full-calendar 
+          *ngIf="calendarKey >= 0" 
+          [options]="monthlyCalendarOptions">
+        </full-calendar>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modern Drawer Form -->
+  <p-drawer 
+    [(visible)]="displayDrawer" 
+    position="right" 
+    [modal]="true"
+    [style]="{width: '480px'}"
+    [showCloseIcon]="true"
+    [closable]="true"
+    header="Thêm / Sửa buổi học"
+    styleClass="schedule-drawer">
+    
+    <div class="drawer-content">
+      <div class="drawer-form">
+        
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin cơ bản</h5>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Giáo viên</label>
+              <p-select
+                [options]="teacherOptions"
+                [(ngModel)]="formSchedule.teacher_id"
+                placeholder="Chọn giáo viên"
+                optionLabel="label"
+                optionValue="value"
+                appendTo="body"
+                class="w-full">
+              </p-select>
+            </div>
+            <div class="form-group">
+              <label>Trạng thái</label>
+              <p-select
+                [options]="statusOptions"
+                [(ngModel)]="formSchedule.status"
+                placeholder="Chọn trạng thái"
+                optionLabel="label"
+                optionValue="value"
+                appendTo="body"
+                class="w-full">
+              </p-select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ngày học <span class="req">*</span></label>
+              <p-datePicker
+                [(ngModel)]="formSchedule.date"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                appendTo="body"
+                [touchUI]="false"
+                class="w-full"
+                placeholder="dd/mm/yyyy">
+              </p-datePicker>
+            </div>
+            <div class="form-group">
+              <label>Phòng học</label>
+              <input 
+                pInputText 
+                [(ngModel)]="formSchedule.room_name" 
+                placeholder="Nhập phòng học" 
+                class="w-full" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin lịch học</h5>
+          
+          <div class="form-group">
+            <label>Giờ học: <span class="req">*</span></label>
+            <div class="schedule-time">
+              <div class="time-inputs">
+                <div class="time-input">
+                  <label for="start-time-picker" class="font-bold block mb-2">Từ:</label>
+                  <p-datePicker 
+                    [(ngModel)]="startTimeDate"
+                    [iconDisplay]="'input'"
+                    [showIcon]="true"
+                    [timeOnly]="true"
+                    appendTo="body"
+                    inputId="start-time-picker"
+                    placeholder="Chọn giờ bắt đầu">
+                    <ng-template #inputicon let-clickCallBack="clickCallBack">
+                      <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+                    </ng-template>
+                  </p-datePicker>
+                </div>
+                <div class="time-separator">-</div>
+                <div class="time-input">
+                  <label for="end-time-picker" class="font-bold block mb-2">Đến:</label>
+                  <p-datePicker 
+                    [(ngModel)]="endTimeDate"
+                    [iconDisplay]="'input'"
+                    [showIcon]="true"
+                    [timeOnly]="true"
+                    appendTo="body"
+                    inputId="end-time-picker"
+                    placeholder="Chọn giờ kết thúc">
+                    <ng-template #inputicon let-clickCallBack="clickCallBack">
+                      <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+                    </ng-template>
+                  </p-datePicker>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea
+              pTextarea
+              [(ngModel)]="formSchedule.note"
+              placeholder="Nhập ghi chú (nếu có)"
+              rows="3"
+              class="w-full">
+            </textarea>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="drawer-footer">
+        <div class="footer-actions">
+          <p-button 
+            label="Hủy" 
+            icon="pi pi-times" 
+            styleClass="p-button-text p-button-secondary"
+            (click)="onCancel()">
+          </p-button>
+          <p-button 
+            *ngIf="formSchedule?.id" 
+            label="Xóa" 
+            icon="pi pi-trash" 
+            styleClass="p-button-text p-button-danger"
+            (click)="onDeleteFromDialog()">
+          </p-button>
+          <p-button 
+            [label]="formSchedule.id ? 'Cập nhật' : 'Thêm buổi học'" 
+            icon="pi pi-check" 
+            styleClass="p-button-primary"
+            (click)="onSave()" 
+            [loading]="saving">
+          </p-button>
+        </div>
+      </div>
+    </ng-template>
+  </p-drawer>
+</div>

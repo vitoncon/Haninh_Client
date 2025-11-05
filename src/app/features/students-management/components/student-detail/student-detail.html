@@ -1,0 +1,582 @@
+<div class="student-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-wrapper">
+    <i class="pi pi-spin pi-spinner loading-icon"></i>
+    <h3>Đang tải...</h3>
+    <p>Vui lòng chờ trong giây lát</p>
+  </div>
+
+  <!-- Student Detail Content -->
+  <div *ngIf="!loading && studentData" class="student-detail-content">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="flex justify-content-between align-items-center">
+        <div class="flex align-items-center gap-3">
+          <button
+            pButton
+            icon="pi pi-arrow-left"
+            [text]="true"
+            (click)="onBack()"
+            pTooltip="Quay lại danh sách"
+            styleClass="p-button-lg">
+          </button>
+          <div>
+            <h1 class="student-name">{{ studentData.full_name }}</h1>
+            <p class="student-code">{{ studentData.student_code }}</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content with Tabs -->
+    <div class="tabs-container">
+      <p-tabs [value]="activeTab" (activeTabChange)="onTabChange($event)">
+        <p-tablist>
+          @for (tab of tabs; track tab.value) {
+            <p-tab [value]="tab.value">{{ tab.title }}</p-tab>
+          }
+        </p-tablist>
+        <p-tabpanels>
+          @for (tab of tabs; track tab.value) {
+            <p-tabpanel [value]="tab.value">
+              <!-- Tab 0: Thông tin cá nhân -->
+              @if (tab.value === 0) {
+                <div class="tab-content">
+                  <!-- View Mode -->
+                    <!-- Profile Section -->
+                    <div class="profile-section">
+                      <div class="profile-card">
+                        <div class="profile-header">
+                          <p-avatar 
+                            [image]="studentData.avatar_url || undefined" 
+                            [label]="getLastNameInitial(studentData.full_name)" 
+                            size="xlarge" 
+                            shape="circle"
+                            styleClass="profile-avatar">
+                          </p-avatar>
+                          <div class="profile-info">
+                            <h3 class="profile-name">{{ studentData.full_name }}</h3>
+                            <p class="profile-code">{{ studentData.student_code }}</p>
+                            <div class="profile-status">
+                              <p-tag 
+                                [value]="studentData.status" 
+                                [severity]="studentData.status === 'Đang học' ? 'success' : 
+                                           studentData.status === 'Hoàn thành' ? 'info' : 
+                                           studentData.status === 'Nghỉ học' ? 'warn' : 'danger'">
+                              </p-tag>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Personal Information -->
+                    <div class="info-section">
+                      <div class="section-header">
+                        <h4>Thông tin cá nhân</h4>
+                        <button 
+                          pButton 
+                          icon="pi pi-pencil" 
+                          label="Chỉnh sửa"
+                          (click)="onEdit()"
+                          styleClass="p-button-primary"
+                          class="p-button-sm">
+                        </button>
+                      </div>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <label>Giới tính:</label>
+                          <span>{{ studentData.gender || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Ngày sinh:</label>
+                          <span>{{ studentData.date_of_birth ? (studentData.date_of_birth | date:'dd/MM/yyyy') : '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Số điện thoại:</label>
+                          <span>{{ studentData.phone || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Email:</label>
+                          <span>{{ studentData.email || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Địa chỉ:</label>
+                          <span>{{ studentData.address || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Ngày nhập học:</label>
+                          <span>{{ studentData.enrollment_date ? (studentData.enrollment_date | date:'dd/MM/yyyy') : '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Trạng thái:</label>
+                          <span>{{ studentData.status || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Ngày tạo:</label>
+                          <span>{{ studentData.created_at ? (studentData.created_at | date:'dd/MM/yyyy HH:mm') : '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                          <label>Cập nhật cuối:</label>
+                          <span>{{ studentData.updated_at ? (studentData.updated_at | date:'dd/MM/yyyy HH:mm') : '-' }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Note Section -->
+                    @if (studentData.note) {
+                      <div class="note-section">
+                        <h4>Ghi chú</h4>
+                        <p class="note-text">{{ studentData.note }}</p>
+                      </div>
+                    }
+                </div>
+              }
+
+              <!-- Tab 1: Lớp học hiện tại -->
+              @if (tab.value === 1) {
+                <div class="tab-content">
+                  <!-- Loading State -->
+                  <div *ngIf="loadingClasses" class="classes-loading">
+                    <i class="pi pi-spin pi-spinner loading-spinner"></i>
+                    <span class="loading-text">Đang tải thông tin lớp học...</span>
+                  </div>
+                  
+                  <!-- Empty State -->
+                  <div *ngIf="!loadingClasses && allClasses.length === 0" class="classes-empty-state">
+                    <i class="pi pi-graduation-cap empty-icon"></i>
+                    <h4 class="empty-title">Chưa có lớp học</h4>
+                    <p class="empty-description">Học viên chưa tham gia lớp học nào. Vui lòng liên hệ admin để đăng ký lớp học.</p>
+                  </div>
+
+                  <div *ngIf="!loadingClasses && allClasses.length > 0" class="current-classes">
+                    <!-- Summary Section -->
+                    <div class="classes-summary">
+                      <div class="summary-header">
+                        <i class="pi pi-graduation-cap"></i>
+                        <h4>Tổng quan lớp học</h4>
+                      </div>
+                      <div class="summary-stats">
+                        <div class="stat-item">
+                          <span class="stat-value" style="color: #22c55e !important; font-size: 2rem !important; font-weight: 800 !important; display: block !important; visibility: visible !important; opacity: 1 !important;">{{ getCurrentClassesCount() }}</span>
+                          <span class="stat-label">Đang học</span>
+                        </div>
+                        <div class="stat-item">
+                          <span class="stat-value" style="color: #3b82f6 !important; font-size: 2rem !important; font-weight: 800 !important; display: block !important; visibility: visible !important; opacity: 1 !important;">{{ getCompletedClassesCount() }}</span>
+                          <span class="stat-label">Đã hoàn thành</span>
+                        </div>
+                        <div class="stat-item">
+                          <span class="stat-value" style="color: #f59e0b !important; font-size: 2rem !important; font-weight: 800 !important; display: block !important; visibility: visible !important; opacity: 1 !important;">{{ getDroppedClassesCount() }}</span>
+                          <span class="stat-label">Nghỉ học</span>
+                        </div>
+                        <!-- Ẩn "Tổng cộng" vì chỉ quản lý 3 thứ tiếng, không cần thiết -->
+                        <!-- <div class="stat-item">
+                          <span class="stat-value">{{ allClasses.length || 0 }}</span>
+                          <span class="stat-label">Tổng cộng</span>
+                        </div> -->
+                      </div>
+                    </div>
+                    
+                    <!-- Classes List Section -->
+                    <div class="classes-list">
+                      <div class="classes-header">
+                        <h4>
+                          <i class="pi pi-list"></i>
+                          Danh sách lớp học
+                        </h4>
+                        <button 
+                          pButton 
+                          icon="pi pi-refresh" 
+                          [outlined]="true"
+                          [loading]="loadingClasses"
+                          (click)="refreshClasses()"
+                          pTooltip="Làm mới danh sách lớp học"
+                          tooltipPosition="bottom"
+                          styleClass="p-button-sm">
+                        </button>
+                      </div>
+                      
+                      <div class="classes-grid">
+                        <div *ngFor="let classItem of allClasses" class="class-card">
+                          <div class="class-header">
+                            <div class="class-title">
+                              <h4 (click)="viewClassDetail(classItem.class_id)" class="class-name-link">
+                                {{ classItem.class_name || classItem.class_code || 'Lớp ' + classItem.class_id }}
+                              </h4>
+                              <span class="class-code">{{ classItem.class_code || 'Mã: ' + classItem.class_id }}</span>
+                            </div>
+                            <div class="class-status">
+                              <p-tag 
+                                [value]="classItem.status" 
+                                [severity]="classItem.status === 'Đang học' || classItem.status === 'Đang diễn ra' ? 'success' : 
+                                           classItem.status === 'Hoàn thành' ? 'info' : 
+                                           classItem.status === 'Nghỉ học' ? 'warn' : 'danger'">
+                              </p-tag>
+                            </div>
+                          </div>
+                          
+                          <div class="class-content">
+                            <div class="info-grid">
+                              <div class="info-item">
+                                <i class="pi pi-graduation-cap info-icon"></i>
+                                <div class="info-content">
+                                  <div class="info-label">Khóa học</div>
+                                  <div class="info-value">{{ classItem.course_name || '-' }}</div>
+                                </div>
+                              </div>
+                              <div class="info-item">
+                                <i class="pi pi-language info-icon"></i>
+                                <div class="info-content">
+                                  <div class="info-label">Ngôn ngữ</div>
+                                  <div class="info-value">{{ classItem.language || '-' }}</div>
+                                </div>
+                              </div>
+                              <div class="info-item">
+                                <i class="pi pi-briefcase info-icon"></i>
+                                <div class="info-content">
+                                  <div class="info-label">Giáo viên</div>
+                                  <div class="info-value">{{ classItem.teacher_name || '-' }}</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="class-dates">
+                              <div class="date-item">
+                                <div class="date-label">Ngày nhập học</div>
+                                <div class="date-value">{{ classItem.enroll_date ? (classItem.enroll_date | date:'dd/MM/yyyy') : '-' }}</div>
+                              </div>
+                              <div *ngIf="classItem.completion_date" class="date-item">
+                                <div class="date-label">Ngày hoàn thành</div>
+                                <div class="date-value">{{ classItem.completion_date | date:'dd/MM/yyyy' }}</div>
+                              </div>
+                            </div>
+                            
+                            <div *ngIf="classItem.note" class="class-note">
+                              <p><i class="pi pi-info-circle"></i> <strong>Ghi chú:</strong> {{ classItem.note }}</p>
+                            </div>
+                          </div>
+                          
+                          <div class="class-actions">
+                            <button 
+                              pButton 
+                              label="Xem chi tiết" 
+                              icon="pi pi-external-link"
+                              class="p-button-outlined p-button-sm"
+                              pTooltip="Xem thông tin chi tiết lớp học"
+                              tooltipPosition="top"
+                              (click)="viewClassDetail(classItem.class_id)">
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+
+              <!-- Tab 2: Thống kê -->
+              @if (tab.value === 2) {
+                <div class="tab-content">
+                  <div *ngIf="overviewStats" class="stats-overview">
+                    <!-- Main Statistics Grid -->
+                    <div class="main-stats-grid">
+                      <div class="main-stat-card">
+                        <div class="stat-icon">
+                          <i class="pi pi-graduation-cap"></i>
+                        </div>
+                        <div class="stat-info">
+                          <div class="stat-value">{{ overviewStats.totalClasses }}</div>
+                          <div class="stat-label">Tổng lớp học</div>
+                        </div>
+                      </div>
+                      
+                      <div class="main-stat-card">
+                        <div class="stat-icon">
+                          <i class="pi pi-play-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                          <div class="stat-value">{{ overviewStats.currentClasses }}</div>
+                          <div class="stat-label">Lớp đang học</div>
+                        </div>
+                      </div>
+                      
+                      <div class="main-stat-card">
+                        <div class="stat-icon">
+                          <i class="pi pi-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                          <div class="stat-value">{{ overviewStats.completedClasses }}</div>
+                          <div class="stat-label">Lớp hoàn thành</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Last Class Date Info -->
+                    <div class="last-class-card" *ngIf="overviewStats.lastClassDate">
+                      <div class="last-class-content">
+                        <div class="last-class-icon">
+                          <i class="pi pi-calendar"></i>
+                        </div>
+                        <div class="last-class-info">
+                          <div class="last-class-label">Ngày học gần nhất</div>
+                          <div class="last-class-date">{{ overviewStats.lastClassDate | date:'dd/MM/yyyy' }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Module Navigation Cards -->
+                    <div class="module-navigation">
+                      <div class="module-card">
+                        <div class="module-header">
+                          <div class="module-icon">
+                            <i class="pi pi-chart-bar"></i>
+                          </div>
+                          <div class="module-title">
+                            <h4>Kết quả học tập</h4>
+                            <p>Xem chi tiết điểm số và bài thi</p>
+                          </div>
+                        </div>
+                        <div class="module-action">
+                          <button 
+                            pButton 
+                            label="Xem chi tiết" 
+                            icon="pi pi-external-link"
+                            class="p-button-outlined p-button-sm"
+                            (click)="navigateToStudyResults()">
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div class="module-card">
+                        <div class="module-header">
+                          <div class="module-icon">
+                            <i class="pi pi-crown"></i>
+                          </div>
+                          <div class="module-title">
+                            <h4>Chứng chỉ</h4>
+                            <p>Xem danh sách chứng chỉ đã cấp</p>
+                          </div>
+                        </div>
+                        <div class="module-action">
+                          <button 
+                            pButton 
+                            label="Xem chi tiết" 
+                            icon="pi pi-external-link"
+                            class="p-button-outlined p-button-sm"
+                            (click)="navigateToCertificates()">
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </p-tabpanel>
+          }
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !studentData" class="error-wrapper">
+    <i class="pi pi-exclamation-triangle error-icon"></i>
+    <h3>Không tìm thấy học viên</h3>
+    <p>Học viên bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+    <button pButton label="Quay lại" icon="pi pi-arrow-left" class="p-button-primary" (click)="onBack()"></button>
+  </div>
+
+  <!-- Drawer chỉnh sửa học viên -->
+  <p-drawer
+    header="Chỉnh sửa học viên"
+    [(visible)]="drawerVisible"
+    position="right"
+    (onHide)="onDrawerHide()"
+    [modal]="true"
+    [style]="{ width: '600px' }">
+    
+    <ng-template pTemplate="content">
+      <div class="student-form-grid p-fluid" *ngIf="formStudent; else noFormTemplate">
+        
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin cơ bản</h5>
+          
+          <!-- Student Code and Name -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mã học viên <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <div class="flex gap-2">
+                <input 
+                  pInputText 
+                  [(ngModel)]="formStudent.student_code"
+                  placeholder="Nhập mã học viên"
+                  class="flex-1"
+                  readonly
+                  [class.readonly-input]="true">
+              </div>
+              <small class="text-gray-500">Mã học viên không thể thay đổi khi chỉnh sửa</small>
+            </div>
+            <div class="form-group">
+              <label>Họ và tên <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.full_name"
+                placeholder="Nhập họ và tên"
+                class="w-full">
+            </div>
+          </div>
+
+          <!-- Gender and DOB -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Giới tính</label>
+              <p-select 
+                [ngModel]="formStudent.gender"
+                (ngModelChange)="formStudent.gender = $event"
+                [options]="genderOptions"
+                placeholder="Chọn giới tính"
+                class="w-full">
+              </p-select>
+            </div>
+            <div class="form-group">
+              <label>Ngày sinh</label>
+              <p-datePicker 
+                [(ngModel)]="formStudent.date_of_birth"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                appendTo="body"
+                [touchUI]="false"
+                class="w-full"
+                [placeholder]="'dd/mm/yyyy'">
+              </p-datePicker>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số điện thoại</label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.phone"
+                placeholder="Nhập số điện thoại"
+                class="w-full">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input 
+                pInputText 
+                [(ngModel)]="formStudent.email"
+                placeholder="Nhập email"
+                class="w-full">
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="form-group">
+            <label>Địa chỉ</label>
+            <input 
+              pInputText 
+              [(ngModel)]="formStudent.address"
+              placeholder="Nhập địa chỉ"
+              class="w-full">
+          </div>
+
+          <!-- Avatar Upload -->
+          <div class="form-group">
+            <label>Hình đại diện</label>
+            <p-fileUpload 
+              mode="basic" 
+              name="avatar" 
+              accept="image/*" 
+              [maxFileSize]="1000000"
+              chooseLabel="Chọn hình"
+              chooseIcon="pi pi-upload"
+              class="w-full">
+            </p-fileUpload>
+          </div>
+        </div>
+
+        <!-- Enrollment Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin nhập học</h5>
+          
+          <!-- Enrollment Date and Status in one row -->
+          <div class="form-row enrollment-row">
+            <div class="form-group">
+              <label>Ngày nhập học</label>
+              <p-datePicker 
+                [(ngModel)]="formStudent.enrollment_date"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                appendTo="body"
+                [touchUI]="false"
+                class="w-full"
+                [placeholder]="'dd/mm/yyyy'">
+              </p-datePicker>
+            </div>
+            <div class="form-group">
+              <label>Trạng thái <span class="req" style="color: #ef4444 !important;">*</span></label>
+              <p-select 
+                [ngModel]="formStudent.status"
+                (ngModelChange)="formStudent.status = $event"
+                [options]="statusOptions"
+                placeholder="Chọn trạng thái"
+                class="w-full">
+              </p-select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin bổ sung</h5>
+          
+          <!-- Notes -->
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea 
+              pInputTextarea 
+              [(ngModel)]="formStudent.note"
+              rows="3"
+              placeholder="Nhập ghi chú"
+              class="w-full">
+            </textarea>
+          </div>
+        </div>
+        
+        <!-- Dialog Actions -->
+        <div class="dialog-actions">
+          <button 
+            pButton 
+            label="Hủy" 
+            class="p-button-text"
+            (click)="onDrawerHide()">
+          </button>
+          <button 
+            pButton 
+            label="Cập nhật" 
+            class="p-button-success"
+            (click)="onSave()"
+            [loading]="saving">
+          </button>
+        </div>
+      </div>
+      
+      <ng-template #noFormTemplate>
+        <div class="empty-wrapper">
+          <i class="pi pi-exclamation-triangle empty-icon"></i>
+          <h3>Không có dữ liệu form</h3>
+          <p>Vui lòng thử lại sau.</p>
+        </div>
+      </ng-template>
+    </ng-template>
+  </p-drawer>
+
+  <!-- Toast Messages -->
+  <p-toast></p-toast>
+</div>

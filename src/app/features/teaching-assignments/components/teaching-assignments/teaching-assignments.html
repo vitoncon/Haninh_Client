@@ -1,1 +1,886 @@
-<p>teaching-assignments works!</p>
+<div class="page-card">
+  <!-- Header với tiêu đề -->
+
+    
+  <!-- Actions Header -->
+  <div class="header-actions">
+    <button
+      pButton
+      type="button"
+      label="Tự động gợi ý"
+      icon="pi pi-lightbulb"
+      class="p-button-info"
+      (click)="onAutoSuggest()"
+    ></button>
+    <button
+      pButton
+      type="button"
+      label="Xuất Excel"
+      icon="pi pi-download"
+      [outlined]="true"
+      (click)="onExportExcel()"
+    ></button>
+    <button
+      pButton
+      type="button"
+      [label]="saving ? 'Đang lưu...' : 'Lưu tất cả'"
+      icon="pi pi-check"
+      class="p-button-primary"
+      (click)="onSaveAllAssignments()"
+      [disabled]="!hasChanges() || saving"
+      [loading]="saving"
+    ></button>
+  </div>
+
+
+
+  <!-- Filters Section -->
+  <div class="filter-bar" [class.collapsed]="!filtersVisible">
+    <div class="filter-section">
+      <div class="filter-header">
+        <h5 class="filter-title">
+          <i class="pi pi-filter"></i>
+          Bộ lọc nhanh
+        </h5>
+        <p-button
+          [icon]="filtersVisible ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+          [outlined]="true"
+          styleClass="filter-toggle-btn"
+          pTooltip="{{ filtersVisible ? 'Ẩn bộ lọc' : 'Hiện bộ lọc' }}"
+          (click)="toggleFiltersVisibility()">
+        </p-button>
+      </div>
+      
+      <div class="filter-controls" [class.hidden]="!filtersVisible">
+        <div class="filter-group">
+          <label class="filter-label">Tìm kiếm:</label>
+          <p-iconfield iconPosition="left" class="search-field">
+            <p-inputicon class="pi pi-search" />
+            <input 
+              type="text" 
+              pInputText 
+              placeholder="Tìm kiếm lớp học..." 
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange($event)" 
+            />
+          </p-iconfield>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Học kỳ:</label>
+          <p-select 
+            [(ngModel)]="selectedSemester"
+            [options]="semesterOptions"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            placeholder="Chọn học kỳ"
+            class="filter-select"
+            (onChange)="onFilterChange()"
+          ></p-select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Khoa:</label>
+          <p-select 
+            [(ngModel)]="selectedDepartment"
+            [options]="departmentOptions"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            placeholder="Chọn khoa"
+            class="filter-select"
+            (onChange)="onFilterChange()"
+          ></p-select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Trạng thái:</label>
+          <p-select 
+            [(ngModel)]="selectedStatus"
+            [options]="assignmentStatusOptions"
+            optionLabel="label"
+            appendTo="body"
+            optionValue="value"
+            placeholder="Trạng thái phân công"
+            class="filter-select"
+            (onChange)="onFilterChange()"
+          ></p-select>
+        </div>
+
+        <div class="filter-actions">
+          <p-button
+            *ngIf="hasActiveFilters()"
+            label="Xóa bộ lọc"
+            icon="pi pi-times"
+            [outlined]="true"
+            styleClass="filter-reset-btn"
+            pTooltip="Xóa tất cả bộ lọc"
+            (click)="onClearFilters()">
+          </p-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <p-tabs [value]="activeTabIndex" (activeTabChange)="onTabChange($event)">
+      <p-tablist>
+        <p-tab value="0">Theo lớp học</p-tab>
+        <p-tab value="1">Theo giáo viên</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <!-- Tab 1: Theo lớp học -->
+        <p-tabpanel value="0">
+        <!-- Loading -->
+        <div *ngIf="loading" class="loading-container">
+          <p-progressSpinner></p-progressSpinner>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+
+        <!-- Main Assignment Table -->
+        <div *ngIf="!loading" class="assignment-table-container">
+          <div class="table-wrapper">
+            <table class="assignment-table">
+              <thead>
+                <tr>
+                  <th class="col-class">Lớp học</th>
+                  <th class="col-status">Trạng thái</th>
+                  <th class="col-teacher">
+                    <div class="role-header">
+                      <i class="pi pi-verified role-icon chủ-nhiệm"></i>
+                      <span>Chủ nhiệm</span>
+                    </div>
+                  </th>
+                  <th class="col-teacher">
+                    <div class="role-header">
+                      <i class="pi pi-graduation-cap role-icon giảng-dạy"></i>
+                      <span>Giảng dạy</span>
+                    </div>
+                  </th>
+                  <th class="col-teacher">
+                    <div class="role-header">
+                      <i class="pi pi-user-plus role-icon trợ-giảng"></i>
+                      <span>Trợ giảng</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="filteredClasses.length > 0; else noDataRow">
+                  <tr *ngFor="let classItem of filteredClasses" class="class-row">
+                    <td class="class-info-cell">
+                      <div class="class-info" 
+                           [pTooltip]="'Lớp: ' + classItem.class_name + '\nMã lớp: ' + classItem.class_code + '\nKhóa học: ' + classItem.course_name"
+                           tooltipPosition="right">
+                        <div class="class-name">{{ classItem.class_name }}</div>
+                        <div class="class-code">{{ classItem.class_code }}</div>
+                        <div class="class-meta">{{ classItem.course_name }}</div>
+                      </div>
+                    </td>
+                    
+                    <td class="status-cell">
+                      <div class="assignment-status" 
+                           [class]="getClassAssignmentStatusClass(classItem.id)"
+                           [pTooltip]="getStatusTooltip(classItem.id)"
+                           tooltipPosition="top">
+                        <div class="status-icon">
+                          <i [class]="getClassAssignmentStatusIcon(classItem.id)"></i>
+                        </div>
+                        <div class="status-text">
+                          {{ getClassAssignmentStatusText(classItem.id) }}
+                        </div>
+                      </div>
+                    </td>
+                  
+                  <td class="teacher-assignment-cell">
+                    <div class="assignment-cell-wrapper">
+                      <p-select 
+                        [ngModel]="getAssignmentByRole(classItem.id, 'Giáo viên chủ nhiệm')?.teacher_id"
+                        [options]="availableTeachers"
+                        optionLabel="teacher_name"
+                        optionValue="id"
+                        placeholder="Chọn giáo viên chủ nhiệm"
+                        [filter]="true"
+                        [showClear]="true"
+                        class="teacher-select"
+                        [style]="{'background-color': getAssignmentStatusColor(classItem.id, 'Giáo viên chủ nhiệm')}"
+                        (onChange)="onAssignmentChange(classItem.id, 'Giáo viên chủ nhiệm', $event.value)"
+                        tooltipPosition="top"
+                      >
+                        <ng-template pTemplate="item" let-teacher>
+                          <div class="teacher-option" [pTooltip]="getTeacherTooltip(teacher)" tooltipPosition="right">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <div class="teacher-info">
+                              <div class="teacher-name">{{ teacher.teacher_name }}</div>
+                              <div class="teacher-meta" *ngIf="getTeacherDisplayInfo(teacher)">
+                                {{ getTeacherDisplayInfo(teacher) }}
+                              </div>
+                            </div>
+                            <div class="teacher-badges">
+                              <p-tag 
+                                *ngIf="teacher.degree" 
+                                [value]="teacher.degree" 
+                                [severity]="getTeacherDegreeSeverity(teacher.degree)"
+                                styleClass="text-xs"
+                              ></p-tag>
+                              <p-tag 
+                                [value]="teacher.status" 
+                                [severity]="getTeacherStatusSeverity(teacher.status)"
+                                styleClass="text-xs ml-1"
+                              ></p-tag>
+                            </div>
+                          </div>
+                        </ng-template>
+                        <ng-template pTemplate="selectedItem" let-teacher>
+                          <div class="teacher-selected" *ngIf="teacher">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <span>{{ teacher.teacher_name }}</span>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                      <div *ngIf="isSaving(classItem.id, 'Giáo viên chủ nhiệm')" class="saving-indicator saving">
+                        <i class="pi pi-save saving-icon"></i>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="teacher-assignment-cell">
+                    <div class="assignment-cell-wrapper">
+                      <p-select 
+                        [ngModel]="getAssignmentByRole(classItem.id, 'Giáo viên giảng dạy')?.teacher_id"
+                        [options]="availableTeachers"
+                        optionLabel="teacher_name"
+                        optionValue="id"
+                        placeholder="Chọn giáo viên chính"
+                        [filter]="true"
+                        [showClear]="true"
+                        class="teacher-select"
+                        [style]="{'background-color': getAssignmentStatusColor(classItem.id, 'Giáo viên giảng dạy')}"
+                        (onChange)="onAssignmentChange(classItem.id, 'Giáo viên giảng dạy', $event.value)"
+                        tooltipPosition="top"
+                      >
+                        <ng-template pTemplate="item" let-teacher>
+                          <div class="teacher-option" [pTooltip]="getTeacherTooltip(teacher)" tooltipPosition="right">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <div class="teacher-info">
+                              <div class="teacher-name">{{ teacher.teacher_name }}</div>
+                              <div class="teacher-meta" *ngIf="getTeacherDisplayInfo(teacher)">
+                                {{ getTeacherDisplayInfo(teacher) }}
+                              </div>
+                            </div>
+                            <div class="teacher-badges">
+                              <p-tag 
+                                *ngIf="teacher.degree" 
+                                [value]="teacher.degree" 
+                                [severity]="getTeacherDegreeSeverity(teacher.degree)"
+                                styleClass="text-xs"
+                              ></p-tag>
+                              <p-tag 
+                                [value]="teacher.status" 
+                                [severity]="getTeacherStatusSeverity(teacher.status)"
+                                styleClass="text-xs ml-1"
+                              ></p-tag>
+                            </div>
+                          </div>
+                        </ng-template>
+                        <ng-template pTemplate="selectedItem" let-teacher>
+                          <div class="teacher-selected" *ngIf="teacher">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <span>{{ teacher.teacher_name }}</span>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                      <div *ngIf="isSaving(classItem.id, 'Giáo viên giảng dạy')" class="saving-indicator saving">
+                        <i class="pi pi-save saving-icon"></i>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="teacher-assignment-cell">
+                    <div class="assignment-cell-wrapper">
+                      <p-select 
+                        [ngModel]="getAssignmentByRole(classItem.id, 'Trợ giảng')?.teacher_id"
+                        [options]="availableTeachers"
+                        optionLabel="teacher_name"
+                        optionValue="id"
+                        placeholder="Chọn trợ giảng (nếu có)"
+                        [filter]="true"
+                        [showClear]="true"
+                        class="teacher-select"
+                        [style]="{'background-color': getAssignmentStatusColor(classItem.id, 'Trợ giảng')}"
+                        (onChange)="onAssignmentChange(classItem.id, 'Trợ giảng', $event.value)"
+                        tooltipPosition="top"
+                      >
+                        <ng-template pTemplate="item" let-teacher>
+                          <div class="teacher-option" [pTooltip]="getTeacherTooltip(teacher)" tooltipPosition="right">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <div class="teacher-info">
+                              <div class="teacher-name">{{ teacher.teacher_name }}</div>
+                              <div class="teacher-meta" *ngIf="getTeacherDisplayInfo(teacher)">
+                                {{ getTeacherDisplayInfo(teacher) }}
+                              </div>
+                            </div>
+                            <div class="teacher-badges">
+                              <p-tag 
+                                *ngIf="teacher.degree" 
+                                [value]="teacher.degree" 
+                                [severity]="getTeacherDegreeSeverity(teacher.degree)"
+                                styleClass="text-xs"
+                              ></p-tag>
+                              <p-tag 
+                                [value]="teacher.status" 
+                                [severity]="getTeacherStatusSeverity(teacher.status)"
+                                styleClass="text-xs ml-1"
+                              ></p-tag>
+                            </div>
+                          </div>
+                        </ng-template>
+                        <ng-template pTemplate="selectedItem" let-teacher>
+                          <div class="teacher-selected" *ngIf="teacher">
+                            <p-avatar 
+                              [image]="teacher.avatar_url ?? undefined"
+                              [label]="getLastNameInitial(teacher.teacher_name)"
+                              size="normal"
+                              styleClass="mr-2"
+                              shape="circle"
+                            ></p-avatar>
+                            <span>{{ teacher.teacher_name }}</span>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                      <div *ngIf="isSaving(classItem.id, 'Trợ giảng')" class="saving-indicator saving">
+                        <i class="pi pi-save saving-icon"></i>
+                      </div>
+                    </div>
+                  </td>
+                  </tr>
+                </ng-container>
+                
+                <!-- No data message -->
+                <ng-template #noDataRow>
+                  <tr>
+                    <td colspan="5" class="no-data-cell">
+                      <div class="no-data-message">
+                        <i class="pi pi-inbox" style="font-size: 3rem; color: var(--text-color-secondary); margin-bottom: 1rem;"></i>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color-secondary);">
+                          Không có dữ liệu
+                        </h4>
+                        <p style="margin: 0; color: var(--text-color-secondary);">
+                          <span *ngIf="hasActiveFilters()">Không tìm thấy lớp học phù hợp với bộ lọc hiện tại.</span>
+                          <span *ngIf="!hasActiveFilters()">Chưa có lớp học nào được tạo.</span>
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </p-tabpanel>
+
+        <!-- Tab 2: Theo giáo viên -->
+        <p-tabpanel value="1">
+        <div class="teacher-schedule-container">
+          <!-- Two-column Layout -->
+          <div class="schedule-layout">
+            <!-- Left Column: Teacher Selection & Profile -->
+            <div class="schedule-left-column">
+              <div class="teacher-selection-card">
+                <div class="card-header">
+                  <h5 class="card-title">
+                    <i class="pi pi-users"></i>
+                    Chọn giáo viên
+                  </h5>
+                </div>
+                <div class="card-content">
+                  <div class="teacher-selector">
+                    <label class="selector-label">Chọn giáo viên:</label>
+                    <p-select 
+                      [(ngModel)]="selectedTeacherForSchedule"
+                      [options]="getFilteredTeachersForSchedule()"
+                      optionLabel="teacher_name"
+                      optionValue="id"
+                      placeholder="Chọn giáo viên để xem lịch dạy"
+                      class="teacher-selector-dropdown"
+                      [filter]="true"
+                      (onChange)="onTeacherSelectionChange($event.value)"
+                    >
+                      <ng-template pTemplate="item" let-teacher>
+                        <div class="teacher-option" [pTooltip]="getTeacherTooltip(teacher)" tooltipPosition="right">
+                          <p-avatar 
+                            [image]="teacher.avatar_url ?? undefined"
+                            [label]="getLastNameInitial(teacher.teacher_name)"
+                            size="normal"
+                            styleClass="mr-2"
+                            shape="circle"
+                          ></p-avatar>
+                          <div class="teacher-info">
+                            <div class="teacher-name">{{ teacher.teacher_name }}</div>
+                            <div class="teacher-meta" *ngIf="getTeacherDisplayInfo(teacher)">
+                              {{ getTeacherDisplayInfo(teacher) }}
+                            </div>
+                          </div>
+                          <div class="teacher-badges">
+                            <p-tag 
+                              *ngIf="teacher.degree" 
+                              [value]="teacher.degree" 
+                              [severity]="getTeacherDegreeSeverity(teacher.degree)"
+                              styleClass="text-xs"
+                            ></p-tag>
+                            <p-tag 
+                              [value]="teacher.status" 
+                              [severity]="getTeacherStatusSeverity(teacher.status)"
+                              styleClass="text-xs ml-1"
+                            ></p-tag>
+                          </div>
+                        </div>
+                      </ng-template>
+                      <ng-template pTemplate="selectedItem" let-teacher>
+                        <div class="teacher-selected" *ngIf="teacher">
+                          <p-avatar 
+                            [image]="teacher.avatar_url ?? undefined"
+                            [label]="getLastNameInitial(teacher.teacher_name)"
+                            size="normal"
+                            styleClass="mr-2"
+                            shape="circle"
+                          ></p-avatar>
+                          <span>{{ teacher.teacher_name }}</span>
+                        </div>
+                      </ng-template>
+                    </p-select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Teacher Profile Card -->
+              <div class="teacher-profile-card" *ngIf="getSelectedTeacherInfo() as teacherInfo">
+                <div class="card-header">
+                  <h5 class="card-title">
+                    <i class="pi pi-user"></i>
+                    Thông tin giáo viên
+                  </h5>
+                </div>
+                <div class="card-content">
+                  <div class="teacher-profile-header">
+                    <div class="teacher-avatar-section">
+                      <p-avatar 
+                        [image]="teacherInfo.avatar_url ?? undefined"
+                        [label]="getLastNameInitial(teacherInfo.teacher_name)"
+                        size="xlarge"
+                        styleClass="mr-3"
+                        shape="circle">
+                      </p-avatar>
+                    </div>
+                    <div class="teacher-details">
+                      <h3 class="teacher-name-big">{{ teacherInfo.teacher_name }}</h3>
+                      <div class="teacher-meta-info" *ngIf="getTeacherDisplayInfo(teacherInfo)">
+                        {{ getTeacherDisplayInfo(teacherInfo) }}
+                      </div>
+                      <div class="teacher-status-badges">
+                        <p-tag 
+                          *ngIf="teacherInfo.degree" 
+                          [value]="teacherInfo.degree" 
+                          [severity]="getTeacherDegreeSeverity(teacherInfo.degree)"
+                          styleClass="mr-2"
+                        ></p-tag>
+                        <p-tag 
+                          [value]="teacherInfo.status" 
+                          [severity]="getTeacherStatusSeverity(teacherInfo.status)"
+                        ></p-tag>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Global Filter Notice -->
+              <div class="global-filter-notice" *ngIf="hasActiveFilters()">
+                <i class="pi pi-info-circle"></i>
+                <span>Bộ lọc toàn cục đang áp dụng</span>
+              </div>
+            </div>
+
+            <!-- Right Column: Schedule Table -->
+            <div class="schedule-right-column">
+              <!-- Schedule Header with Actions -->
+              <div class="schedule-header-card" *ngIf="selectedTeacherForSchedule">
+                <div class="card-header">
+                  <h5 class="card-title">
+                    <i class="pi pi-calendar"></i>
+                    Lịch dạy hiện tại
+                  </h5>
+                </div>
+                <div class="card-content">
+                  <!-- Schedule Actions and Search -->
+                  <div class="schedule-actions">
+                    <div class="schedule-filters">
+                      <div class="schedule-search">
+                        <p-iconfield iconPosition="left" class="schedule-search-field">
+                          <p-inputicon class="pi pi-search" />
+                          <input 
+                            type="text" 
+                            pInputText 
+                            placeholder="Tìm kiếm lớp học..." 
+                            [(ngModel)]="scheduleSearchQuery"
+                            (input)="onScheduleSearchChange($event)" 
+                          />
+                        </p-iconfield>
+                      </div>
+                      <div class="schedule-filter-selects">
+                        <p-select 
+                          [(ngModel)]="scheduleRoleFilter"
+                          [options]="roleOptions"
+                          optionLabel="label"
+                          optionValue="value"
+                          placeholder="Vai trò"
+                          [showClear]="true"
+                          class="schedule-filter-select"
+                          (onChange)="onScheduleFilterChange()"
+                        ></p-select>
+                        <p-select 
+                          [(ngModel)]="scheduleStatusFilter"
+                          [options]="statusOptions"
+                          optionLabel="label"
+                          optionValue="value"
+                          placeholder="Trạng thái"
+                          [showClear]="true"
+                          class="schedule-filter-select"
+                          (onChange)="onScheduleFilterChange()"
+                        ></p-select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Schedule Table -->
+              <div class="schedule-table-card" *ngIf="selectedTeacherForSchedule">
+                <div class="card-content">
+                  <div class="schedule-table-container">
+              <table class="schedule-table">
+                <thead>
+                  <tr>
+                    <th>Lớp học</th>
+                    <th>Vai trò</th>
+                    <th>Khóa học</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày phân công</th>
+                    <th class="col-actions">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngIf="getFilteredTeacherSchedule().length > 0; else noScheduleDataRow">
+                    <tr *ngFor="let assignment of getFilteredTeacherSchedule()" class="schedule-row">
+                      <td>
+                        <div class="class-cell">
+                          <div class="class-name">{{ assignment.class_name }}</div>
+                          <div class="class-code">{{ assignment.class_code }}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <p-tag 
+                          [value]="assignment.role" 
+                          [severity]="getRoleSeverity(assignment.role)"
+                        ></p-tag>
+                      </td>
+                      <td>{{ assignment.course_name || '-' }}</td>
+                      <td>
+                        <p-tag 
+                          [value]="assignment.status" 
+                          [severity]="getStatusSeverity(assignment.status)"
+                        ></p-tag>
+                      </td>
+                      <td>{{ assignment.assign_date | date:'dd/MM/yyyy' }}</td>
+                      <td class="col-actions">
+                        <div class="action-buttons">
+                          <button
+                            pButton
+                            type="button"
+                            icon="pi pi-pencil"
+                            class="p-button-outlined p-button-sm action-btn edit-btn"
+                            pTooltip="Chỉnh sửa phân công"
+                            tooltipPosition="top"
+                            (click)="onEditTeacherAssignment(assignment)"
+                          ></button>
+                          <button
+                            pButton
+                            type="button"
+                            icon="pi pi-trash"
+                            class="p-button-outlined p-button-sm action-btn delete-btn"
+                            pTooltip="Xóa phân công"
+                            tooltipPosition="top"
+                            (click)="onDeleteTeacherAssignment(assignment)"
+                          ></button>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+                  
+                  <!-- No schedule data message -->
+                  <ng-template #noScheduleDataRow>
+                    <tr>
+                      <td colspan="6" class="no-schedule-data-cell">
+                        <div class="no-schedule-data-message">
+                          <i class="pi pi-inbox" style="font-size: 2.5rem; color: var(--text-color-secondary); margin-bottom: 0.75rem;"></i>
+                          <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color-secondary);">
+                            Không có dữ liệu
+                          </h4>
+                          <p style="margin: 0; color: var(--text-color-secondary);">
+                            <span *ngIf="hasScheduleFilters()">Không tìm thấy lớp học phù hợp với bộ lọc hiện tại.</span>
+                            <span *ngIf="!hasScheduleFilters() && hasActiveFilters()">Giáo viên này không có lớp học phù hợp với bộ lọc toàn cục.</span>
+                            <span *ngIf="!hasScheduleFilters() && !hasActiveFilters()">Giáo viên này chưa được phân công cho lớp học nào.</span>
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-template>
+                </tbody>
+                  </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No data states for right column -->
+              <div *ngIf="selectedTeacherForSchedule && getFilteredTeacherSchedule().length === 0 && teacherSchedule.length > 0" class="schedule-table-card">
+                <div class="card-content">
+                  <div class="no-schedule-data-message">
+                    <i class="pi pi-filter text-6xl text-300 mb-3"></i>
+                    <h3>Không có kết quả tìm kiếm</h3>
+                    <p>Không tìm thấy lớp học phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="selectedTeacherForSchedule && teacherSchedule.length === 0" class="schedule-table-card">
+                <div class="card-content">
+                  <div class="no-schedule-data-message">
+                    <i class="pi pi-calendar-times text-6xl text-300 mb-3"></i>
+                    <h3>Chưa có lịch dạy</h3>
+                    <p *ngIf="!hasActiveFilters()">Giáo viên này chưa được phân công cho lớp học nào.</p>
+                    <p *ngIf="hasActiveFilters()">Giáo viên này không có lớp học phù hợp với bộ lọc toàn cục hiện tại.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- No teacher selected state -->
+          <div *ngIf="!selectedTeacherForSchedule" class="no-teacher-selected">
+            <i class="pi pi-user text-6xl text-300 mb-3"></i>
+            <h3>Chọn giáo viên để xem lịch dạy</h3>
+            <p>Vui lòng chọn một giáo viên từ dropdown ở trên để xem lịch dạy của họ.</p>
+          </div>
+        </div>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+
+  <!-- Add/Edit Assignment Drawer -->
+  <p-drawer 
+    [(visible)]="assignmentDialogVisible" 
+    [position]="'right'"
+    [modal]="true" 
+    [style]="{ width: '600px' }"
+  >
+    <ng-template pTemplate="header">
+      <h4 class="m-0">{{ isEditMode ? 'Chỉnh sửa phân công' : 'Thêm giáo viên cho lớp' }}</h4>
+    </ng-template>
+    
+    <ng-template pTemplate="content">
+    <form *ngIf="formAssignment" (ngSubmit)="onSaveAssignment()" #assignmentForm="ngForm">
+      <div class="assignment-form-grid">
+        <div class="form-column">
+          <!-- Lớp học (readonly if editing) -->
+          <div class="form-field">
+            <label class="block text-900 font-medium mb-2">Lớp học</label>
+            <p-select
+              [(ngModel)]="formAssignment.class_id" 
+              name="class_id"
+              [options]="availableClasses"
+              optionLabel="class_name"
+              optionValue="id"
+              placeholder="Chọn lớp học"
+              [disabled]="isEditMode"
+              class="w-full"
+              (ngModelChange)="onClassSelectionChange($event)"
+            ></p-select>
+          </div>
+
+          <!-- Thông tin khóa học -->
+          <div class="form-field" *ngIf="formAssignment.class_id && getSelectedClassCourseInfo()">
+            <label class="block text-900 font-medium mb-2">Khóa học</label>
+            <div class="course-info-display">
+              <p-tag 
+                [value]="getSelectedClassCourseInfo()" 
+                severity="info"
+                styleClass="course-tag"
+              ></p-tag>
+            </div>
+          </div>
+
+          <!-- Giáo viên -->
+          <div class="form-field">
+            <label class="block text-900 font-medium mb-2">Giáo viên</label>
+            <p-select
+              [(ngModel)]="formAssignment.teacher_id" 
+              name="teacher_id"
+              [options]="getAvailableTeachersForClass()"
+              optionLabel="teacher_name"
+              optionValue="id"
+              placeholder="Chọn giáo viên"
+              class="w-full"
+              [filter]="true"
+            >
+              <ng-template pTemplate="item" let-teacher>
+                <div class="teacher-option" [pTooltip]="getTeacherTooltip(teacher)" tooltipPosition="right">
+                  <p-avatar 
+                    [image]="teacher.avatar_url ?? undefined"
+                    [label]="getLastNameInitial(teacher.teacher_name)"
+                    size="normal"
+                    styleClass="mr-2"
+                    shape="circle"
+                  ></p-avatar>
+                  <div class="teacher-info">
+                    <div class="teacher-name">{{ teacher.teacher_name }}</div>
+                    <div class="teacher-meta" *ngIf="getTeacherDisplayInfo(teacher)">
+                      {{ getTeacherDisplayInfo(teacher) }}
+                    </div>
+                  </div>
+                  <div class="teacher-badges">
+                    <p-tag 
+                      *ngIf="teacher.degree" 
+                      [value]="teacher.degree" 
+                      [severity]="getTeacherDegreeSeverity(teacher.degree)"
+                      styleClass="text-xs"
+                    ></p-tag>
+                    <p-tag 
+                      [value]="teacher.status" 
+                      [severity]="getTeacherStatusSeverity(teacher.status)"
+                      styleClass="text-xs ml-1"
+                    ></p-tag>
+                  </div>
+                </div>
+              </ng-template>
+              <ng-template pTemplate="selectedItem" let-teacher>
+                <div class="teacher-selected" *ngIf="teacher">
+                  <p-avatar 
+                    [image]="teacher.avatar_url ?? undefined"
+                    [label]="getLastNameInitial(teacher.teacher_name)"
+                    size="normal"
+                    styleClass="mr-2"
+                    shape="circle"
+                  ></p-avatar>
+                  <span>{{ teacher.teacher_name }}</span>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+
+          <!-- Vai trò -->
+          <div class="form-field">
+            <label class="block text-900 font-medium mb-2">Vai trò</label>
+            <p-select
+              [(ngModel)]="formAssignment.role" 
+              name="role"
+              [options]="roleOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Chọn vai trò"
+              class="w-full"
+            ></p-select>
+          </div>
+
+          <!-- Trạng thái -->
+          <div class="form-field">
+            <label class="block text-900 font-medium mb-2">Trạng thái</label>
+            <p-select
+              [(ngModel)]="formAssignment.status" 
+              name="status"
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Chọn trạng thái"
+              class="w-full"
+            ></p-select>
+          </div>
+
+          <!-- Ngày phân công -->
+          <div class="form-field">
+            <label class="block text-900 font-medium mb-2">Ngày phân công</label>
+            <p-datePicker
+              [(ngModel)]="formAssignment.assign_date" 
+              name="assign_date"
+              placeholder="Chọn ngày phân công"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              class="w-full"
+            ></p-datePicker>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex justify-content-end gap-2 mt-4 form-actions-right">
+        <button
+          pButton
+          type="button"
+          label="Hủy"
+          icon="pi pi-times"
+          text="true"
+          (click)="onCancelAssignment()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="isEditMode ? 'Cập nhật' : 'Tạo mới'"
+          [icon]="isEditMode ? 'pi pi-check' : 'pi pi-plus'"
+          class="p-button-primary"
+          [loading]="saving"
+          [disabled]="saving"
+        ></button>
+      </div>
+    </form>
+    </ng-template>
+  </p-drawer>
+
+  <!-- Toast Messages -->
+  <p-toast></p-toast>
+
+  <!-- Confirmation Dialog -->
+  <p-confirmDialog></p-confirmDialog>
+
+</div>

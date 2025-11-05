@@ -8,7 +8,6 @@ import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
-import { ChipModule } from 'primeng/chip';
 import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -19,7 +18,7 @@ import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DrawerModule } from 'primeng/drawer';
 import { MessageService } from 'primeng/api';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, of, switchMap } from 'rxjs';
 import { ClassService } from '../../../class-management/services/class.service';
 import { ClassStudentService } from '../../../class-management/services/class-student.service';
 import { TeachingAssignmentService } from '../../../teaching-assignments/services/teaching-assignment.service';
@@ -35,7 +34,6 @@ import { TeachingAssignmentService } from '../../../teaching-assignments/service
     RippleModule,
     ToastModule,
     CardModule,
-    ChipModule,
     TagModule,
     DividerModule,
     ProgressSpinnerModule,
@@ -65,7 +63,6 @@ export class CourseDetail implements OnInit, OnDestroy {
   drawerVisible: boolean = false;
   formCourse: Course | null = null;
   saving: boolean = false;
-  tagsInput: string = '';
 
   private destroy$ = new Subject<void>();
 
@@ -181,8 +178,6 @@ export class CourseDetail implements OnInit, OnDestroy {
   onEdit(): void {
     if (this.courseData?.id) {
       this.formCourse = { ...this.courseData };
-      // Initialize tags input from form data
-      this.initializeTagsInput();
       this.drawerVisible = true;
     } else {
       this.messageService.add({
@@ -193,41 +188,9 @@ export class CourseDetail implements OnInit, OnDestroy {
     }
   }
 
-  private initializeTagsInput(): void {
-    if (this.formCourse?.tags) {
-      if (Array.isArray(this.formCourse.tags)) {
-        this.tagsInput = this.formCourse.tags.join(', ');
-      } else if (typeof this.formCourse.tags === 'string') {
-        try {
-          const parsed = JSON.parse(this.formCourse.tags);
-          if (Array.isArray(parsed)) {
-            this.tagsInput = parsed.join(', ');
-          } else {
-            this.tagsInput = '';
-          }
-        } catch {
-          this.tagsInput = '';
-        }
-      }
-    } else {
-      this.tagsInput = '';
-    }
-  }
-
-  updateTagsFromInput(input: string): void {
-    if (this.formCourse) {
-      if (input.trim()) {
-        const tags = input.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-        this.formCourse.tags = tags;
-      } else {
-        this.formCourse.tags = [];
-      }
-    }
-  }
 
   onDrawerHide(): void {
     this.formCourse = null;
-    this.tagsInput = '';
     this.drawerVisible = false;
   }
 
@@ -300,14 +263,6 @@ export class CourseDetail implements OnInit, OnDestroy {
     delete cleanData.created_at;
     delete cleanData.updated_at;
     
-    // Handle tags - ensure it's a proper JSON array or null
-    if (cleanData.tags && Array.isArray(cleanData.tags) && cleanData.tags.length > 0) {
-      // Convert array to JSON string for database storage
-      cleanData.tags = JSON.stringify(cleanData.tags);
-    } else {
-      // Set to null if empty or invalid
-      cleanData.tags = null;
-    }
     
     // Ensure numeric fields are properly formatted
     if (cleanData.tuition_fee !== null && cleanData.tuition_fee !== undefined && cleanData.tuition_fee !== '') {
@@ -402,7 +357,7 @@ export class CourseDetail implements OnInit, OnDestroy {
       prerequisites: course.prerequisites || '',
       learning_objectives: course.learning_objectives || '',
       category: course.category || '',
-      tags: course.tags || []
+      tags: []
     };
   }
 
@@ -440,59 +395,67 @@ export class CourseDetail implements OnInit, OnDestroy {
       return;
     }
 
-    // Load students và teachers từ tất cả các lớp
-    const studentPromises = classIds.map(classId => 
-      this.classStudentService.getStudentsByClass(classId).toPromise()
+    // Tạo các observables để load students và teachers từ tất cả các lớp
+    const studentObservables = classIds.map(classId => 
+      this.classStudentService.getStudentsByClass(classId).pipe(
+        takeUntil(this.destroy$)
+      )
     );
 
-    const teacherPromises = classIds.map(classId => 
-      this.teachingAssignmentService.getTeachingAssignmentsWithDetails({ 
-        class_id: classId, 
-        status: 'Đang dạy' 
-      }).toPromise()
+    const teacherObservables = classIds.map(classId => 
+      this.teachingAssignmentService.getClassTeacherAssignments(classId).pipe(
+        takeUntil(this.destroy$)
+      )
     );
 
-    Promise.all([...studentPromises, ...teacherPromises])
-      .then(results => {
-        const studentResults = results.slice(0, classIds.length);
-        const teacherResults = results.slice(classIds.length);
+    // Sử dụng forkJoin để đợi tất cả API calls hoàn thành
+    forkJoin([...studentObservables, ...teacherObservables])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results) => {
+          const studentResults = results.slice(0, classIds.length);
+          const teacherResults = results.slice(classIds.length);
 
-        // Đếm số học viên unique (tránh đếm trùng nếu học viên học nhiều lớp)
-        const uniqueStudents = new Set<number>();
-        studentResults.forEach(students => {
-          if (students && Array.isArray(students)) {
-            students.forEach(student => {
-              const studentData = student as any; // Type assertion for student data
-              if (studentData.student_id && studentData.status === 'Đang học') {
-                uniqueStudents.add(studentData.student_id);
-              }
-            });
-          }
-        });
+          // Đếm số học viên unique (tránh đếm trùng nếu học viên học nhiều lớp)
+          // Đếm tất cả học viên như trong class-detail, không filter theo status
+          const uniqueStudents = new Set<number>();
+          studentResults.forEach((students, index) => {
+            if (students && Array.isArray(students)) {
+              students.forEach(student => {
+                const studentData = student as any;
+                // Đếm tất cả học viên có student_id hợp lệ, giống như class-detail
+                if (studentData.student_id) {
+                  uniqueStudents.add(studentData.student_id);
+                }
+              });
+            }
+          });
 
-        // Đếm số giáo viên unique từ teaching assignments
-        const uniqueTeachers = new Set<number>();
-        teacherResults.forEach(assignments => {
-          if (assignments && Array.isArray(assignments)) {
-            assignments.forEach(assignment => {
-              const assignmentData = assignment as any; // Type assertion for assignment data
-              if (assignmentData.teacher_id) {
-                uniqueTeachers.add(assignmentData.teacher_id);
-              }
-            });
-          }
-        });
+          // Đếm số giáo viên unique từ class_teachers table (giống như class-detail)
+          const uniqueTeachers = new Set<number>();
+          teacherResults.forEach(assignments => {
+            if (assignments && Array.isArray(assignments)) {
+              assignments.forEach(assignment => {
+                const assignmentData = assignment as any;
+                // Chỉ đếm giáo viên có status 'Đang dạy' (giống logic trong class-detail)
+                if (assignmentData.teacher_id && (assignmentData.status === 'Đang dạy' || !assignmentData.status)) {
+                  uniqueTeachers.add(assignmentData.teacher_id);
+                }
+              });
+            }
+          });
 
-        this.courseStats = {
-          totalClasses: classCount,
-          totalStudents: uniqueStudents.size,
-          totalTeachers: uniqueTeachers.size
-        };
-        
-        this.statsLoading = false;
-      })
-      .catch(error => {
-        this.statsLoading = false;
+          this.courseStats = {
+            totalClasses: classCount,
+            totalStudents: uniqueStudents.size,
+            totalTeachers: uniqueTeachers.size
+          };
+          
+          this.statsLoading = false;
+        },
+        error: (error) => {
+          this.statsLoading = false;
+        }
       });
   }
 
@@ -530,11 +493,11 @@ export class CourseDetail implements OnInit, OnDestroy {
   getLanguageIcon(language: string | undefined): string {
     switch (language) {
       case 'Tiếng Anh':
-        return 'pi pi-flag';
+        return 'pi pi-language';
       case 'Tiếng Hàn':
-        return 'pi pi-flag';
+        return 'pi pi-language';
       case 'Tiếng Trung':
-        return 'pi pi-flag';
+        return 'pi pi-language';
       default:
         return 'pi pi-globe';
     }
@@ -557,13 +520,6 @@ export class CourseDetail implements OnInit, OnDestroy {
     return !!(value && value.trim().length > 0);
   }
 
-  hasTags(tags: string[] | undefined): boolean {
-    return !!(tags && tags.length > 0);
-  }
-
-  formatTags(tags: string[] | undefined): string[] {
-    return tags || [];
-  }
 
   getCourseStats(): Array<{label: string, value: string, icon: string}> {
     if (!this.courseData) return [];
@@ -636,9 +592,4 @@ export class CourseDetail implements OnInit, OnDestroy {
     return text.trim();
   }
 
-  // Helper method để format tags display
-  getTagsDisplayText(tags: string[] | undefined): string {
-    if (!tags || tags.length === 0) return 'Chưa có thẻ phân loại';
-    return tags.join(', ');
-  }
 }

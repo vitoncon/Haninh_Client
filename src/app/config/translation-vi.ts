@@ -63,5 +63,50 @@ export const vi: any = {
   // Messages
   accept: 'Đồng ý',
   reject: 'Từ chối',
-  chooseDate: 'Chọn ngày'
+  chooseDate: 'Chọn ngày',
+
+  // MultiSelect
+  selectedItems: 'học viên đã chọn',
+  itemsSelected: 'học viên đã chọn',
+  selectedDays: 'thứ đã chọn'
+};
+
+// FullCalendar Vietnamese locale
+export const fullCalendarViLocale = {
+  code: 'vi',
+  week: {
+    dow: 1, // Monday is the first day of the week
+    doy: 4  // The week that contains Jan 4th is the first week of the year
+  },
+  buttonText: {
+    prev: 'Trước',
+    next: 'Sau',
+    today: 'Hôm nay',
+    year: 'Năm',
+    month: 'Tháng',
+    week: 'Tuần',
+    day: 'Ngày',
+    list: 'Danh sách'
+  },
+  weekText: 'Tuần',
+  allDayText: 'Cả ngày',
+  moreLinkText: 'Khác',
+  noEventsText: 'Không có sự kiện nào',
+  buttonHints: {
+    prev: '$0 Trước',
+    next: '$0 Sau',
+    today(buttonText: string) {
+      return buttonText === 'Ngày' ? 'Hôm nay' : 'Tuần này';
+    }
+  },
+  viewHint(buttonText: string) {
+    return 'Xem ' + (buttonText === 'Tuần' ? 'Tuần' : buttonText === 'Tháng' ? 'Tháng' : 'Ngày');
+  },
+  navLinkHint: 'Đi tới $0',
+  moreLinkHint(eventCnt: number) {
+    return `Hiển thị thêm ${eventCnt} sự kiện`;
+  },
+  closeHint: 'Đóng',
+  timeHint: 'Thời gian',
+  eventHint: 'Sự kiện'
 };
