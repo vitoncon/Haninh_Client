@@ -1548,19 +1548,35 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Helper để lấy tổng học phí an toàn
   getTotalTuitionAmount(): number {
+    // If there are no students in the new data structure, treat totals as zero
+    // This prevents showing historical/statistics totals when the class has no students
+    if (!this.students || this.students.length === 0) {
+      return 0;
+    }
+
     return this.totalTuition || this.statistics?.total_amount || 0;
   }
 
   // Helper để lấy số tiền đã thu an toàn
   getCollectedAmount(): number {
+    // If there are no students, do not show any collected amount
+    if (!this.students || this.students.length === 0) {
+      return 0;
+    }
+
     // Ưu tiên sử dụng collected đã được tính toán lại, fallback về statistics
-    return this.collected !== undefined ? this.collected : (this.statistics?.paid_amount || 0);
+    return (typeof this.collected === 'number' ? this.collected : (this.statistics?.paid_amount || 0)) || 0;
   }
 
   // Helper để lấy số tiền chưa thu an toàn
   getUnpaidAmount(): number {
+    // If there are no students, unpaid amount should be zero
+    if (!this.students || this.students.length === 0) {
+      return 0;
+    }
+
     // Ưu tiên sử dụng debt đã được tính toán lại, fallback về statistics
-    return this.debt !== undefined ? this.debt : (this.statistics?.unpaid_amount || 0);
+    return (typeof this.debt === 'number' ? this.debt : (this.statistics?.unpaid_amount || 0)) || 0;
   }
 
 
