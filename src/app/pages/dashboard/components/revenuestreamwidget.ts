@@ -39,6 +39,16 @@ export class RevenueStreamWidget implements OnInit {
     loadRevenueData() {
         this.dashboardService.getRevenueChartData().subscribe({
             next: (data) => {
+                // Nếu backend trả về dữ liệu chưa có 'fill', ta thêm ở đây
+                data.datasets = data.datasets.map((ds: any) => ({
+                    ...ds,
+                    fill: false, // Tắt tô nền dưới đường
+                    tension: 0.4, // Bo nhẹ đường cong cho đẹp
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: ds.borderColor || '#3b82f6'
+                }));
+
                 this.chartData = data;
                 this.initChart();
             },
@@ -48,6 +58,7 @@ export class RevenueStreamWidget implements OnInit {
             }
         });
     }
+
 
     initChart() {
         const documentStyle = getComputedStyle(document.documentElement);
