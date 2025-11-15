@@ -1,0 +1,427 @@
+<div class="users-container">
+  <!-- Statistics Cards -->
+  <div class="statistics-cards-grid" *ngIf="statistics">
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Tổng tài khoản</h6>
+          <h4 class="mb-0">{{ statistics.total_users }}</h4>
+        </div>
+        <div class="icon-container text-blue-500">
+          <i class="pi pi-users"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đã xác thực</h6>
+          <h4 class="mb-0">{{ statistics.verified_users }}</h4>
+        </div>
+        <div class="icon-container text-green-500">
+          <i class="pi pi-check-circle"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Chưa xác thực</h6>
+          <h4 class="mb-0">{{ statistics.unverified_users }}</h4>
+        </div>
+        <div class="icon-container text-orange-500">
+          <i class="pi pi-clock"></i>
+        </div>
+      </div>
+    </p-card>
+    <p-card>
+      <div class="flex align-items-center">
+        <div class="flex-1">
+          <h6>Đang hoạt động</h6>
+          <h4 class="mb-0">{{ statistics.active_users }}</h4>
+        </div>
+        <div class="icon-container text-purple-500">
+          <i class="pi pi-user"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Main Content -->
+  <p-card>
+    <div class="flex justify-content-between align-items-center header-with-buttons">
+      <h2 class="m-0">Quản lý tài khoản</h2>
+      <div class="flex gap-2 justify-content-end" style="display: flex !important; gap: 0.5rem !important; justify-content: flex-end !important; align-items: center !important; flex-direction: row !important; margin-left: auto !important;">
+        <p-button 
+          icon="pi pi-download" 
+          label="Xuất Excel" 
+          (click)="exportToExcel()"
+          [outlined]="true"
+          [disabled]="filteredUsers.length === 0"
+        >
+        </p-button>
+        <p-button 
+          icon="pi pi-refresh" 
+          label="Làm mới" 
+          (click)="forceRefresh()"
+          [outlined]="true"
+          [loading]="loading"
+        >
+        </p-button>
+        <p-button 
+          icon="pi pi-plus" 
+          label="Thêm tài khoản" 
+          (click)="onCreate()"
+          styleClass="p-button-primary">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="flex flex-wrap gap-3 mb-4">
+      <!-- Text Search -->
+      <div class="flex-1 min-w-0">
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+          <input 
+            pInputText 
+            type="text" 
+            placeholder="Tìm kiếm theo tên, email, vai trò..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearch($event)"
+            class="w-full">
+        </p-iconField>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex gap-2">
+        <p-select 
+          [ngModel]="filters.role_id"
+          (ngModelChange)="filters.role_id = $event; onFilterChange()"
+          [options]="roleOptions"
+          placeholder="Lọc theo vai trò"
+          [showClear]="true"
+          class="min-w-0">
+        </p-select>
+
+        <p-select 
+          [ngModel]="filters.status"
+          (ngModelChange)="filters.status = $event; onFilterChange()"
+          [options]="statusOptions"
+          placeholder="Lọc theo trạng thái"
+          [showClear]="true"
+          class="min-w-0">
+        </p-select>
+
+        <p-select 
+          [ngModel]="filters.verifyEmail"
+          (ngModelChange)="filters.verifyEmail = $event; onFilterChange()"
+          [options]="verifyEmailOptions"
+          placeholder="Lọc theo xác thực"
+          [showClear]="true"
+          class="min-w-0">
+        </p-select>
+
+        <p-button 
+          icon="pi pi-filter"
+          text="true"
+          [label]="showAdvancedFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'"
+          (click)="toggleAdvancedFilters()"
+          styleClass="filter-toggle-btn">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Advanced Filters Panel -->
+    <div *ngIf="showAdvancedFilters" class="advanced-filters-panel">
+      <div class="grid">
+        <!-- Clear Filters Button -->
+        <div class="filter-group">
+          <p-button 
+            label="Xóa bộ lọc"
+            icon="pi pi-times"
+            [outlined]="true"
+            [disabled]="!hasActiveFilters"
+            (click)="onClearFilters()"
+            [style]="{'width': '100%'}">
+          </p-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <main class="main-content">
+      <p-table 
+        #dt
+        [value]="filteredUsers" 
+        [tableStyle]="{'min-width': '60rem'}"
+        [paginator]="true" 
+        [rows]="20"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} tài khoản"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [globalFilterFields]="['name', 'email', 'role_name']"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-gridlines">
+        
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem">
+              <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
+            <th pSortableColumn="name">
+              Tên <p-sortIcon field="name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="email">
+              Email <p-sortIcon field="email"></p-sortIcon>
+            </th>
+            <th pSortableColumn="role_name">
+              Vai trò <p-sortIcon field="role_name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="status">
+              Trạng thái <p-sortIcon field="status"></p-sortIcon>
+            </th>
+            <th pSortableColumn="verifyEmail">
+              Xác thực <p-sortIcon field="verifyEmail"></p-sortIcon>
+            </th>
+            <th pSortableColumn="created_at">
+              Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+            </th>
+            <th style="width: 8rem">Thao tác</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-user>
+          <tr>
+            <td>
+              <p-tableCheckbox [value]="user"></p-tableCheckbox>
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <p-avatar 
+                  [image]="user.avatarUrl" 
+                  [label]="getNameInitial(user.name)" 
+                  [style]="getAvatarStyle(user)"
+                  styleClass="mr-2" 
+                  size="normal" 
+                  shape="circle">
+                </p-avatar>
+                <span class="font-semibold">{{ user.name }}</span>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>
+              <p-tag 
+                [value]="getRoleLabel(user.role_name)" 
+                [severity]="getUserRoleSeverity(user.role_name)">
+              </p-tag>
+            </td>
+            <td>
+              <p-tag 
+                [value]="user.status || 'Hoạt động'" 
+                [severity]="getUserStatusSeverity(user.status)">
+              </p-tag>
+            </td>
+            <td>
+              <p-tag 
+                [value]="getVerifyEmailLabel(user.verifyEmail || 0)" 
+                [severity]="getVerifyEmailSeverity(user.verifyEmail || 0)">
+              </p-tag>
+            </td>
+            <td>{{ user.created_at ? (user.created_at | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>
+              <div class="flex gap-2">
+                <p-button 
+                  icon="pi pi-pencil" 
+                  [text]="true" 
+                  size="small"
+                  (click)="onEdit(user)"
+                  pTooltip="Chỉnh sửa"
+                  tooltipPosition="top">
+                </p-button>
+                <p-button 
+                  icon="pi pi-trash" 
+                  [text]="true" 
+                  severity="danger"
+                  size="small"
+                  (click)="onDelete(user)"
+                  pTooltip="Xóa"
+                  tooltipPosition="top">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center">
+              <div class="py-4">
+                <div class="text-center">
+                  <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                  <p class="mb-0">Không tìm thấy tài khoản nào</p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </main>
+  </p-card>
+
+  <!-- Drawer thêm/sửa user -->
+  <p-drawer
+    header="Thêm/Sửa tài khoản"
+    [(visible)]="drawerVisible"
+    position="right"
+    (onHide)="onDrawerHide()"
+    [modal]="true"
+    [style]="{ width: '600px' }">
+    
+    <ng-template pTemplate="content">
+      <div class="user-form-grid p-fluid" *ngIf="formUser; else noFormTemplate">
+        
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h5 class="form-section-title">Thông tin cơ bản</h5>
+          
+          <!-- Name -->
+          <div class="form-group">
+            <label>Tên <span class="req" style="color: #ef4444 !important;">*</span></label>
+            <input 
+              pInputText 
+              [(ngModel)]="formUser.name"
+              placeholder="Nhập tên"
+              class="w-full">
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label>Email <span class="req" style="color: #ef4444 !important;">*</span></label>
+            <input 
+              pInputText 
+              [(ngModel)]="formUser.email"
+              placeholder="Nhập email"
+              class="w-full"
+              [readonly]="isEditMode()"
+              [class.readonly-input]="isEditMode()">
+            <small *ngIf="isEditMode()" class="text-gray-500">Email không thể thay đổi khi chỉnh sửa</small>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group" *ngIf="!isEditMode()">
+            <label>Mật khẩu <span class="req" style="color: #ef4444 !important;">*</span></label>
+            <p-password 
+              [(ngModel)]="formUser.password"
+              [feedback]="true"
+              [toggleMask]="true"
+              placeholder="Nhập mật khẩu"
+              [style]="{'width': '100%'}"
+              [inputStyle]="{'width': '100%'}">
+            </p-password>
+          </div>
+
+          <div class="form-group" *ngIf="isEditMode()">
+            <label>Mật khẩu</label>
+            <p-password 
+              [(ngModel)]="formUser.password"
+              [feedback]="true"
+              [toggleMask]="true"
+              placeholder="Để trống nếu không đổi mật khẩu"
+              [style]="{'width': '100%'}"
+              [inputStyle]="{'width': '100%'}">
+            </p-password>
+            <small class="text-gray-500">Chỉ nhập khi muốn đổi mật khẩu</small>
+          </div>
+
+          <!-- Role -->
+          <div class="form-group">
+            <label>Vai trò</label>
+            <p-select 
+              [ngModel]="formUser.role_id"
+              (ngModelChange)="formUser.role_id = $event"
+              [options]="roleOptions"
+              placeholder="Chọn vai trò"
+              class="w-full">
+            </p-select>
+          </div>
+
+          <!-- Status -->
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <p-select 
+              [ngModel]="formUser.status"
+              (ngModelChange)="formUser.status = $event"
+              [options]="statusOptions"
+              placeholder="Chọn trạng thái"
+              class="w-full">
+            </p-select>
+          </div>
+
+          <!-- Verify Email -->
+          <div class="form-group">
+            <label>Xác thực email</label>
+            <p-select 
+              [ngModel]="formUser.verifyEmail"
+              (ngModelChange)="formUser.verifyEmail = $event"
+              [options]="verifyEmailOptions"
+              placeholder="Chọn trạng thái xác thực"
+              class="w-full">
+            </p-select>
+          </div>
+
+          <!-- Avatar Upload -->
+          <div class="form-group">
+            <label>Hình đại diện</label>
+            <p-fileUpload 
+              mode="basic" 
+              name="avatar" 
+              accept="image/*" 
+              [maxFileSize]="1000000"
+              chooseLabel="Chọn hình"
+              chooseIcon="pi pi-upload"
+              (onError)="onFileUploadError($event)"
+              (onSelect)="onFileUploadSelect($event)"
+              class="w-full">
+            </p-fileUpload>
+            <div *ngIf="formUser.avatarUrl" class="mt-2">
+              <img [src]="formUser.avatarUrl" alt="Avatar preview" style="max-width: 100px; max-height: 100px; border-radius: 50%;">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Dialog Actions -->
+        <div class="dialog-actions">
+          <button 
+            pButton 
+            label="Hủy" 
+            class="p-button-text"
+            (click)="onDrawerHide()">
+          </button>
+          <button 
+            pButton 
+            label="{{ formUser && formUser.id ? 'Cập nhật' : 'Thêm mới' }}" 
+            class="p-button-success"
+            (click)="onSave()"
+            [loading]="saving">
+          </button>
+        </div>
+      </div>
+      
+      <ng-template #noFormTemplate>
+        <div class="empty-wrapper">
+          <i class="pi pi-exclamation-triangle empty-icon"></i>
+          <h3>Không có dữ liệu form</h3>
+          <p>Vui lòng thử lại sau.</p>
+        </div>
+      </ng-template>
+    </ng-template>
+  </p-drawer>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog></p-confirmDialog>
+</div>
+

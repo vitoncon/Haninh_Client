@@ -1,0 +1,367 @@
+// Main container - prevent horizontal overflow
+.users-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Statistics Cards Grid
+.statistics-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1400px) {
+    gap: 2rem;
+  }
+  
+  .p-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--content-border-radius, 0.75rem);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all var(--element-transition-duration, 0.25s);
+    height: 100%;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    ::ng-deep .p-card-body {
+      padding: 0.5rem !important;
+    }
+
+    .flex {
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+
+      .flex-1 {
+        flex: 1;
+
+        h6 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0;
+          color: var(--text-color-secondary);
+          transition: color 0.3s ease;
+        }
+
+        h4 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 0;
+          color: var(--text-color);
+          transition: color 0.3s ease;
+        }
+
+        .mb-0 {
+          margin-top: 0.5rem !important;
+        }
+      }
+
+      .icon-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        i {
+          font-size: 1.8rem;
+          transition: all 0.3s ease;
+        }
+      }
+
+      .text-blue-500 {
+        color: #3b82f6;
+        background: #dbeafe;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+      }
+      .text-green-500 {
+        color: #10b981;
+        background: #dcfce7;
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+      }
+      .text-orange-500 {
+        color: #f59e0b;
+        background: #fed7aa;
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+      }
+      .text-purple-500 {
+        color: #8b5cf6;
+        background: #e9d5ff;
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.15);
+      }
+    }
+
+    .app-dark & {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+
+      &:hover {
+        background: var(--surface-600);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+      }
+    }
+  }
+}
+
+// Form Styles
+.user-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.form-section {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--content-border-radius);
+  padding: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+  }
+  
+  .form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-border);
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+    
+    .req {
+      color: #ef4444 !important;
+    }
+  }
+}
+
+// Advanced Filters Panel
+.advanced-filters-panel {
+  background: var(--surface-100);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.5rem;
+  overflow: visible;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 1rem;
+
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+  }
+  
+  .filter-group {
+    min-width: 0;
+    
+    label {
+      color: var(--text-color);
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+      display: block;
+      font-size: 0.8rem;
+      transition: color 0.3s ease;
+    }
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: end;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  transition: border-color 0.3s ease;
+}
+
+.header-with-buttons .flex.gap-2.justify-content-end,
+:host ::ng-deep .header-with-buttons .flex.gap-2.justify-content-end {
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+.empty-wrapper {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  .empty-icon {
+    font-size: 3rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+  }
+  
+  p {
+    color: var(--text-color-secondary);
+    margin-bottom: 1.5rem;
+    transition: color 0.3s ease;
+  }
+}
+
+// Readonly input styling
+.readonly-input {
+  background-color: var(--surface-100) !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  
+  .app-dark & {
+    background-color: var(--surface-700) !important;
+  }
+}
+
+// PrimeNG Components Dark Mode Overrides
+:host ::ng-deep {
+  .app-dark & {
+    .p-inputtext,
+    .p-inputtext:enabled:hover,
+    .p-inputtext:enabled:focus {
+      background-color: var(--surface-800) !important;
+      border-color: var(--surface-600) !important;
+      color: var(--text-color) !important;
+    }
+    
+    .p-inputtext:enabled:focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 0.2rem var(--primary-color) !important;
+    }
+    
+    .p-select,
+    .p-select:not(.p-disabled):hover,
+    .p-select:not(.p-disabled).p-focus {
+      background-color: var(--surface-800) !important;
+      border-color: var(--surface-600) !important;
+      color: var(--text-color) !important;
+    }
+    
+    .p-select:not(.p-disabled).p-focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 0.2rem var(--primary-color) !important;
+    }
+    
+    .p-password,
+    .p-password:not(.p-disabled):hover,
+    .p-password:not(.p-disabled).p-focus {
+      background-color: var(--surface-800) !important;
+      border-color: var(--surface-600) !important;
+      color: var(--text-color) !important;
+    }
+    
+    .p-password:not(.p-disabled).p-focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 0.2rem var(--primary-color) !important;
+    }
+    
+    .p-fileupload {
+      background-color: var(--surface-800) !important;
+      border-color: var(--surface-600) !important;
+      color: var(--text-color) !important;
+    }
+    
+    .p-datatable .p-datatable-thead > tr > th {
+      background-color: var(--surface-800) !important;
+      color: var(--text-color) !important;
+      border-color: var(--surface-700) !important;
+    }
+    
+    .p-datatable-tbody > tr {
+      transition: background-color 0.15s ease-in-out !important;
+      color: var(--text-color) !important;
+    }
+    
+    .p-datatable-tbody > tr > td {
+      border-bottom: 1px solid var(--surface-border) !important;
+      padding: 1rem 0.75rem;
+      color: var(--text-color) !important;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .p-drawer {
+      background-color: var(--surface-800) !important;
+      color: var(--text-color) !important;
+      border-color: var(--surface-600) !important;
+    }
+    
+    .p-drawer .p-drawer-header {
+      background-color: var(--surface-800) !important;
+      border-bottom-color: var(--surface-600) !important;
+    }
+    
+    .p-drawer .p-drawer-content {
+      background-color: var(--surface-800) !important;
+      color: var(--text-color) !important;
+    }
+  }
+}
+
+:host ::ng-deep .filter-toggle-btn {
+  background: transparent !important;
+  color: #10b981 !important;
+  border: none !important;
+  
+  &:hover {
+    background: transparent !important;
+    color: #10b981 !important;
+    border: none !important;
+  }
+}
+
