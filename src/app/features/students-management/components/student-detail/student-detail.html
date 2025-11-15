@@ -247,9 +247,11 @@
                                 <div class="date-label">Ngày nhập học</div>
                                 <div class="date-value">{{ classItem.enroll_date ? (classItem.enroll_date | date:'dd/MM/yyyy') : '-' }}</div>
                               </div>
-                              <div *ngIf="classItem.completion_date" class="date-item">
-                                <div class="date-label">Ngày hoàn thành</div>
-                                <div class="date-value">{{ classItem.completion_date | date:'dd/MM/yyyy' }}</div>
+
+                              <!-- Dynamic end date label/value: shows 'Ngày hoàn thành' or 'Ngày nghỉ học' depending on status -->
+                              <div *ngIf="getEndDateValue(classItem)" class="date-item">
+                                <div class="date-label">{{ getEndDateLabel(classItem) }}</div>
+                                <div class="date-value">{{ getEndDateValue(classItem) | date:'dd/MM/yyyy' }}</div>
                               </div>
                             </div>
                             

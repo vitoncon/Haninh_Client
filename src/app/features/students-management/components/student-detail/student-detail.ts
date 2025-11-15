@@ -81,6 +81,12 @@ export class StudentDetail implements OnInit {
     { label: 'Hoàn thành', value: 'Hoàn thành' }
   ];
 
+  // Canonical status constants (based on statusOptions)
+  readonly STATUS_ONGOING = 'Đang học';
+  readonly STATUS_PAUSED = 'Tạm nghỉ';
+  readonly STATUS_DROPPED = 'Nghỉ học';
+  readonly STATUS_COMPLETED = 'Hoàn thành';
+
   // Tabs configuration
   tabs: { title: string; value: number; content: string }[] = [];
   activeTab: number = 0;
@@ -226,25 +232,86 @@ export class StudentDetail implements OnInit {
     return words[words.length - 1].charAt(0).toUpperCase();
   }
 
+  /**
+   * Return a localized label for the end date depending on the class status.
+   * - 'Hoàn thành' => 'Ngày hoàn thành'
+   * - 'Nghỉ học' or 'Tạm nghỉ' => 'Ngày nghỉ học'
+   * - fallback => 'Ngày kết thúc'
+   */
+  getEndDateLabel(classItem: StudentCurrentClasses | null | undefined): string {
+    if (!classItem) return '';
+    const statusRaw = String(classItem.status || '');
+    const status = statusRaw.trim().toLowerCase();
+    const completed = this.STATUS_COMPLETED.toLowerCase();
+    const dropped = this.STATUS_DROPPED.toLowerCase();
+    const paused = this.STATUS_PAUSED.toLowerCase();
+
+    if (status === completed) return 'Ngày hoàn thành';
+    if (status === dropped || status === paused) return 'Ngày nghỉ học';
+    return 'Ngày kết thúc';
+  }
+
+  /**
+   * Return the most appropriate date string to display as the end date.
+   * Preference order:
+   *  - explicit dropout_date (if status indicates dropout)
+   *  - completion_date
+   *  - enroll_date (fallback)
+   */
+  getEndDateValue(classItem: StudentCurrentClasses | null | undefined): string | null {
+    if (!classItem) return null;
+    const anyItem = classItem as any;
+    const statusRaw = String(classItem.status || '');
+    const status = statusRaw.trim().toLowerCase();
+    const completed = this.STATUS_COMPLETED.toLowerCase();
+    const dropped = this.STATUS_DROPPED.toLowerCase();
+    const paused = this.STATUS_PAUSED.toLowerCase();
+
+    // If the student dropped out or is paused and we have a dropout_date, show it
+    if ((status === dropped || status === paused) && anyItem.dropout_date) {
+      return anyItem.dropout_date;
+    }
+
+    // For completed classes prefer completion_date
+    if (status === completed && anyItem.completion_date) return anyItem.completion_date;
+
+    // If completion_date exists, use it as general end date
+    if (anyItem.completion_date) return anyItem.completion_date;
+
+    // Fallback to an explicit dropout_date even if status isn't marked as dropped
+    if (anyItem.dropout_date) return anyItem.dropout_date;
+
+    // Final fallback: enroll_date
+    if (anyItem.enroll_date) return anyItem.enroll_date;
+
+    return null;
+  }
+
+  isStatusDropout(status?: string | null): boolean {
+    if (!status) return false;
+    return String(status || '').trim().toLowerCase() === this.STATUS_DROPPED.toLowerCase();
+  }
+
   getCurrentClassesCount(): number {
     if (!this.allClasses || this.allClasses.length === 0) {
       return 0;
     }
-    return this.allClasses.filter(c => c.status === 'Đang học' || c.status === 'Đang diễn ra').length;
+    // Treat canonical 'Đang học' as current; keep a fallback for 'Đang diễn ra' if present in data
+    return this.allClasses.filter(c => c.status === this.STATUS_ONGOING || c.status === 'Đang diễn ra').length;
   }
 
   getCompletedClassesCount(): number {
     if (!this.allClasses || this.allClasses.length === 0) {
       return 0;
     }
-    return this.allClasses.filter(c => c.status === 'Hoàn thành').length;
+    return this.allClasses.filter(c => c.status === this.STATUS_COMPLETED).length;
   }
 
   getDroppedClassesCount(): number {
     if (!this.allClasses || this.allClasses.length === 0) {
       return 0;
     }
-    return this.allClasses.filter(c => c.status === 'Nghỉ học').length;
+    return this.allClasses.filter(c => c.status === this.STATUS_DROPPED).length;
   }
 
 
@@ -445,9 +512,18 @@ export class StudentDetail implements OnInit {
     const completedClasses = this.allClasses.filter(c => c.status === 'Hoàn thành').length;
     
     
-    // Lấy ngày học gần nhất từ dữ liệu class_student
-    const lastClassDate = this.allClasses.length > 0 
-      ? this.allClasses[0].enroll_date 
+    // Lấy ngày kết thúc gần nhất (completion or dropout) từ dữ liệu class_student
+    const endDates: number[] = this.allClasses
+      .map(c => this.getEndDateValue(c))
+      .filter(d => !!d)
+      .map(d => {
+        const t = new Date(d as string).getTime();
+        return isNaN(t) ? 0 : t;
+      })
+      .filter(t => t > 0);
+
+    const lastClassDate = endDates.length > 0
+      ? new Date(Math.max(...endDates)).toISOString()
       : '';
 
     this.overviewStats = {
