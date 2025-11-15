@@ -128,6 +128,9 @@ export class FeesDetail implements OnInit, OnDestroy {
   sendViaSMS: boolean = false;
   sendingReminder: boolean = false;
   messageTemplates: any[] = [];
+
+  // Confirm payment dialog constraints
+  confirmMaxPaidDate: Date | null = null;
   
   // Summary calculations
   totalTuition: number = 0;
@@ -165,8 +168,20 @@ export class FeesDetail implements OnInit, OnDestroy {
   editDialogStyle = { width: '500px' };
   reminderDialogStyle = { width: '600px' };
   
+  // Monthly fee management
+  monthlyFees: Map<string, StudentPayment[]> = new Map(); // Key: "YYYY-MM", Value: StudentPayment[]
+  availableMonths: string[] = []; // List of months with fees data
+  selectedMonth: string = ''; // Currently selected month (format: "YYYY-MM")
+  selectedMonthIndex: number = 0; // Index for TabView
+  monthlyStatistics: Map<string, { total: number; collected: number; debt: number }> = new Map();
+  
+  // Cache for performance optimization
+  private monthKeyCache: Map<string, string | null> = new Map(); // Cache parsed month keys
+  private dateParseCache: Map<string, Date | null> = new Map(); // Cache parsed dates
+
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
+  private studentDetailsLoaded = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -201,6 +216,39 @@ export class FeesDetail implements OnInit, OnDestroy {
         }
       });
     this.setupSearchDebounce();
+  }
+
+  /**
+   * Parse a date string to a Date object.
+   * Supports 'DD/MM/YYYY' and ISO 'YYYY-MM-DD' formats and other Date-parsable strings.
+   */
+  private parseDateStringToDate(dateStr: string | null | undefined): Date | null {
+    if (!dateStr) return null;
+
+    try {
+      // Handle DD/MM/YYYY
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) return d;
+          }
+        }
+        // Fallback to Date constructor
+        const f = new Date(dateStr);
+        return isNaN(f.getTime()) ? null : f;
+      }
+
+      // Handle ISO-like strings (YYYY-MM-DD) and other formats
+      const parsed = new Date(dateStr);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    } catch (error) {
+      return null;
+    }
   }
 
   private initializePaymentOptions(): void {
@@ -252,6 +300,10 @@ export class FeesDetail implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.searchSubject$.complete();
+    
+    // Clear caches
+    this.monthKeyCache.clear();
+    this.dateParseCache.clear();
   }
 
   private setupSearchDebounce(): void {
@@ -270,27 +322,42 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   private loadClassFeeDetails(): void {
     if (!this.classId) return;
-    
+
     this.loading = true;
-    
+
     // Load class data and students first to ensure we have the right class
     this.loadClassData();
     this.loadClassStudents();
-    
+
+    // Wait for student details to be loaded before processing fees
+    const checkStudentDetailsLoaded = () => {
+      if (this.studentDetailsLoaded) {
+        // Now load fees data
+        this.loadFeesData();
+      } else {
+        // Wait a bit and check again
+        setTimeout(checkStudentDetailsLoaded, 100);
+      }
+    };
+
+    checkStudentDetailsLoaded();
+  }
+
+  private loadFeesData(): void {
     // Use getFeesByClass as the main method since getClassFeeDetails endpoint doesn't exist
-    this.feeService.getFeesByClass(this.classId)
+    this.feeService.getFeesByClass(this.classId!)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (fees: FeeWithDetails[]) => {
           // Process fees data (transform and apply filtering)
           this.processFeesData(fees);
-          
+
           this.loadClassStatistics();
           this.loading = false;
         },
         error: (error) => {
           console.error('Error loading class fees:', error);
-          
+
           // Fallback to getFeesWithDetails with class_id filter
           this.feeService.getFeesWithDetails({ class_id: this.classId || undefined })
             .pipe(takeUntil(this.destroy$))
@@ -298,13 +365,13 @@ export class FeesDetail implements OnInit, OnDestroy {
               next: (fees: FeeWithDetails[]) => {
                 // Process fees data (transform and apply filtering)
                 this.processFeesData(fees);
-                
+
                 this.loadClassStatistics();
                 this.loading = false;
               },
               error: (fallbackError) => {
                 console.error('Error loading class fees (fallback):', fallbackError);
-                
+
                 // Even if we can't load fees, ensure all class students are shown
                 if (this.classStudents.length > 0) {
                   this.buildStudentsListFromClassStudents([]);
@@ -312,7 +379,7 @@ export class FeesDetail implements OnInit, OnDestroy {
                   this.calculateSummary();
                   this.updateTableData();
                 }
-                
+
                 this.messageService.add({
                   severity: 'error',
                   summary: 'Lỗi',
@@ -337,6 +404,7 @@ export class FeesDetail implements OnInit, OnDestroy {
       .subscribe({
         next: (fees: FeeWithDetails[]) => {
           // Process fees data (transform and apply filtering)
+          // This will also call groupFeesByMonth() internally
           this.processFeesData(fees);
           
           this.loadClassStatistics();
@@ -350,6 +418,7 @@ export class FeesDetail implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
               next: (fees: FeeWithDetails[]) => {
+                // This will also call groupFeesByMonth() internally
                 this.processFeesData(fees);
                 this.loadClassStatistics();
                 this.loading = false;
@@ -370,7 +439,14 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   private calculateSummary(): void {
-    // Safely handle cases where students array is null/undefined/empty
+    // If a month is selected, calculate summary for that month only
+    if (this.selectedMonth && this.monthlyStatistics.has(this.selectedMonth)) {
+      const stats = this.monthlyStatistics.get(this.selectedMonth)!;
+      this.totalTuition = stats.total;
+      this.collected = stats.collected;
+      this.debt = stats.debt;
+    } else {
+      // Calculate for all students (fallback)
     const studentsArray = this.students || [];
     
     // Calculate total tuition with proper validation using getStudentAmount
@@ -414,6 +490,7 @@ export class FeesDetail implements OnInit, OnDestroy {
     }
     
     this.debt = totalTuitionNum - collectedNum;
+    }
     
     // Ensure all values are numbers and not NaN
     this.totalTuition = isNaN(this.totalTuition) ? 0 : this.totalTuition;
@@ -424,31 +501,35 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   private updateTableData(): void {
-    // Ensure filteredStudents is properly set up
-    if (!this.filteredStudents && this.students) {
-      this.filteredStudents = [...this.students];
+    // If a month is selected, use students from that month
+    if (this.selectedMonth && this.monthlyFees.has(this.selectedMonth)) {
+      const monthStudents = this.monthlyFees.get(this.selectedMonth) || [];
+      this.filteredStudents = [...monthStudents];
+      this.tableData = [...monthStudents];
+    } else {
+      // Ensure filteredStudents is properly set up
+      if (!this.filteredStudents && this.students) {
+        this.filteredStudents = [...this.students];
+      }
+      
+      // Use new students data if available, otherwise fallback to legacy fees data
+      let newTableData: (StudentPayment | FeeWithDetails)[] = [];
+      if (this.filteredStudents && this.filteredStudents.length > 0) {
+        newTableData = [...this.filteredStudents];
+      } else if (this.filteredFees && this.filteredFees.length > 0) {
+        newTableData = [...this.filteredFees];
+      }
+      
+      // Force new reference để Angular detect changes
+      this.tableData = [...newTableData]; // Create completely new array reference
     }
-    
-    // Use new students data if available, otherwise fallback to legacy fees data
-    let newTableData: (StudentPayment | FeeWithDetails)[] = [];
-    if (this.filteredStudents && this.filteredStudents.length > 0) {
-      newTableData = [...this.filteredStudents];
-    } else if (this.filteredFees && this.filteredFees.length > 0) {
-      newTableData = [...this.filteredFees];
-    }
-    
-    // Force new reference để Angular detect changes
-    this.tableData = [...newTableData]; // Create completely new array reference
     
     this.applyFilters();
     
-    // Force change detection để đảm bảo UI được update
-    this.cdr.detectChanges();
-    
-    // Additional refresh để đảm bảo template được update
-    setTimeout(() => {
+    // Use requestAnimationFrame for better performance instead of setTimeout
+    requestAnimationFrame(() => {
       this.cdr.detectChanges();
-    }, 0);
+    });
   }
 
   private loadClassData(): void {
@@ -610,36 +691,16 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   private loadClassStudents(): void {
     if (!this.classId) return;
-    
+
     this.classStudentService.getStudentsByClass(this.classId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (students) => {
           this.classStudents = students;
-          
-          // Check if we need to load student details from StudentService
-          // Similar to how class-detail component does it
-          if (this.classStudents.some(cs => !cs.student || !cs.student.full_name || cs.student.full_name === '')) {
-            this.loadStudentDetails();
-          } else {
-            // Even if classStudents have data, re-process fees to ensure all students are included
-            if (this.classFees.length > 0) {
-              this.processFeesData(this.classFees);
-            } else {
-              // No fees loaded yet, but we have classStudents - build list from classStudents
-              this.buildStudentsListFromClassStudents([]);
-              this.filteredStudents = [...this.students];
-              this.calculateSummary();
-              this.updateTableData();
-            }
-          }
-          
-          // Trigger filtering if we already have students data
-          if (this.students.length > 0) {
-            this.filterStudentsByClass();
-            this.calculateSummary();
-            this.updateTableData();
-          }
+
+          // Always load student details from StudentService to ensure we have real names
+          // This fixes the bug where placeholder names like "Học viên" are used
+          this.loadStudentDetails();
         },
         error: (error) => {
           console.error('Error loading class students:', error);
@@ -690,16 +751,16 @@ export class FeesDetail implements OnInit, OnDestroy {
   private transformFeesToStudentPayments(fees: FeeWithDetails[]): StudentPayment[] {
     return fees.map(fee => {
       // Try to get student name from multiple sources in priority order
-      let studentName = fee.student_name;
-      
+      let studentName = '';
+
       // Priority 1: Use cached student data from StudentService (most reliable)
-      if ((!studentName || studentName.trim() === '') && fee.student_id && this.studentsData.has(fee.student_id)) {
+      if (fee.student_id && this.studentsData.has(fee.student_id)) {
         const studentData = this.studentsData.get(fee.student_id);
         if (studentData && studentData.full_name && studentData.full_name.trim() !== '') {
           studentName = studentData.full_name;
         }
       }
-      
+
       // Priority 2: Use data from classStudents (from ClassStudentService)
       if ((!studentName || studentName.trim() === '') && fee.student_id && this.classStudents.length > 0) {
         const classStudent = this.classStudents.find(cs => cs.student_id === fee.student_id);
@@ -710,17 +771,17 @@ export class FeesDetail implements OnInit, OnDestroy {
           }
         }
       }
-      
+
       // Priority 3: Use original fee.student_name if available
       if ((!studentName || studentName.trim() === '') && fee.student_name && fee.student_name.trim() !== '') {
         studentName = fee.student_name;
       }
-      
+
       // Fallback to 'Học viên' + ID if still no name
       if (!studentName || studentName.trim() === '') {
         studentName = fee.student_id ? `Học viên ${fee.student_id}` : 'Học viên không xác định';
       }
-      
+
       return {
         id: fee.id || 0, // Fee ID for backward compatibility
         fee_id: fee.id || 0, // Explicit fee ID
@@ -740,7 +801,7 @@ export class FeesDetail implements OnInit, OnDestroy {
     // Store fees data first
     this.classFees = fees;
     this.filteredFees = [...fees];
-    
+
     // If we have classStudents data, we should build the students list based on classStudents
     // rather than just fees data to ensure we show ALL students in the class
     if (this.classStudents.length > 0) {
@@ -750,15 +811,26 @@ export class FeesDetail implements OnInit, OnDestroy {
       this.students = this.transformFeesToStudentPayments(fees);
       this.ensureAllClassStudentsAreIncluded();
     }
-    
+
     this.filteredStudents = [...this.students];
-    
+
     // Apply filtering to ensure only students from this class are shown (this should be redundant now)
     this.filterStudentsByClass();
-    
+
     // Update all student amounts từ course data
     this.updateAllStudentAmounts();
-    
+
+    // Group fees by month
+    this.groupFeesByMonth();
+
+    // Set default selected month to current month if available
+    if (this.availableMonths.length > 0 && !this.selectedMonth) {
+      const currentMonth = this.getCurrentMonthKey();
+      const defaultMonth = this.availableMonths.includes(currentMonth) ? currentMonth : this.availableMonths[0];
+      this.selectedMonth = defaultMonth;
+      this.selectedMonthIndex = this.availableMonths.indexOf(defaultMonth);
+    }
+
     this.calculateSummary();
     this.updateTableData();
   }
@@ -766,14 +838,14 @@ export class FeesDetail implements OnInit, OnDestroy {
   private buildStudentsListFromClassStudents(fees: FeeWithDetails[]): void {
     // Start with empty students array
     this.students = [];
-    
+
     // For each student in the class, create or find their fee entry
     this.classStudents.forEach(classStudent => {
       // Look for existing fee data for this student
       const existingFee = fees.find(fee => fee.student_id === classStudent.student_id);
-      
+
       let studentPayment: StudentPayment;
-      
+
       if (existingFee) {
         // Transform existing fee data
         const transformedFees = this.transformFeesToStudentPayments([existingFee]);
@@ -784,7 +856,7 @@ export class FeesDetail implements OnInit, OnDestroy {
           id: 0, // No fee ID yet
           fee_id: 0,
           student_id: classStudent.student_id,
-          name: classStudent.student?.full_name || classStudent.student_name || `Học viên ${classStudent.student_id}`,
+          name: '', // Will be resolved from cached data
           amount: 0, // Default amount
           due_date: '', // Will be set based on class info if available
           paid_date: null,
@@ -793,15 +865,20 @@ export class FeesDetail implements OnInit, OnDestroy {
           notes: ''
         };
 
-        // Try to get student name from cached data if not available
+        // Always prioritize cached student data for name resolution
         if (this.studentsData.has(classStudent.student_id)) {
           const studentData = this.studentsData.get(classStudent.student_id);
           if (studentData?.full_name) {
             studentPayment.name = studentData.full_name;
           }
         }
+
+        // Fallback to classStudents data if cached data not available
+        if (!studentPayment.name || studentPayment.name.trim() === '') {
+          studentPayment.name = classStudent.student?.full_name || classStudent.student_name || `Học viên ${classStudent.student_id}`;
+        }
       }
-      
+
       // Gán số tiền từ course tuition fee cho học viên (nếu chưa có)
       if (!this.hasValidAmount(studentPayment.amount)) {
         const tuitionFee = this.getCourseTuitionFee(this.classData);
@@ -809,12 +886,12 @@ export class FeesDetail implements OnInit, OnDestroy {
           studentPayment.amount = tuitionFee;
         }
       }
-      
+
       // Set due date: 3 days before class start date (if not already set)
       if (!studentPayment.due_date || studentPayment.due_date === '') {
         studentPayment.due_date = this.calculateDueDate(this.classData);
       }
-      
+
       this.students.push(studentPayment);
     });
   }
@@ -873,27 +950,27 @@ export class FeesDetail implements OnInit, OnDestroy {
   // Load student details from StudentService - similar to class-detail component
   private loadStudentDetails(): void {
     const studentIds = this.classStudents.map(cs => cs.student_id);
-    
+
     // Load student details from student service
     this.studentService.getStudents({})
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (studentsResponse) => {
           let students: StudentsModel[] = [];
-          
+
           if (Array.isArray(studentsResponse)) {
             students = studentsResponse;
           } else if (studentsResponse?.data) {
             students = Array.isArray(studentsResponse.data) ? studentsResponse.data : [studentsResponse.data];
           }
-          
-          // Cache student data
+
+          // Cache student data - this is crucial for name resolution
           students.forEach(student => {
             if (student.id) {
               this.studentsData.set(student.id, student);
             }
           });
-          
+
           // Update class students with real student data
           this.classStudents = this.classStudents.map(cs => {
             const studentDetail = students.find(s => s.id === cs.student_id);
@@ -913,7 +990,7 @@ export class FeesDetail implements OnInit, OnDestroy {
                 default:
                   mappedStatus = 'Đang học';
               }
-              
+
               cs.student = {
                 id: studentDetail.id!,
                 student_code: studentDetail.student_code || '',
@@ -926,25 +1003,38 @@ export class FeesDetail implements OnInit, OnDestroy {
             }
             return cs;
           });
-          
-          // Re-transform fees data now that we have proper student data from StudentService
+
+          // Mark student details as loaded
+          this.studentDetailsLoaded = true;
+
+          // Now that we have real student data, process fees data
+          // This ensures names are resolved correctly
           if (this.classFees.length > 0) {
-            this.buildStudentsListFromClassStudents(this.classFees);
+            this.processFeesData(this.classFees);
           } else {
-            // Even if no fees data, ensure all class students are included
+            // Even if no fees data, ensure all class students are included with correct names
             this.buildStudentsListFromClassStudents([]);
+            this.filteredStudents = [...this.students];
+            this.calculateSummary();
+            this.updateTableData();
           }
-          
-          this.filteredStudents = [...this.students];
-          this.calculateSummary();
-          this.updateTableData();
         },
         error: (error) => {
           console.error('Error loading student details:', error);
-          
+
+          // Mark as loaded even on error to prevent hanging
+          this.studentDetailsLoaded = true;
+
           // Continue with existing data even if StudentService fails
+          // But still try to process fees data with whatever we have
           if (this.classFees.length > 0) {
             this.processFeesData(this.classFees);
+          } else {
+            // Build from classStudents even without StudentService data
+            this.buildStudentsListFromClassStudents([]);
+            this.filteredStudents = [...this.students];
+            this.calculateSummary();
+            this.updateTableData();
           }
         }
       });
@@ -1139,13 +1229,33 @@ export class FeesDetail implements OnInit, OnDestroy {
       };
     }
     
-    // Initialize confirm form - payment_method is required, paid_date defaults to today
-    this.confirmForm = {
-      payment_method: '', // Required field
-      paid_date: new Date(), // Default to today
-      notes: ''
-    };
-    
+    // Initialize confirm form - payment_method is required
+    // Determine max allowed paid date from selectedStudent.due_date
+    const dueDateStr = this.getDueDate(this.selectedStudent as StudentPayment);
+    const parsedDue = this.parseDateStringToDate(dueDateStr);
+    this.confirmMaxPaidDate = parsedDue;
+
+    // Default paid_date is today but must not be after due date
+    const today = new Date();
+    // Normalize times
+    today.setHours(0, 0, 0, 0);
+    if (parsedDue) {
+      const due = new Date(parsedDue);
+      due.setHours(0, 0, 0, 0);
+      // If today is after due date, default to due date to keep within bounds
+      this.confirmForm = {
+        payment_method: '',
+        paid_date: today <= due ? today : due,
+        notes: ''
+      };
+    } else {
+      this.confirmForm = {
+        payment_method: '',
+        paid_date: today,
+        notes: ''
+      };
+    }
+
     this.confirmPaymentDialogVisible = true;
   }
 
@@ -1269,7 +1379,25 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   onSaveConfirmPayment(): void {
-    if (!this.selectedStudent || !this.isConfirmPaymentFormValid()) return;
+    if (!this.selectedStudent) return;
+
+    // Extra validation: ensure paid_date is not after due date
+    if (this.confirmMaxPaidDate && this.confirmForm && this.confirmForm.paid_date) {
+      const selected = new Date(this.confirmForm.paid_date);
+      selected.setHours(0, 0, 0, 0);
+      const max = new Date(this.confirmMaxPaidDate);
+      max.setHours(0, 0, 0, 0);
+      if (selected.getTime() > max.getTime()) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Ngày không hợp lệ',
+          detail: 'Ngày thanh toán không được lớn hơn hạn nộp.'
+        });
+        return;
+      }
+    }
+
+    if (!this.isConfirmPaymentFormValid()) return;
 
     const updateData = {
       paid_date: this.confirmForm.paid_date ? this.confirmForm.paid_date.toISOString().split('T')[0] : null,
@@ -1395,7 +1523,23 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   isConfirmPaymentFormValid(): boolean {
-    return !!(this.confirmForm.payment_method && this.confirmForm.paid_date);
+    if (!this.confirmForm) return false;
+    const hasMethod = !!this.confirmForm.payment_method;
+    const hasDate = !!this.confirmForm.paid_date;
+    if (!hasMethod || !hasDate) return false;
+
+    // If a max paid date is set, ensure selected date is not after it
+    if (this.confirmMaxPaidDate) {
+      const selected = new Date(this.confirmForm.paid_date);
+      selected.setHours(0, 0, 0, 0);
+      const max = new Date(this.confirmMaxPaidDate);
+      max.setHours(0, 0, 0, 0);
+      if (selected.getTime() > max.getTime()) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   // Helper method to determine if we should show new student payment structure
@@ -1531,6 +1675,10 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   getTotalStudents(): number {
+    // If a month is selected, return count for that month
+    if (this.selectedMonth && this.monthlyFees.has(this.selectedMonth)) {
+      return (this.monthlyFees.get(this.selectedMonth) || []).length;
+    }
     return this.students?.length || 0;
   }
 
@@ -1548,6 +1696,11 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Helper để lấy tổng học phí an toàn
   getTotalTuitionAmount(): number {
+    // If a month is selected, use monthly statistics
+    if (this.selectedMonth && this.monthlyStatistics.has(this.selectedMonth)) {
+      return this.monthlyStatistics.get(this.selectedMonth)!.total;
+    }
+    
     // If there are no students in the new data structure, treat totals as zero
     // This prevents showing historical/statistics totals when the class has no students
     if (!this.students || this.students.length === 0) {
@@ -1559,6 +1712,11 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Helper để lấy số tiền đã thu an toàn
   getCollectedAmount(): number {
+    // If a month is selected, use monthly statistics
+    if (this.selectedMonth && this.monthlyStatistics.has(this.selectedMonth)) {
+      return this.monthlyStatistics.get(this.selectedMonth)!.collected;
+    }
+    
     // If there are no students, do not show any collected amount
     if (!this.students || this.students.length === 0) {
       return 0;
@@ -1570,6 +1728,11 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Helper để lấy số tiền chưa thu an toàn
   getUnpaidAmount(): number {
+    // If a month is selected, use monthly statistics
+    if (this.selectedMonth && this.monthlyStatistics.has(this.selectedMonth)) {
+      return this.monthlyStatistics.get(this.selectedMonth)!.debt;
+    }
+    
     // If there are no students, unpaid amount should be zero
     if (!this.students || this.students.length === 0) {
       return 0;
@@ -1655,7 +1818,12 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   getOverdueCount(): number {
-    return this.students?.filter(student => {
+    // If a month is selected, filter students from that month
+    const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
+      ? (this.monthlyFees.get(this.selectedMonth) || [])
+      : (this.students || []);
+    
+    return studentsToCheck.filter(student => {
       if (!student || typeof student !== 'object') return false;
       
       // Đã thanh toán thì không quá hạn
@@ -1680,7 +1848,12 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Hàm để đếm số học viên "Chưa đóng" (chưa đến hạn)
   getUnpaidCount(): number {
-    return this.students?.filter(student => {
+    // If a month is selected, filter students from that month
+    const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
+      ? (this.monthlyFees.get(this.selectedMonth) || [])
+      : (this.students || []);
+    
+    return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
       return status === 'Chưa đóng' || status === 'Chưa thanh toán';
     }).length || 0;
@@ -1688,7 +1861,12 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Hàm để đếm số học viên "Quá hạn"
   getOverdueCountOnly(): number {
-    return this.students?.filter(student => {
+    // If a month is selected, filter students from that month
+    const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
+      ? (this.monthlyFees.get(this.selectedMonth) || [])
+      : (this.students || []);
+    
+    return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
       return status === 'Quá hạn';
     }).length || 0;
@@ -1696,7 +1874,12 @@ export class FeesDetail implements OnInit, OnDestroy {
 
   // Hàm để đếm tổng số học viên chưa thanh toán (cả "Chưa đóng" và "Quá hạn")
   getTotalUnpaidCount(): number {
-    return this.students?.filter(student => {
+    // If a month is selected, filter students from that month
+    const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
+      ? (this.monthlyFees.get(this.selectedMonth) || [])
+      : (this.students || []);
+    
+    return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
       return status === 'Chưa đóng' || status === 'Chưa thanh toán' || status === 'Quá hạn';
     }).length || 0;
@@ -1708,39 +1891,47 @@ export class FeesDetail implements OnInit, OnDestroy {
     const dueDateStr = this.getDueDate(item);
     if (!dueDateStr) return 0;
     
-    // Parse date safely - handle DD/MM/YYYY format
-    let dueDate: Date;
-    try {
-      // Try to parse DD/MM/YYYY format first
-      if (dueDateStr.includes('/')) {
-        const parts = dueDateStr.split('/');
-        if (parts.length === 3) {
-          // DD/MM/YYYY format
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS
-          const year = parseInt(parts[2], 10);
-          
-          // Validate the parsed values
-          if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
-            console.error('Invalid date parts:', { day, month: month + 1, year, originalString: dueDateStr });
-            return 0;
+    // Use cached date parsing
+    let dueDate: Date | null = null;
+    
+    const cachedDate = this.dateParseCache.get(dueDateStr);
+    if (cachedDate !== undefined) {
+      dueDate = cachedDate;
+    } else {
+      try {
+        // Try to parse DD/MM/YYYY format first
+        if (dueDateStr.includes('/')) {
+          const parts = dueDateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            
+            if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
+              return 0;
+            }
+            
+            dueDate = new Date(year, month, day);
+          } else {
+            dueDate = new Date(dueDateStr);
           }
-          
-          dueDate = new Date(year, month, day);
         } else {
           dueDate = new Date(dueDateStr);
         }
-      } else {
-        dueDate = new Date(dueDateStr);
+        
+        if (dueDate && !isNaN(dueDate.getTime())) {
+          this.dateParseCache.set(dueDateStr, dueDate);
+        } else {
+          this.dateParseCache.set(dueDateStr, null);
+          return 0;
+        }
+      } catch (error) {
+        this.dateParseCache.set(dueDateStr, null);
+        return 0;
       }
-    } catch (error) {
-      console.error('Error parsing due date:', dueDateStr, error);
-      return 0;
     }
     
-    // Check if date is valid
-    if (isNaN(dueDate.getTime())) {
-      console.error('Invalid due date:', dueDateStr);
+    if (!dueDate || isNaN(dueDate.getTime())) {
       return 0;
     }
     
@@ -1751,12 +1942,6 @@ export class FeesDetail implements OnInit, OnDestroy {
     const diffTime = today.getTime() - dueDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // Logic đã đúng: diffDays < 0 = chưa đến hạn, diffDays > 0 = quá hạn
-    
-    // CHỈ trả về số dương khi hôm nay > ngày hạn nộp (thực sự quá hạn)
-    // Nếu diffDays < 0 có nghĩa là chưa đến hạn
-    // Nếu diffDays = 0 có nghĩa là hôm nay là ngày hạn nộp
-    // Nếu diffDays > 0 có nghĩa là đã quá hạn
     return diffDays > 0 ? diffDays : 0;
   }
 
@@ -1766,32 +1951,46 @@ export class FeesDetail implements OnInit, OnDestroy {
     const dueDateStr = this.getDueDate(item);
     if (!dueDateStr) return 0;
     
-    // Parse date safely - handle DD/MM/YYYY format (same as getDaysOverdue)
-    let dueDate: Date;
-    try {
-      if (dueDateStr.includes('/')) {
-        const parts = dueDateStr.split('/');
-        if (parts.length === 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS
-          const year = parseInt(parts[2], 10);
-          
-          if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
-            return 0;
+    // Use cached date parsing (same as getDaysOverdue)
+    let dueDate: Date | null = null;
+    
+    const cachedDate = this.dateParseCache.get(dueDateStr);
+    if (cachedDate !== undefined) {
+      dueDate = cachedDate;
+    } else {
+      try {
+        if (dueDateStr.includes('/')) {
+          const parts = dueDateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            
+            if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
+              return 0;
+            }
+            
+            dueDate = new Date(year, month, day);
+          } else {
+            dueDate = new Date(dueDateStr);
           }
-          
-          dueDate = new Date(year, month, day);
         } else {
           dueDate = new Date(dueDateStr);
         }
-      } else {
-        dueDate = new Date(dueDateStr);
+        
+        if (dueDate && !isNaN(dueDate.getTime())) {
+          this.dateParseCache.set(dueDateStr, dueDate);
+        } else {
+          this.dateParseCache.set(dueDateStr, null);
+          return 0;
+        }
+      } catch (error) {
+        this.dateParseCache.set(dueDateStr, null);
+        return 0;
       }
-    } catch (error) {
-      return 0;
     }
     
-    if (isNaN(dueDate.getTime())) {
+    if (!dueDate || isNaN(dueDate.getTime())) {
       return 0;
     }
     
@@ -1802,7 +2001,6 @@ export class FeesDetail implements OnInit, OnDestroy {
     const diffTime = dueDate.getTime() - today.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // Trả về số dương khi chưa đến hạn, 0 khi hôm nay là ngày hạn nộp
     return diffDays >= 0 ? diffDays : 0;
   }
 
@@ -1813,32 +2011,46 @@ export class FeesDetail implements OnInit, OnDestroy {
     const dueDateStr = this.getDueDate(item);
     if (!dueDateStr) return false;
     
-    // Parse date safely - handle DD/MM/YYYY format (same as getDaysOverdue)
-    let dueDate: Date;
-    try {
-      if (dueDateStr.includes('/')) {
-        const parts = dueDateStr.split('/');
-        if (parts.length === 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS
-          const year = parseInt(parts[2], 10);
-          
-          if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
-            return false;
+    // Use cached date parsing
+    let dueDate: Date | null = null;
+    
+    const cachedDate = this.dateParseCache.get(dueDateStr);
+    if (cachedDate !== undefined) {
+      dueDate = cachedDate;
+    } else {
+      try {
+        if (dueDateStr.includes('/')) {
+          const parts = dueDateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            
+            if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) {
+              return false;
+            }
+            
+            dueDate = new Date(year, month, day);
+          } else {
+            dueDate = new Date(dueDateStr);
           }
-          
-          dueDate = new Date(year, month, day);
         } else {
           dueDate = new Date(dueDateStr);
         }
-      } else {
-        dueDate = new Date(dueDateStr);
+        
+        if (dueDate && !isNaN(dueDate.getTime())) {
+          this.dateParseCache.set(dueDateStr, dueDate);
+        } else {
+          this.dateParseCache.set(dueDateStr, null);
+          return false;
+        }
+      } catch (error) {
+        this.dateParseCache.set(dueDateStr, null);
+        return false;
       }
-    } catch (error) {
-      return false;
     }
     
-    if (isNaN(dueDate.getTime())) {
+    if (!dueDate || isNaN(dueDate.getTime())) {
       return false;
     }
     
@@ -2082,10 +2294,196 @@ export class FeesDetail implements OnInit, OnDestroy {
   // Force refresh UI để đảm bảo logic mới được áp dụng
   public forceRefreshUI(): void {
     this.cdr.detectChanges();
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       this.updateTableData();
       this.cdr.detectChanges();
-    }, 0);
+    });
+  }
+
+  /**
+   * Group fees by month based on due_date
+   * Optimized with single pass and cached calculations
+   */
+  private groupFeesByMonth(): void {
+    this.monthlyFees.clear();
+    this.monthlyStatistics.clear();
+    this.availableMonths = [];
+
+    // Single pass: group and calculate in one iteration
+    this.students.forEach(student => {
+      const monthKey = this.getMonthKeyFromDate(student.due_date);
+      if (!monthKey) return;
+
+      // Initialize month if not exists
+      if (!this.monthlyFees.has(monthKey)) {
+        this.monthlyFees.set(monthKey, []);
+      }
+      this.monthlyFees.get(monthKey)!.push(student);
+    });
+
+    // Calculate statistics for each month (optimized)
+    this.monthlyFees.forEach((students, monthKey) => {
+      let total = 0;
+      let collected = 0;
+
+      // Single pass through students for both calculations
+      students.forEach(s => {
+        const amount = this.getStudentAmount(s);
+        const numAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+        total += numAmount;
+
+        // Check payment status once
+        if (this.getPaymentStatus(s) === 'Đã thanh toán') {
+          collected += numAmount;
+        }
+      });
+
+      const debt = total - collected;
+      this.monthlyStatistics.set(monthKey, { total, collected, debt });
+      this.availableMonths.push(monthKey);
+    });
+
+    // Sort months in descending order (newest first)
+    this.availableMonths.sort((a, b) => b.localeCompare(a));
+  }
+
+  /**
+   * Get month key (YYYY-MM) from date string
+   * Optimized with caching
+   */
+  private getMonthKeyFromDate(dateStr: string | null | undefined): string | null {
+    if (!dateStr) return null;
+
+    // Check cache first
+    if (this.monthKeyCache.has(dateStr)) {
+      return this.monthKeyCache.get(dateStr)!;
+    }
+
+    try {
+      let date: Date | null = null;
+      
+      // Check date parse cache
+      if (this.dateParseCache.has(dateStr)) {
+        date = this.dateParseCache.get(dateStr)!;
+      } else {
+        // Handle DD/MM/YYYY format
+        if (dateStr.includes('/')) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            date = new Date(year, month, day);
+          } else {
+            date = new Date(dateStr);
+          }
+        } else {
+          date = new Date(dateStr);
+        }
+
+        // Cache parsed date
+        if (date && !isNaN(date.getTime())) {
+          this.dateParseCache.set(dateStr, date);
+        } else {
+          this.dateParseCache.set(dateStr, null);
+          return null;
+        }
+      }
+
+      if (!date || isNaN(date.getTime())) {
+        this.monthKeyCache.set(dateStr, null);
+        return null;
+      }
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${month}`;
+      
+      // Cache result
+      this.monthKeyCache.set(dateStr, monthKey);
+      return monthKey;
+    } catch (error) {
+      console.error('Error parsing date for month key:', dateStr, error);
+      this.monthKeyCache.set(dateStr, null);
+      return null;
+    }
+  }
+
+  /**
+   * Get current month key (YYYY-MM)
+   */
+  private getCurrentMonthKey(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }
+
+  /**
+   * Format month key to display string (e.g., "Tháng 1/2024")
+   */
+  formatMonthKey(monthKey: string): string {
+    if (!monthKey) return '';
+    
+    try {
+      const [year, month] = monthKey.split('-');
+      const monthNum = parseInt(month, 10);
+      if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) return monthKey;
+      
+      return `Tháng ${monthNum}/${year}`;
+    } catch (error) {
+      return monthKey;
+    }
+  }
+
+  /**
+   * Get students for selected month
+   */
+  getStudentsForSelectedMonth(): StudentPayment[] {
+    if (!this.selectedMonth || !this.monthlyFees.has(this.selectedMonth)) {
+      return [];
+    }
+    return this.monthlyFees.get(this.selectedMonth) || [];
+  }
+
+  /**
+   * Get statistics for selected month
+   */
+  getStatisticsForSelectedMonth(): { total: number; collected: number; debt: number } {
+    if (!this.selectedMonth || !this.monthlyStatistics.has(this.selectedMonth)) {
+      return { total: 0, collected: 0, debt: 0 };
+    }
+    return this.monthlyStatistics.get(this.selectedMonth) || { total: 0, collected: 0, debt: 0 };
+  }
+
+  /**
+   * Handle month selection change from Tabs
+   */
+  onMonthTabChange(event: any): void {
+    const index = typeof event === 'number' ? event : (event?.value ?? event?.index ?? 0);
+    if (index >= 0 && index < this.availableMonths.length) {
+      this.selectedMonth = this.availableMonths[index];
+      this.selectedMonthIndex = index;
+      this.updateTableData();
+      this.calculateSummary();
+    }
+  }
+
+  /**
+   * Handle month selection change (direct)
+   */
+  onMonthChange(monthKey: string): void {
+    this.selectedMonth = monthKey;
+    this.selectedMonthIndex = this.availableMonths.indexOf(monthKey);
+    this.updateTableData();
+    this.calculateSummary();
+  }
+
+  /**
+   * Check if month has fees
+   */
+  hasFeesForMonth(monthKey: string): boolean {
+    return this.monthlyFees.has(monthKey) && (this.monthlyFees.get(monthKey)?.length || 0) > 0;
   }
 }
 

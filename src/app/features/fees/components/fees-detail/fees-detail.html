@@ -31,12 +31,40 @@
     </div>
   </div>
 
+  <!-- Monthly Tabs -->
+  <div class="monthly-tabs-container" *ngIf="availableMonths.length > 0">
+    <p-tabs [value]="selectedMonthIndex" (activeTabChange)="onMonthTabChange($event)">
+      <p-tablist>
+        @for (monthKey of availableMonths; track monthKey; let i = $index) {
+          <p-tab [value]="i">
+            <span class="month-tab-header">
+              <i class="pi pi-calendar mr-2"></i>
+              {{ formatMonthKey(monthKey) }}
+              <span class="month-badge" *ngIf="hasFeesForMonth(monthKey)">
+                ({{ (monthlyFees.get(monthKey) || []).length }})
+              </span>
+            </span>
+          </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels>
+        @for (monthKey of availableMonths; track monthKey; let i = $index) {
+          <p-tabpanel [value]="i">
+            <div class="month-tab-content">
+              <!-- Content will be shown in the table below -->
+            </div>
+          </p-tabpanel>
+        }
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+
   <!-- Statistics Cards - Dashboard Mini -->
   <div class="statistics-cards-grid" *ngIf="statistics || (totalTuition || collected || debt)">
     <p-card>
       <div class="flex align-items-center">
         <div class="flex-1">
-          <h6>Tổng học phí</h6>
+          <h6>Tổng học phí <span *ngIf="selectedMonth" class="text-sm text-muted">({{ formatMonthKey(selectedMonth) }})</span></h6>
           <h4 class="mb-0">{{ formatCurrency(getTotalTuitionAmount()) }}</h4>
           <small class="text-muted">{{ getTotalStudents() }} học viên</small>
         </div>
@@ -48,7 +76,7 @@
     <p-card>
       <div class="flex align-items-center">
         <div class="flex-1">
-          <h6>Đã thu</h6>
+          <h6>Đã thu <span *ngIf="selectedMonth" class="text-sm text-muted">({{ formatMonthKey(selectedMonth) }})</span></h6>
           <h4 class="mb-0">{{ formatCurrency(getCollectedAmount()) }}</h4>
           <small class="text-success">{{ getCollectionPercentage() }}% đã thu</small>
         </div>
@@ -60,7 +88,7 @@
     <p-card>
       <div class="flex align-items-center">
         <div class="flex-1">
-          <h6>Chưa thu</h6>
+          <h6>Chưa thu <span *ngIf="selectedMonth" class="text-sm text-muted">({{ formatMonthKey(selectedMonth) }})</span></h6>
           <h4 class="mb-0">{{ formatCurrency(getUnpaidAmount()) }}</h4>
           <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getUnpaidCount() > 0">
             {{ getOverdueCountOnly() }} quá hạn, {{ getUnpaidCount() }} chưa đóng
@@ -365,6 +393,7 @@
             [(ngModel)]="confirmForm.paid_date"
             dateFormat="dd/mm/yy"
             [showIcon]="true"
+            [maxDate]="confirmMaxPaidDate"
             appendTo="body"
             placeholder="Chọn ngày thanh toán"
             class="field-input"
