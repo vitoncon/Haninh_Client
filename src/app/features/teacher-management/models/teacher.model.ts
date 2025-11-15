@@ -10,7 +10,7 @@ export interface TeacherModel {
   department?: string | null;
   specialization?: string | null;
   experience_years?: number;
-  degree?: 'Cử nhân' | 'Thạc sĩ' | 'Tiến sĩ' | 'Giáo sư' | 'Khác';
+  degree?: 'Cử nhân' | 'Thạc sĩ' | 'Tiến sĩ' | 'Giáo sư' | 'Trung cấp';
   status: 'Đang dạy' | 'Tạm nghỉ' | 'Đã nghỉ';
   note?: string | null;
   created_at?: string;

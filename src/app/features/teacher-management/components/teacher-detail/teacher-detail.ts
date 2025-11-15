@@ -20,8 +20,14 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DrawerModule } from 'primeng/drawer';
 import { FileUploadModule } from 'primeng/fileupload';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
-import { Subject, takeUntil } from 'rxjs';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { UserService } from '../../../user-management/services/user.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { DialogModule } from 'primeng/dialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputTextModule as PasswordModule } from 'primeng/inputtext';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-teacher-detail',
@@ -45,8 +51,12 @@ import { Subject, takeUntil } from 'rxjs';
     DatePickerModule,
     DrawerModule,
     FileUploadModule,
-    TooltipModule
+    TooltipModule,
+    DialogModule,
+    ConfirmDialogModule,
+    PasswordModule
   ],
+  providers: [MessageService, ConfirmationService],
   styleUrls: ['./teacher-detail.scss']
 })
 export class TeacherDetail implements OnInit, OnDestroy {
@@ -57,6 +67,14 @@ export class TeacherDetail implements OnInit, OnDestroy {
   drawerVisible: boolean = false;
   teacherId: number | null = null;
   private destroy$ = new Subject<void>();
+
+  // User account linking
+  linkedUser: any = null;
+  checkingUser: boolean = false;
+  creatingUser: boolean = false;
+  showCreateUserDialog: boolean = false;
+  newUserPassword: string = '';
+  newUserConfirmPassword: string = '';
 
   // Dropdown options
   genderOptions: any[] = [];
@@ -69,7 +87,10 @@ export class TeacherDetail implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private teacherService: TeacherService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private userService: UserService,
+    private confirmationService: ConfirmationService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -99,6 +120,10 @@ export class TeacherDetail implements OnInit, OnDestroy {
       next: (teacher: TeacherModel) => {
         this.teacherData = teacher;
         this.loading = false;
+        // Check if teacher has linked user account
+        if (teacher.email) {
+          this.checkLinkedUser(teacher.email);
+        }
       },
       error: (error) => {
         this.messageService.add({
@@ -490,5 +515,242 @@ export class TeacherDetail implements OnInit, OnDestroy {
     }
     
     return cleaned;
+  }
+
+  /**
+   * Kiểm tra xem teacher đã có user account chưa (bằng email)
+   */
+  checkLinkedUser(teacherEmail: string): void {
+    if (!teacherEmail || !this.isValidEmail(teacherEmail)) {
+      this.linkedUser = null;
+      return;
+    }
+
+    this.checkingUser = true;
+    this.userService.getUsers().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response: any) => {
+        const users = response?.data || response || [];
+        // Tìm user có email trùng với teacher email
+        const user = Array.isArray(users) 
+          ? users.find((u: any) => u.email && u.email.toLowerCase() === teacherEmail.toLowerCase())
+          : null;
+        
+        this.linkedUser = user || null;
+        this.checkingUser = false;
+      },
+      error: (error) => {
+        console.error('Error checking linked user:', error);
+        this.linkedUser = null;
+        this.checkingUser = false;
+      }
+    });
+  }
+
+  /**
+   * Mở dialog tạo user account cho teacher
+   */
+  openCreateUserDialog(): void {
+    if (!this.teacherData || !this.teacherData.email) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Giáo viên chưa có email. Vui lòng cập nhật email trước.'
+      });
+      return;
+    }
+
+    if (this.linkedUser) {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Thông tin',
+        detail: 'Giáo viên đã có tài khoản user liên kết.'
+      });
+      return;
+    }
+
+    this.newUserPassword = '';
+    this.newUserConfirmPassword = '';
+    this.showCreateUserDialog = true;
+  }
+
+  /**
+   * Tạo user account cho teacher
+   */
+  createUserAccount(): void {
+    if (!this.teacherData || !this.teacherData.email) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Không có email để tạo tài khoản'
+      });
+      return;
+    }
+
+    // Validate password
+    if (!this.newUserPassword || this.newUserPassword.trim() === '') {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Vui lòng nhập mật khẩu'
+      });
+      return;
+    }
+
+    if (this.newUserPassword.length < 6) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Mật khẩu phải có ít nhất 6 ký tự'
+      });
+      return;
+    }
+
+    if (this.newUserPassword !== this.newUserConfirmPassword) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Mật khẩu xác nhận không khớp'
+      });
+      return;
+    }
+
+    this.creatingUser = true;
+
+    // Tạo user với email của teacher và role = 2 (Giáo viên)
+    // Sử dụng API register để tạo user với password (API này tự động hash password)
+    const registerData = {
+      email: this.teacherData.email,
+      password: this.newUserPassword
+    };
+
+    // Gọi API register để tạo user
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    this.http.post<any>('http://localhost:10093/api/auth/register', registerData, { headers }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response: any) => {
+        // Sau khi register thành công, cần lấy user_id từ email để gán role
+        // Tìm user vừa tạo bằng email
+        this.userService.getUsers().pipe(
+          takeUntil(this.destroy$)
+        ).subscribe({
+          next: (usersResponse: any) => {
+            const users = usersResponse?.data || usersResponse || [];
+            const newUser = Array.isArray(users) 
+              ? users.find((u: any) => u.email && u.email.toLowerCase() === this.teacherData!.email!.toLowerCase())
+              : null;
+            
+            if (newUser && newUser.id) {
+              // Gán role 2 (Giáo viên) cho user
+              this.userService.assignRole(newUser.id, 2).pipe(
+                takeUntil(this.destroy$)
+              ).subscribe({
+                next: () => {
+                  this.messageService.add({
+                    severity: 'success',
+                    summary: 'Thành công',
+                    detail: 'Đã tạo tài khoản user cho giáo viên thành công. Email: ' + this.teacherData!.email + '. Vui lòng ghi nhớ mật khẩu đã nhập.'
+                  });
+                  this.showCreateUserDialog = false;
+                  this.creatingUser = false;
+                  this.newUserPassword = '';
+                  this.newUserConfirmPassword = '';
+                  // Kiểm tra lại user đã được tạo
+                  setTimeout(() => {
+                    this.checkLinkedUser(this.teacherData!.email!);
+                  }, 1000);
+                },
+                error: (error) => {
+                  console.error('Error assigning role:', error);
+                  this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Cảnh báo',
+                    detail: 'Đã tạo user nhưng không thể gán role. Vui lòng gán role thủ công trong quản lý tài khoản.'
+                  });
+                  this.showCreateUserDialog = false;
+                  this.creatingUser = false;
+                  this.newUserPassword = '';
+                  this.newUserConfirmPassword = '';
+                  setTimeout(() => {
+                    this.checkLinkedUser(this.teacherData!.email!);
+                  }, 1000);
+                }
+              });
+            } else {
+              this.messageService.add({
+                severity: 'warn',
+                summary: 'Cảnh báo',
+                detail: 'Đã tạo user nhưng không tìm thấy để gán role. Vui lòng gán role thủ công.'
+              });
+              this.showCreateUserDialog = false;
+              this.creatingUser = false;
+              this.newUserPassword = '';
+              this.newUserConfirmPassword = '';
+              setTimeout(() => {
+                this.checkLinkedUser(this.teacherData!.email!);
+              }, 1000);
+            }
+          },
+          error: (error) => {
+            console.error('Error finding new user:', error);
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Cảnh báo',
+              detail: 'Đã tạo user nhưng không thể tìm thấy để gán role. Vui lòng gán role thủ công.'
+            });
+            this.showCreateUserDialog = false;
+            this.creatingUser = false;
+            this.newUserPassword = '';
+            this.newUserConfirmPassword = '';
+          }
+        });
+      },
+      error: (error: any) => {
+        console.error('Error creating user:', error);
+        let errorMessage = 'Không thể tạo tài khoản user';
+        
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (typeof error.error === 'string') {
+          errorMessage = error.error;
+        } else if (error.status === 409) {
+          errorMessage = 'Email đã tồn tại trong hệ thống. Vui lòng kiểm tra lại.';
+        } else if (error.status === 400) {
+          errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
+        }
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: errorMessage
+        });
+        this.creatingUser = false;
+      }
+    });
+  }
+
+  /**
+   * Điều hướng đến trang quản lý user
+   */
+  goToUserManagement(): void {
+    if (this.linkedUser && this.linkedUser.id) {
+      this.router.navigate(['/features/users']);
+    }
+  }
+
+  /**
+   * Kiểm tra xem teacher đã có user account chưa
+   */
+  hasLinkedUser(): boolean {
+    return !!this.linkedUser;
   }
 }

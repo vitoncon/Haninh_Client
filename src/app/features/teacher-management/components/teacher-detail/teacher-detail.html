@@ -215,8 +215,67 @@
               label="Gửi email" 
               [outlined]="true"
               (click)="sendEmail(teacherData.email!)"
-              styleClass="w-full">
+              styleClass="w-full mb-2">
             </p-button>
+          </div>
+        </p-card>
+
+        <!-- User Account Linking -->
+        <p-card header="Tài khoản đăng nhập" styleClass="info-card">
+          <div class="user-account-section">
+            <!-- Checking status -->
+            <div *ngIf="checkingUser" class="checking-status">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span>Đang kiểm tra tài khoản...</span>
+            </div>
+
+            <!-- Has linked user -->
+            <div *ngIf="!checkingUser && linkedUser" class="linked-user-info">
+              <div class="status-badge success">
+                <i class="pi pi-check-circle"></i>
+                <span>Đã liên kết tài khoản</span>
+              </div>
+              <div class="user-details">
+                <p><strong>Email:</strong> {{ linkedUser.email }}</p>
+                <p *ngIf="linkedUser.role_name"><strong>Vai trò:</strong> {{ linkedUser.role_name }}</p>
+              </div>
+              <p-button 
+                icon="pi pi-external-link" 
+                label="Quản lý tài khoản" 
+                [outlined]="true"
+                (click)="goToUserManagement()"
+                styleClass="w-full mt-2">
+              </p-button>
+            </div>
+
+            <!-- No linked user -->
+            <div *ngIf="!checkingUser && !linkedUser && teacherData.email" class="no-linked-user">
+              <div class="status-badge warning">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Chưa có tài khoản đăng nhập</span>
+              </div>
+              <p class="info-text">
+                Giáo viên chưa có tài khoản user để đăng nhập và xem lịch dạy.
+                Vui lòng tạo tài khoản với email: <strong>{{ teacherData.email }}</strong>
+              </p>
+              <p-button 
+                icon="pi pi-user-plus" 
+                label="Tạo tài khoản đăng nhập" 
+                styleClass="w-full mt-2"
+                (click)="openCreateUserDialog()">
+              </p-button>
+            </div>
+
+            <!-- No email -->
+            <div *ngIf="!checkingUser && !teacherData.email" class="no-email">
+              <div class="status-badge danger">
+                <i class="pi pi-times-circle"></i>
+                <span>Chưa có email</span>
+              </div>
+              <p class="info-text">
+                Giáo viên chưa có email. Vui lòng cập nhật email trước khi tạo tài khoản đăng nhập.
+              </p>
+            </div>
           </div>
         </p-card>
       </div>
@@ -515,6 +574,71 @@
     </div>
   </ng-template>
 </p-drawer>
+
+<!-- Dialog: Tạo tài khoản user cho giáo viên -->
+<p-dialog 
+  header="Tạo tài khoản đăng nhập cho giáo viên" 
+  [(visible)]="showCreateUserDialog" 
+  [modal]="true" 
+  [style]="{width: '500px'}"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <div class="create-user-dialog" *ngIf="teacherData">
+    <div class="info-section mb-4">
+      <p><strong>Email:</strong> {{ teacherData.email }}</p>
+      <p><strong>Tên giáo viên:</strong> {{ teacherData.teacher_name }}</p>
+      <p class="text-sm text-gray-600 mt-2">
+        Tài khoản sẽ được tạo với role <strong>Giáo viên</strong> và có thể đăng nhập để xem lịch dạy.
+      </p>
+    </div>
+
+    <div class="form-section">
+      <div class="form-group mb-3">
+        <label for="newUserPassword">Mật khẩu <span class="text-red-500">*</span></label>
+        <input 
+          id="newUserPassword"
+          type="password" 
+          pInputText 
+          [(ngModel)]="newUserPassword" 
+          placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" 
+          class="w-full" />
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="newUserConfirmPassword">Xác nhận mật khẩu <span class="text-red-500">*</span></label>
+        <input 
+          id="newUserConfirmPassword"
+          type="password" 
+          pInputText 
+          [(ngModel)]="newUserConfirmPassword" 
+          placeholder="Nhập lại mật khẩu" 
+          class="w-full" />
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <p-button 
+        label="Hủy" 
+        icon="pi pi-times" 
+        styleClass="p-button-text p-button-secondary"
+        (click)="showCreateUserDialog = false"
+        [disabled]="creatingUser">
+      </p-button>
+      <p-button 
+        label="Tạo tài khoản" 
+        icon="pi pi-check" 
+        styleClass="p-button-primary"
+        (click)="createUserAccount()" 
+        [loading]="creatingUser"
+        [disabled]="creatingUser">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
 
 <!-- Toast Messages -->
 <p-toast></p-toast>

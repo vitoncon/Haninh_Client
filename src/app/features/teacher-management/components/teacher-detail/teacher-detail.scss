@@ -561,3 +561,129 @@
     }
   }
 }
+
+// User Account Linking Section
+:host ::ng-deep {
+  .user-account-section {
+    .checking-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      color: var(--text-color-secondary);
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      
+      i {
+        font-size: 1rem;
+      }
+      
+      &.success {
+        background: var(--green-50);
+        color: var(--green-700);
+        border: 1px solid var(--green-200);
+      }
+      
+      &.warning {
+        background: var(--yellow-50);
+        color: var(--yellow-700);
+        border: 1px solid var(--yellow-200);
+      }
+      
+      &.danger {
+        background: var(--red-50);
+        color: var(--red-700);
+        border: 1px solid var(--red-200);
+      }
+    }
+
+    .linked-user-info {
+      .user-details {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: var(--surface-ground);
+        border-radius: 0.5rem;
+        
+        p {
+          margin: 0.5rem 0;
+          color: var(--text-color);
+          
+          strong {
+            color: var(--text-color-secondary);
+            margin-right: 0.5rem;
+          }
+        }
+      }
+    }
+
+    .no-linked-user,
+    .no-email {
+      .info-text {
+        color: var(--text-color-secondary);
+        margin: 1rem 0;
+        line-height: 1.6;
+        
+        strong {
+          color: var(--text-color);
+        }
+      }
+    }
+  }
+
+  // Create User Dialog
+  .create-user-dialog {
+    .info-section {
+      padding: 1rem;
+      background: var(--surface-ground);
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      
+      p {
+        margin: 0.5rem 0;
+        color: var(--text-color);
+        
+        strong {
+          color: var(--text-color-secondary);
+          margin-right: 0.5rem;
+        }
+      }
+    }
+
+    .form-section {
+      .form-group {
+        margin-bottom: 1rem;
+        
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: var(--text-color);
+          font-weight: 500;
+          
+          .text-red-500 {
+            color: var(--red-500);
+          }
+        }
+      }
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-border);
+    }
+  }
+}

@@ -12,7 +12,7 @@ export class TeacherService {
   constructor(private http: HttpClient) {}
 
   private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,
@@ -52,6 +52,19 @@ export class TeacherService {
       map((res) => res?.data ?? res),
       catchError((error) => {
         console.error('Error fetching teachers:', error);
+        throw error;
+      })
+    );
+  }
+
+  /** Lấy teachers theo conditions tùy chỉnh (backend generic API) */
+  getTeachersByConditions(conditions: any[]): Observable<TeacherModel[]> {
+    const conditionJson = encodeURIComponent(JSON.stringify(conditions || []));
+    const url = `${this.apiUrl}?condition=${conditionJson}`;
+    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
+      map((res) => res?.data ?? res),
+      catchError((error) => {
+        console.error('Error fetching teachers by conditions:', error);
         throw error;
       })
     );
