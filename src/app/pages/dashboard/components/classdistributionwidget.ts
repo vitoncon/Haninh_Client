@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
 import { debounceTime, Subscription } from 'rxjs';
 import { LayoutService } from '../../../layout/service/layout.service';
@@ -15,7 +15,7 @@ import { DashboardService } from '../services/dashboard.service';
         </div>
     </div>`
 })
-export class ClassDistributionWidget implements OnInit {
+export class ClassDistributionWidget implements OnInit, OnDestroy {
     chartData: any = {
         labels: [],
         datasets: []

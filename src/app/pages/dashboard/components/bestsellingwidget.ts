@@ -28,14 +28,18 @@ import { DashboardService } from '../services/dashboard.service';
                 <p-menu #menu [popup]="true" [model]="items"></p-menu>
             </div>
         </div>
-        <ul class="list-none p-0 m-0" *ngIf="topCourses.length > 0">
-            <li class="flex flex-col md:flex-row md:items-center md:justify-between mb-6" *ngFor="let course of topCourses">
+        <div *ngIf="loading" class="text-center py-8">
+            <i class="pi pi-spin pi-spinner text-2xl text-primary-500"></i>
+            <p class="mt-2 text-muted-color">Đang tải dữ liệu...</p>
+        </div>
+        <ul class="list-none p-0 m-0" *ngIf="!loading && topCourses.length > 0">
+            <li class="flex flex-col md:flex-row md:items-center md:justify-between mb-6" *ngFor="let course of topCourses; trackBy: trackByCourseName">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 flex items-center justify-center bg-primary-50 dark:bg-primary-400/10 rounded-full shrink-0">
                         <i class="pi pi-graduation-cap text-primary-500 text-xl"></i>
                     </div>
                     <div>
-                        <div class="text-surface-900 dark:text-surface-0 font-medium">{{ course.course_name }}</div>
+                        <div class="text-surface-900 dark:text-surface-0 font-medium">{{ course.course_name || 'Không xác định' }}</div>
                         <div class="mt-1 text-sm text-muted-color">Khóa học</div>
                     </div>
                 </div>
@@ -47,8 +51,9 @@ import { DashboardService } from '../services/dashboard.service';
                 </div>
             </li>
         </ul>
-        <div *ngIf="topCourses.length === 0" class="text-center py-8 text-muted-color">
-            Chưa có dữ liệu
+        <div *ngIf="!loading && topCourses.length === 0" class="text-center py-8 text-muted-color">
+            <i class="pi pi-inbox text-4xl mb-2" style="display: block; color: var(--text-color-secondary);"></i>
+            <p>Chưa có dữ liệu</p>
         </div>
     </div>`
 })
@@ -56,6 +61,7 @@ export class BestSellingWidget implements OnInit {
     topCourses: any[] = [];
     menu = null;
     maxRevenue = 0;
+    loading = false;
 
     items: any[] = [];
 
@@ -88,23 +94,50 @@ export class BestSellingWidget implements OnInit {
     }
 
     loadTopCourses() {
+        this.loading = true;
         this.dashboardService.getTopCoursesByRevenue().subscribe({
             next: (data) => {
-                this.topCourses = data;
-                this.maxRevenue = Math.max(...data.map(c => c.revenue), 0);
+                // Ensure data is an array
+                if (!Array.isArray(data)) {
+                    console.warn('Invalid data structure:', data);
+                    this.topCourses = [];
+                    this.maxRevenue = 0;
+                    this.loading = false;
+                    return;
+                }
+
+                this.topCourses = data || [];
+                
+                // Safely calculate maxRevenue - handle empty array case
+                if (this.topCourses.length > 0) {
+                    const revenues = this.topCourses.map(c => c.revenue || 0).filter(r => r > 0);
+                    this.maxRevenue = revenues.length > 0 ? Math.max(...revenues) : 0;
+                } else {
+                    this.maxRevenue = 0;
+                }
+                
+                this.loading = false;
             },
             error: (err) => {
                 console.error('Error loading top courses:', err);
                 this.topCourses = [];
+                this.maxRevenue = 0;
+                this.loading = false;
             }
         });
     }
 
     getPercentage(revenue: number): number {
-        return this.maxRevenue > 0 ? (revenue / this.maxRevenue) * 100 : 0;
+        if (!revenue || revenue <= 0 || this.maxRevenue <= 0) {
+            return 0;
+        }
+        return Math.min((revenue / this.maxRevenue) * 100, 100); // Cap at 100%
     }
 
     formatCurrency(value: number): string {
+        if (!value || isNaN(value) || !isFinite(value)) {
+            return '0 ₫';
+        }
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -119,5 +152,9 @@ export class BestSellingWidget implements OnInit {
     viewDetails() {
         // Navigate to courses page
         this.router.navigate(['/features/courses']);
+    }
+
+    trackByCourseName(index: number, course: any): string {
+        return course.course_name || index.toString();
     }
 }

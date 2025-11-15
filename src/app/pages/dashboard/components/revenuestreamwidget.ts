@@ -39,14 +39,27 @@ export class RevenueStreamWidget implements OnInit {
     loadRevenueData() {
         this.dashboardService.getRevenueChartData().subscribe({
             next: (data) => {
-                // Nếu backend trả về dữ liệu chưa có 'fill', ta thêm ở đây
+                // Ensure chart data has proper structure
+                if (!data || !data.labels || !data.datasets) {
+                    console.warn('Invalid chart data structure:', data);
+                    this.initChart();
+                    return;
+                }
+
+                // Map datasets to ensure proper chart configuration
                 data.datasets = data.datasets.map((ds: any) => ({
                     ...ds,
                     fill: false, // Tắt tô nền dưới đường
                     tension: 0.4, // Bo nhẹ đường cong cho đẹp
                     borderWidth: 3,
                     pointRadius: 5,
-                    pointBackgroundColor: ds.borderColor || '#3b82f6'
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: ds.borderColor || '#3b82f6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: ds.borderColor || '#3b82f6',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 3
                 }));
 
                 this.chartData = data;
@@ -54,6 +67,19 @@ export class RevenueStreamWidget implements OnInit {
             },
             error: (err) => {
                 console.error('Error loading revenue data:', err);
+                // Initialize with empty data on error
+                this.chartData = {
+                    labels: ['Không có dữ liệu'],
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: [0],
+                        backgroundColor: '#3B82F6',
+                        borderColor: '#2563EB',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                };
                 this.initChart();
             }
         });
@@ -71,20 +97,40 @@ export class RevenueStreamWidget implements OnInit {
             maintainAspectRatio: false,
             aspectRatio: 0.8,
             responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
+                    display: true,
+                    position: 'top',
                     labels: {
-                        color: isDark ? '#f3f4f6' : '#1f2937' // Explicit color based on theme
+                        color: isDark ? '#f3f4f6' : '#1f2937',
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
                     }
                 },
                 tooltip: {
+                    backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    titleColor: isDark ? '#f3f4f6' : '#1f2937',
+                    bodyColor: isDark ? '#f3f4f6' : '#1f2937',
+                    borderColor: borderColor,
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
                     callbacks: {
                         label: (context: any) => {
+                            const value = context.parsed.y || 0;
                             return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND',
                                 maximumFractionDigits: 0
-                            }).format(context.parsed.y)}`;
+                            }).format(value)}`;
                         }
                     }
                 }
@@ -92,28 +138,41 @@ export class RevenueStreamWidget implements OnInit {
             scales: {
                 x: {
                     ticks: {
-                        color: isDark ? '#9ca3af' : '#6b7280' // Explicit muted color based on theme
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        font: {
+                            size: 11
+                        },
+                        maxRotation: 45,
+                        minRotation: 0
                     },
                     grid: {
                         color: 'transparent',
-                        borderColor: 'transparent'
+                        borderColor: 'transparent',
+                        display: false
                     }
                 },
                 y: {
+                    beginAtZero: true,
                     ticks: {
-                        color: isDark ? '#9ca3af' : '#6b7280', // Explicit muted color based on theme
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        font: {
+                            size: 11
+                        },
                         callback: (value: any) => {
+                            if (value === 0) return '0';
                             return new Intl.NumberFormat('vi-VN', {
                                 notation: 'compact',
                                 style: 'currency',
-                                currency: 'VND'
+                                currency: 'VND',
+                                maximumFractionDigits: 1
                             }).format(value);
                         }
                     },
                     grid: {
                         color: borderColor,
                         borderColor: 'transparent',
-                        drawTicks: false
+                        drawTicks: false,
+                        drawBorder: false
                     }
                 }
             }

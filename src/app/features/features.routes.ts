@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { permissionGuard } from '../core/guards/permission.guard';
+import { roleGuard } from '../core/guards/role.guard';
 import { PermissionService } from '../core/services/permission.service';
 import { Courses } from './courses/components/courses';
 import { Class } from './class-management/components/class/class';
@@ -18,6 +19,7 @@ import { Teacher } from './teacher-management/components/teacher/teacher';
 import { TeachingAssignments } from './teaching-assignments/components/teaching-assignments/teaching-assignments';
 import { Fees } from './fees/components/fees/fees';
 import { FeesDetail } from './fees/components/fees-detail/fees-detail';
+import { Users } from './user-management/components/users/users';
 
 export default [   
     // quan ly khoa hoc
@@ -67,6 +69,12 @@ export default [
         path: 'schedule', 
         data: { breadcrumb: 'Lịch học' }, 
         canActivate: [permissionGuard([PermissionService.PERMISSIONS.SCHEDULE_VIEW])], 
+        component: Schedule 
+    },
+    { 
+        path: 'teacher-schedule', 
+        data: { breadcrumb: 'Lịch dạy của tôi', roles: [2] }, 
+        canActivate: [roleGuard, permissionGuard([PermissionService.PERMISSIONS.SCHEDULE_VIEW])], 
         component: Schedule 
     },
     // quan ly hoc vien
@@ -121,10 +129,17 @@ export default [
         component: Fees 
     },
     { 
-        path: 'fees/detail/:id', 
+        path: 'fees/detail/:id',
         data: { breadcrumb: 'Chi tiết học phí' }, 
         canActivate: [permissionGuard([PermissionService.PERMISSIONS.FEES_VIEW])], 
         component: FeesDetail 
+    },
+    // quan ly tai khoan
+    { 
+        path: 'users', 
+        data: { breadcrumb: 'Quản lý tài khoản' }, 
+        canActivate: [permissionGuard([PermissionService.PERMISSIONS.USERS_VIEW])], 
+        component: Users 
     },
     // default route
     { path: '**', redirectTo: '/notfound' },

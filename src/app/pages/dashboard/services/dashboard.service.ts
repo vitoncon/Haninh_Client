@@ -166,21 +166,33 @@ export class DashboardService {
         // Handle response structure
         const feesList = Array.isArray(fees) ? fees : [];
         
-        // Group fees by payment date
+        // Group fees by payment date - use YYYY-MM format for proper sorting
         const monthlyRevenue = new Map<string, number>();
         
         feesList.forEach((fee: any) => {
           if (fee.paid_date && fee.amount) {
             try {
               const date = new Date(fee.paid_date);
-              const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+              // Check if date is valid
+              if (isNaN(date.getTime())) {
+                return;
+              }
+              
+              // Use YYYY-MM format for proper sorting
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const monthKey = `${year}-${month}`;
+              
               const amount = typeof fee.amount === 'string' ? parseFloat(fee.amount) : fee.amount;
-              monthlyRevenue.set(
-                monthYear,
-                (monthlyRevenue.get(monthYear) || 0) + (amount || 0)
-              );
+              if (!isNaN(amount) && isFinite(amount)) {
+                monthlyRevenue.set(
+                  monthKey,
+                  (monthlyRevenue.get(monthKey) || 0) + amount
+                );
+              }
             } catch (e) {
               // Skip invalid entries
+              console.warn('Invalid fee date or amount:', fee);
             }
           }
         });
@@ -188,33 +200,47 @@ export class DashboardService {
         // If no data, create default empty chart with current month
         if (monthlyRevenue.size === 0) {
           const now = new Date();
-          const currentMonth = `${now.getMonth() + 1}/${now.getFullYear()}`;
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const currentMonthKey = `${year}-${month}`;
+          const currentMonthLabel = `Tháng ${now.getMonth() + 1}/${year}`;
+          
           return {
-            labels: [currentMonth],
+            labels: [currentMonthLabel],
             datasets: [{
               label: 'Doanh thu (VNĐ)',
               data: [0],
               backgroundColor: '#3B82F6',
               borderColor: '#2563EB',
               tension: 0.4,
-              fill: true
+              fill: false
             }]
           };
         }
 
-        const sortedDates = Array.from(monthlyRevenue.keys()).sort();
-        const last6Months = sortedDates.slice(-6);
+        // Sort by date key (YYYY-MM format sorts correctly as string)
+        const sortedMonthKeys = Array.from(monthlyRevenue.keys()).sort();
+        
+        // Get last 6 months (or all if less than 6)
+        const last6Months = sortedMonthKeys.slice(-6);
+        
+        // Format labels for display (Tháng M/YYYY)
+        const formattedLabels = last6Months.map(monthKey => {
+          const [year, month] = monthKey.split('-');
+          const monthNum = parseInt(month, 10);
+          return `Tháng ${monthNum}/${year}`;
+        });
 
         const chartData = {
-          labels: last6Months.length > 0 ? last6Months : ['Không có dữ liệu'],
+          labels: formattedLabels.length > 0 ? formattedLabels : ['Không có dữ liệu'],
           datasets: [{
             label: 'Doanh thu (VNĐ)',
-            data: last6Months.map(date => monthlyRevenue.get(date) || 0),
+            data: last6Months.map(monthKey => monthlyRevenue.get(monthKey) || 0),
             backgroundColor: '#3B82F6',
             borderColor: '#2563EB',
             borderWidth: 2,
             tension: 0.4,
-            fill: true
+            fill: false
           }]
         };
         
@@ -375,7 +401,11 @@ export class DashboardService {
       courses: this.coursesService.getCourses()
     }).pipe(
       map(({ fees, courses }) => {
-        const courseRevenue = new Map<string, number>();
+        // Handle response structure
+        const feesList = Array.isArray(fees) ? fees : [];
+        const coursesList = Array.isArray(courses) ? courses : [];
+        
+        const courseRevenue = new Map<string | number, number>();
         
         // Helper function to safely parse amount
         const parseAmount = (amount: any): number => {
@@ -386,25 +416,50 @@ export class DashboardService {
           return typeof numAmount === 'number' && !isNaN(numAmount) && isFinite(numAmount) ? numAmount : 0;
         };
         
-        (fees || []).forEach((fee: any) => {
-          if (fee.paid_date && fee.amount) {
+        // Helper function to normalize course ID for comparison
+        const normalizeId = (id: any): string | number | null => {
+          if (id === null || id === undefined || id === '') {
+            return null;
+          }
+          // Convert to number if possible, otherwise keep as string
+          const numId = typeof id === 'string' ? (isNaN(Number(id)) ? id : Number(id)) : id;
+          return typeof numId === 'number' && !isNaN(numId) ? numId : numId;
+        };
+        
+        feesList.forEach((fee: any) => {
+          // Only count fees that have been paid
+          if (fee.paid_date && fee.amount && fee.course_id) {
+            const courseId = normalizeId(fee.course_id);
+            if (courseId === null) {
+              return; // Skip if course_id is invalid
+            }
+            
             const amount = parseAmount(fee.amount);
-            const currentRevenue = courseRevenue.get(fee.course_id) || 0;
-            courseRevenue.set(fee.course_id, currentRevenue + amount);
+            if (amount > 0) {
+              const currentRevenue = courseRevenue.get(courseId) || 0;
+              courseRevenue.set(courseId, currentRevenue + amount);
+            }
           }
         });
 
+        // Convert to array and map to course names
         const topCourses = Array.from(courseRevenue.entries())
           .map(([courseId, revenue]) => {
-            const course = (courses || []).find((c: any) => c.id == courseId);
+            // Find course by matching id (handle both string and number)
+            const course = coursesList.find((c: any) => {
+              const cId = normalizeId(c.id);
+              return cId !== null && cId === courseId;
+            });
+            
             return {
+              course_id: courseId,
               course_name: course?.course_name || 'Không xác định',
               revenue: revenue
             };
           })
           .filter(c => c.revenue > 0) // Filter out courses with 0 revenue
-          .sort((a, b) => b.revenue - a.revenue)
-          .slice(0, 5);
+          .sort((a, b) => b.revenue - a.revenue) // Sort descending by revenue
+          .slice(0, 5); // Get top 5
 
         return topCourses;
       })

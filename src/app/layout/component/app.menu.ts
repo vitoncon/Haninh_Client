@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
@@ -8,7 +8,7 @@ import { PermissionService } from '../../core/services/permission.service';
 @Component({
     selector: 'app-menu',
     standalone: true,
-    imports: [CommonModule, AppMenuitem, RouterModule],
+    imports: [CommonModule, NgIf, NgForOf, AppMenuitem, RouterModule],
     template: `<ul class="layout-menu">
         <ng-container *ngFor="let item of model; let i = index">
             <li app-menuitem *ngIf="!item.separator" [item]="item" [index]="i" [root]="true"></li>
@@ -82,7 +82,7 @@ export class AppMenu implements OnInit {
                 label: 'GIẢNG VIÊN',
                 items: [
                     { 
-                        label: 'Quản lý giảng viên', 
+                        label: 'Quản lý giáo viên', 
                         icon: 'pi pi-fw pi-briefcase', 
                         routerLink: ['/features/teacher'],
                         permissions: [PermissionService.PERMISSIONS.TEACHER_VIEW]
@@ -103,6 +103,17 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-wallet', 
                         routerLink: ['/features/fees'],
                         permissions: [PermissionService.PERMISSIONS.FEES_VIEW]
+                    },
+                ]
+            },
+            {
+                label: 'QUẢN TRỊ',
+                items: [
+                    { 
+                        label: 'Quản lý tài khoản', 
+                        icon: 'pi pi-fw pi-shield', 
+                        routerLink: ['/features/users'],
+                        permissions: [PermissionService.PERMISSIONS.USERS_VIEW]
                     },
                 ]
             },
