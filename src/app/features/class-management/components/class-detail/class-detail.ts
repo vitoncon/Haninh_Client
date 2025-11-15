@@ -831,8 +831,19 @@ export class ClassDetail implements OnInit, OnDestroy {
   }
 
 
-  viewStudentDetail(studentId: number): void {
-    this.router.navigate(['/features/students', studentId]);
+  viewStudentDetail(studentId: number | null | undefined): void {
+    // Guard against missing student id coming from template (uses optional chaining)
+    if (!studentId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Không tìm thấy học viên',
+        detail: 'Không có ID học viên để hiển thị chi tiết.'
+      });
+      return;
+    }
+
+    // Navigate to the student detail route which is defined as 'students/detail/:id'
+    this.router.navigate(['/features/students/detail', studentId]);
   }
 
   // Bulk operations methods
