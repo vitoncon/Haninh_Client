@@ -148,11 +148,14 @@ export class AuthService {
                             // Điều hướng theo role
                             const roleId = roles[0];
                             if (roleId === 1) {
+                                // Admin
                                 this.router.navigate(['/dashboard']);
                             } else if (roleId === 2) {
-                                this.router.navigate(['/dashboard']);
-                            } else if (roleId === 3) {
+                                // Giáo viên -> use main schedule route
                                 this.router.navigate(['/features/schedule']);
+                            } else if (roleId === 3) {
+                                // Học viên
+                                this.router.navigate(['/unauthorized']);
                             } else {
                                 this.router.navigate(['/unauthorized']);
                             }                            

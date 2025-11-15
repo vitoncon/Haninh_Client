@@ -75,6 +75,17 @@ export class PermissionService {
         FEES_CREATE: 'fees.create',
         FEES_EDIT: 'fees.edit',
         FEES_DELETE: 'fees.delete',
+        
+        // Quản lý tài khoản
+        USERS_VIEW: 'users.view',
+        USERS_CREATE: 'users.create',
+        USERS_EDIT: 'users.edit',
+        USERS_DELETE: 'users.delete',
+        
+        ROLES_VIEW: 'roles.view',
+        ROLES_CREATE: 'roles.create',
+        ROLES_EDIT: 'roles.edit',
+        ROLES_DELETE: 'roles.delete',
     };
 
     // Định nghĩa permissions cho từng role
@@ -123,10 +134,18 @@ export class PermissionService {
                 { id: 39, name: 'Fees Create', code: PermissionService.PERMISSIONS.FEES_CREATE },
                 { id: 40, name: 'Fees Edit', code: PermissionService.PERMISSIONS.FEES_EDIT },
                 { id: 41, name: 'Fees Delete', code: PermissionService.PERMISSIONS.FEES_DELETE },
+                { id: 42, name: 'Users View', code: PermissionService.PERMISSIONS.USERS_VIEW },
+                { id: 43, name: 'Users Create', code: PermissionService.PERMISSIONS.USERS_CREATE },
+                { id: 44, name: 'Users Edit', code: PermissionService.PERMISSIONS.USERS_EDIT },
+                { id: 45, name: 'Users Delete', code: PermissionService.PERMISSIONS.USERS_DELETE },
+                { id: 46, name: 'Roles View', code: PermissionService.PERMISSIONS.ROLES_VIEW },
+                { id: 47, name: 'Roles Create', code: PermissionService.PERMISSIONS.ROLES_CREATE },
+                { id: 48, name: 'Roles Edit', code: PermissionService.PERMISSIONS.ROLES_EDIT },
+                { id: 49, name: 'Roles Delete', code: PermissionService.PERMISSIONS.ROLES_DELETE },
             ]
         },
         {
-            roleId: 2, // Quản lý/Staff
+            roleId: 2, // Giáo viên
             permissions: [
                 { id: 1, name: 'Dashboard View', code: PermissionService.PERMISSIONS.DASHBOARD_VIEW },
                 { id: 10, name: 'Schedule View', code: PermissionService.PERMISSIONS.SCHEDULE_VIEW },
@@ -145,7 +164,7 @@ export class PermissionService {
             ]
         },
         {
-            roleId: 3, // Giáo viên
+            roleId: 3, // Học viên
             permissions: [
                 { id: 10, name: 'Schedule View', code: PermissionService.PERMISSIONS.SCHEDULE_VIEW },
                 { id: 18, name: 'Class Students View', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_VIEW },
