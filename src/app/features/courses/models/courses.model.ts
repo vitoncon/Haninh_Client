@@ -14,7 +14,6 @@ export interface Course {
   prerequisites?: string; // Điều kiện tiên quyết
   learning_objectives?: string; // Mục tiêu học tập
   category?: string; // Danh mục khóa học
-  tags?: string[]; // Thẻ phân loại
   
   created_at?: Date;
   updated_at?: Date;

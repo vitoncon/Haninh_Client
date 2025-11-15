@@ -357,7 +357,6 @@ export class CourseDetail implements OnInit, OnDestroy {
       prerequisites: course.prerequisites || '',
       learning_objectives: course.learning_objectives || '',
       category: course.category || '',
-      tags: []
     };
   }
 

@@ -126,7 +126,6 @@ export class Courses implements OnInit, OnDestroy {
       prerequisites: '',
       learning_objectives: '',
       category: '',
-      tags: []
     };
   }
 
