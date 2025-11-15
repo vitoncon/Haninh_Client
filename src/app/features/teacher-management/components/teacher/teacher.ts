@@ -99,6 +99,8 @@ export class Teacher implements OnInit, OnDestroy {
   degreeOptions: any[] = [];
   statusOptions: any[] = [];
   departmentOptions: any[] = [];
+  // New: position/role options (nhiệm vụ) - e.g. Giáo viên chủ nhiệm, Trợ giảng, ...
+  positionOptions: any[] = [];
   contractTypeOptions: any[] = [];
   languageOptions: any[] = [];
   specializationOptions: any[] = [];
@@ -151,7 +153,7 @@ export class Teacher implements OnInit, OnDestroy {
       { label: 'Thạc sĩ', value: 'Thạc sĩ' },
       { label: 'Tiến sĩ', value: 'Tiến sĩ' },
       { label: 'Giáo sư', value: 'Giáo sư' },
-      { label: 'Khác', value: 'Khác' }
+      { label: 'Trung cấp', value: 'Trung cấp' }
     ];
 
     // Load status options
@@ -176,21 +178,26 @@ export class Teacher implements OnInit, OnDestroy {
       { label: 'Tiếng Hàn', value: 'Tiếng Hàn' }
     ];
 
-    // Load department options - phù hợp với trung tâm ngoại ngữ
+    // Change: use `department` column to represent nhiệm vụ (position/role)
+    // This sets the dropdown values for the column previously labelled 'Khoa'.
     this.departmentOptions = [
-      // Các bộ môn ngôn ngữ
-      { label: 'Tiếng Anh', value: 'Tiếng Anh' },
-      { label: 'Tiếng Trung', value: 'Tiếng Trung' },
-      { label: 'Tiếng Hàn', value: 'Tiếng Hàn' },
-      // Các vị trí đặc biệt
       { label: 'Giáo viên chủ nhiệm', value: 'Giáo viên chủ nhiệm' },
+      { label: 'Giáo viên giảng dạy', value: 'Giáo viên giảng dạy' },
       { label: 'Trợ giảng', value: 'Trợ giảng' },
       { label: 'Giáo viên bán thời gian', value: 'Giáo viên bán thời gian' },
       { label: 'Giáo viên toàn thời gian', value: 'Giáo viên toàn thời gian' }
     ];
 
-    // Load specialization options - để trống vì không cần thiết cho trung tâm ngoại ngữ
-    this.specializationOptions = [];
+    // Specialization column will now be used for language/subject specializations
+    // (ví dụ: Tiếng Anh, Tiếng Trung, Tiếng Hàn).
+    this.specializationOptions = [
+      { label: 'Tiếng Anh', value: 'Tiếng Anh' },
+      { label: 'Tiếng Trung', value: 'Tiếng Trung' },
+      { label: 'Tiếng Hàn', value: 'Tiếng Hàn' }
+    ];
+
+    // Keep languageOptions as a separate list if you need multi-language support
+    // (languages taught). This can be used to populate the specialization select as well.
   }
 
   private loadStatistics(): void {
@@ -323,6 +330,10 @@ export class Teacher implements OnInit, OnDestroy {
     try {
       // Deep copy to avoid reference issues
       this.formTeacher = JSON.parse(JSON.stringify(teacher));
+      // If the teacher's role is non-teaching, ensure specialization is cleared
+      if (this.formTeacher && this.isRoleNonTeaching(this.formTeacher.department)) {
+        this.formTeacher.specialization = null;
+      }
       this.drawerVisible = true;
       
       // Override file upload text after drawer opens
@@ -337,6 +348,24 @@ export class Teacher implements OnInit, OnDestroy {
         detail: 'Không thể tải dữ liệu giảng viên để chỉnh sửa'
       });
     }
+  }
+
+  // Called when the role/department (now representing nhiệm vụ) changes in the form
+  onRoleChange(newRole: string | null) {
+    if (!this.formTeacher) return;
+    this.formTeacher.department = newRole;
+
+    // If the selected role is a non-teaching role, clear specialization and disable input
+    if (this.isRoleNonTeaching(newRole)) {
+      this.formTeacher.specialization = null;
+    }
+  }
+
+  // Helper: determine if a given role is non-teaching (no specialization applies)
+  isRoleNonTeaching(role: string | null | undefined): boolean {
+    if (!role) return false;
+    const nonTeachingRoles = ['Giáo viên chủ nhiệm', 'Trợ giảng'];
+    return nonTeachingRoles.includes(role);
   }
 
   onDelete(teacher: TeacherModel) {
@@ -911,8 +940,15 @@ export class Teacher implements OnInit, OnDestroy {
   }
 
   onView(teacher: TeacherModel) {
-    if (teacher.id) {
+    if (teacher && teacher.id) {
       this.router.navigate(['/features/teacher/detail', teacher.id]);
+    } else {
+      console.error('Teacher ID is missing:', teacher);
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Không thể xem chi tiết giáo viên. Vui lòng thử lại.'
+      });
     }
   }
 
@@ -1293,7 +1329,7 @@ export class Teacher implements OnInit, OnDestroy {
       <tr style="background-color: #f0f0f0;">
         <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Mã GV</td>
         <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Họ tên</td>
-        <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Khoa</td>
+    <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Nhiệm vụ</td>
         <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Chuyên môn</td>
         <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Bằng cấp</td>
         <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 12px;">Kinh nghiệm</td>
@@ -1306,12 +1342,13 @@ export class Teacher implements OnInit, OnDestroy {
 
     // Add data rows
     this.filteredTeachers.forEach(teacher => {
+      const spec = this.isRoleNonTeaching(teacher.department) ? 'Không áp dụng' : (teacher.specialization || '');
       html += `
         <tr>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.teacher_code || ''}</td>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.teacher_name || ''}</td>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.department || ''}</td>
-          <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.specialization || ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${spec}</td>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.degree || ''}</td>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.experience_years || 0} năm</td>
           <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${teacher.status || ''}</td>
@@ -1350,11 +1387,23 @@ export class Teacher implements OnInit, OnDestroy {
         return 'success';    
       case 'Cử nhân':
         return 'success';  
-      case 'Khác':
+      case 'Trung cấp':
         return 'secondary';       
       default:
         return 'contrast';  
     }
+  }
+
+  /** Map department/role (nhiệm vụ) to tag severity (color) */
+  getRoleSeverity(role: string | null | undefined): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
+    if (!role) return 'secondary';
+    const name = role.toLowerCase();
+    if (name.includes('chủ nhiệm')) return 'info';        // lead teacher
+    if (name.includes('giảng') || name.includes('giảng dạy')) return 'success'; // main teacher
+    if (name.includes('trợ')) return 'secondary';        // assistant
+    if (name.includes('bán thời gian') || name.includes('part')) return 'warn'; // part-time
+    if (name.includes('toàn thời gian') || name.includes('toàn thời')) return 'success';
+    return 'secondary';
   }
 
 

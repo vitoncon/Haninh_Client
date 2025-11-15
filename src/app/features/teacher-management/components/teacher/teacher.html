@@ -98,7 +98,7 @@
           [ngModel]="filters.department"
           (ngModelChange)="filters.department = $event; onFilterChange()"
           [options]="departmentOptions"
-          placeholder="Lọc theo khoa"
+          placeholder="Lọc theo nhiệm vụ"
           [showClear]="true"
           class="w-full">
         </p-select>
@@ -250,7 +250,7 @@
             Họ tên <p-sortIcon field="teacher_name"></p-sortIcon>
           </th>
           <th pSortableColumn="department">
-            Khoa <p-sortIcon field="department"></p-sortIcon>
+            Nhiệm vụ <p-sortIcon field="department"></p-sortIcon>
           </th>
           <th pSortableColumn="specialization">
             Chuyên môn <p-sortIcon field="specialization"></p-sortIcon>
@@ -293,7 +293,12 @@
               </div>
             </div>
           </td>
-          <td>{{ teacher.department || '-' }}</td>
+          <td>
+            <p-tag 
+              [value]="teacher.department || '-'"
+              [severity]="getRoleSeverity(teacher.department)">
+            </p-tag>
+          </td>
           <td>{{ teacher.specialization || '-' }}</td>
           <td>
             <p-tag 
@@ -309,7 +314,7 @@
             </p-tag>
           </td>
           <td>
-            <div class="flex gap-2">
+            <div class="flex gap-2" (click)="$event.stopPropagation()">
               <p-button 
                 icon="pi pi-eye" 
                 [text]="true" 
@@ -463,24 +468,29 @@
           <!-- Department and Specialization -->
           <div class="form-row">
             <div class="form-group">
-              <label>Khoa/Bộ môn <span class="req" style="color: #ef4444 !important;">*</span></label>
-              <p-select 
-                [ngModel]="formTeacher.department"
-                (ngModelChange)="formTeacher.department = $event"
-                [options]="departmentOptions"
-                placeholder="Chọn khoa"
-                [filter]="true"
-                class="w-full">
-              </p-select>
-            </div>
-            <div class="form-group">
-              <label>Chuyên môn <span class="text-gray-500">(Tùy chọn)</span></label>
-              <input 
-                pInputText 
-                [(ngModel)]="formTeacher.specialization"
-                placeholder="Nhập chuyên môn (không bắt buộc)"
-                class="w-full">
-            </div>
+                <label>Nhiệm vụ <span class="req" style="color: #ef4444 !important;">*</span></label>
+                <p-select 
+                  [ngModel]="formTeacher.department"
+                  (ngModelChange)="formTeacher.department = $event"
+                  [options]="departmentOptions"
+                  placeholder="Chọn nhiệm vụ"
+                  [filter]="true"
+                  [showClear]="true"
+                  class="w-full">
+                </p-select>
+              </div>
+              <div class="form-group">
+                <label>Chuyên môn <span class="text-gray-500">(Tùy chọn)</span></label>
+                <p-select
+                  [ngModel]="formTeacher.specialization"
+                  (ngModelChange)="formTeacher.specialization = $event"
+                  [options]="specializationOptions"
+                  placeholder="Chọn chuyên môn"
+                  [showClear]="true"
+                  [filter]="true"
+                  class="w-full">
+                </p-select>
+              </div>
           </div>
 
           <!-- Degree and Experience -->
