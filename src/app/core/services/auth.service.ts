@@ -1,26 +1,35 @@
-import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+
+    /* ================== ĐÃ CÓ ================== */
 
     isAuthenticated(): boolean {
         return true;
     }
 
     login(_payload?: any) {
-        // MOCK đăng nhập: user id = 1, role = 1 (admin)
         localStorage.setItem('user_id', '1');
-        localStorage.setItem('user_role', '1');
+        localStorage.setItem('user_role', '1'); // admin
 
         return of({
-            user: {
-                id: 1,
-                roleId: 1,
-                name: 'Admin DEV'
-            },
+            user: { id: 1, roleId: 1, name: 'Admin DEV' },
             accessToken: 'dev-token'
         });
+    }
+
+    /* ================== THÊM MỚI ================== */
+
+    // ✅ FIX LỖI setRememberMe
+    setRememberMe(_remember: boolean): void {
+        // DEV MODE: không cần xử lý gì
+    }
+
+    // ✅ FIX LỖI forgotPassword
+    forgotPassword(_payload: { email: string; password: string }) {
+        // giả lập thành công
+        return of(true);
     }
 
     getAccessToken(): string | null {
