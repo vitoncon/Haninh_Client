@@ -50,4 +50,13 @@ export class AuthService {
   forgotPassword(_: any) {
     return of(true);
   }
+
+    getAccessToken(): string | null {
+    return 'dev-token';
+}
+
+getRefreshToken(): string | null {
+    return 'dev-refresh-token';
+}
+
 }
