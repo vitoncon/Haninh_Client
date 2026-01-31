@@ -97,9 +97,10 @@ export class AuthService {
         this.permissionService.clearPermissions();
     }
 
-    forgotPassword(): Observable<any> {
-        return of(true);
-    }
+forgotPassword(_payload: { email: string; password: string }) {
+    return of(true);
+}
+
 
     setRememberMe(_remember: boolean): void {
     // mock - không cần làm gì
