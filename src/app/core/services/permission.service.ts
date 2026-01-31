@@ -204,4 +204,9 @@ export class PermissionService {
         const raw = localStorage.getItem(this.roleKey);
         return raw ? Number(raw) : null;
     }
+
+    getFilteredMenuItems(menu: any[]): any[] {
+    return this.filterMenu(menu);
+}
+
 }
