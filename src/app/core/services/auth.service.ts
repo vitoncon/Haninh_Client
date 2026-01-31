@@ -100,4 +100,9 @@ export class AuthService {
     forgotPassword(): Observable<any> {
         return of(true);
     }
+
+    setRememberMe(_remember: boolean): void {
+    // mock - không cần làm gì
+}
+
 }
