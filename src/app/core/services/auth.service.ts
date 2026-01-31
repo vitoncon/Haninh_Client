@@ -47,4 +47,9 @@ export class AuthService {
     clearSession(): void {
         localStorage.clear();
     }
+    getRole(): number | null {
+    const role = localStorage.getItem('user_role');
+    return role ? Number(role) : null;
+}
+
 }
