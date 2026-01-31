@@ -1,62 +1,41 @@
 import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private mockUser = {
-    id: 1,
-    roles: [1], // admin
-    permissions: ['*']
-  };
+    isAuthenticated(): boolean {
+        return true;
+    }
 
-  isAuthenticated(): boolean {
-    return true; // LUÔN ĐĂNG NHẬP
-  }
+    login(_payload?: any) {
+        // MOCK đăng nhập: user id = 1, role = 1 (admin)
+        localStorage.setItem('user_id', '1');
+        localStorage.setItem('user_role', '1');
 
-  getUser() {
-    return this.mockUser;
-  }
-
-  getUserId(): number {
-    return 1;
-  }
-
-  getRoles(): number[] {
-    return [1];
-  }
-
-  getPermissions(): string[] {
-    return ['*'];
-  }
-
-  login() {
-    return of(true);
-  }
-
-  logout() {
-    // KHÔNG LÀM GÌ
-  }
-
-  refreshToken() {
-    return of(true);
-  }
-
-  // ===== login page support =====
-  setRememberMe(_: boolean) {}
-
-  forgotPassword(_: any) {
-    return of(true);
-  }
+        return of({
+            user: {
+                id: 1,
+                roleId: 1,
+                name: 'Admin DEV'
+            },
+            accessToken: 'dev-token'
+        });
+    }
 
     getAccessToken(): string | null {
-    return 'dev-token';
-}
+        return 'dev-token';
+    }
 
-getRefreshToken(): string | null {
-    return 'dev-refresh-token';
-}
+    getRefreshToken(): string | null {
+        return 'dev-refresh-token';
+    }
 
+    refreshAccessToken() {
+        return of('dev-token');
+    }
+
+    clearSession(): void {
+        localStorage.clear();
+    }
 }
