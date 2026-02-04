@@ -1,269 +1,170 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, map, catchError, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
+import { delay, map } from 'rxjs/operators';
 import { Course, CourseFilters, CourseStatistics } from '../models/courses.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CoursesService {
-  private readonly apiUrl = 'http://localhost:10093/api/courses';
-  private readonly httpOptions = {
-    headers: new HttpHeaders({
-      'Content-Type': 'application/json'
-    })
-  };
-  
-  // Cache for courses data
-  private coursesCache: Course[] | null = null;
-  private cacheTimestamp: number = 0;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private http: HttpClient) {}
-
-  private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
-    return {
-      headers: this.httpOptions.headers.set('Authorization', `Bearer ${token}`)
-    };
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Client Error: ${error.error.message}`;
-    } else {
-      errorMessage = `Server Error: ${error.status} - ${error.message}`;
+  // ================= MOCK DATA =================
+  private courses: Course[] = [
+    {
+      id: 1,
+      course_code: 'KH2024001',
+      course_name: 'Tiếng Anh giao tiếp',
+      description: 'Khóa học tiếng Anh cho người mới',
+      language: 'Tiếng Anh',
+      level: 'Sơ cấp',
+      duration_weeks: 12,
+      total_hours: 36,
+      tuition_fee: 2500000,
+      status: 'Đang hoạt động',
+      prerequisites: 'Không yêu cầu',
+      learning_objectives: 'Giao tiếp cơ bản',
+      category: 'Ngoại ngữ',
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    {
+      id: 2,
+      course_code: 'KH2024002',
+      course_name: 'Tiếng Hàn TOPIK I',
+      description: 'Luyện thi TOPIK I',
+      language: 'Tiếng Hàn',
+      level: 'Trung cấp',
+      duration_weeks: 16,
+      total_hours: 48,
+      tuition_fee: 3200000,
+      status: 'Đang hoạt động',
+      prerequisites: 'Biết bảng chữ cái',
+      learning_objectives: 'Đạt TOPIK I',
+      category: 'Ngoại ngữ',
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    {
+      id: 3,
+      course_code: 'KH2024003',
+      course_name: 'Tiếng Trung HSK 3',
+      description: 'Luyện thi HSK 3',
+      language: 'Tiếng Trung',
+      level: 'Cao cấp',
+      duration_weeks: 20,
+      total_hours: 60,
+      tuition_fee: 4500000,
+      status: 'Không hoạt động',
+      prerequisites: 'HSK 2',
+      learning_objectives: 'Đạt HSK 3',
+      category: 'Ngoại ngữ',
+      created_at: new Date(),
+      updated_at: new Date()
     }
-    
-    console.error('CoursesService Error:', errorMessage);
-    return throwError(() => new Error(errorMessage));
-  }
+  ];
 
-  // Method to clear cache when needed (e.g., after add/update/delete)
-  clearCache(): void {
-    this.coursesCache = null;
-    this.cacheTimestamp = 0;
-  }
+  private autoId = 4;
 
+  // ================= GET LIST =================
   getCourses(filters?: CourseFilters): Observable<Course[]> {
-    let params = new HttpParams();
-    
+    let data = [...this.courses];
+
     if (filters?.search) {
-      params = params.set('q', filters.search);
-    }
-    
-    if (filters?.language) {
-      params = params.set('language', filters.language);
-    }
-    
-    if (filters?.level) {
-      params = params.set('level', filters.level);
-    }
-    
-    if (filters?.status) {
-      params = params.set('status', filters.status);
-    }
-    
-    if (filters?.minDuration != null) {
-      params = params.set('minDuration', String(filters.minDuration));
-    }
-    
-    if (filters?.maxDuration != null) {
-      params = params.set('maxDuration', String(filters.maxDuration));
-    }
-    
-    if (filters?.minTuitionFee != null) {
-      params = params.set('minTuitionFee', String(filters.minTuitionFee));
-    }
-    
-    if (filters?.maxTuitionFee != null) {
-      params = params.set('maxTuitionFee', String(filters.maxTuitionFee));
+      const q = filters.search.toLowerCase();
+      data = data.filter(c =>
+        c.course_code.toLowerCase().includes(q) ||
+        c.course_name.toLowerCase().includes(q)
+      );
     }
 
-    return this.http.get<any>(this.apiUrl, { ...this.getAuthHeaders(), params }).pipe(
-      map((res) => res?.data ?? res),
-      catchError(this.handleError)
-    );
+    if (filters?.language) {
+      data = data.filter(c => c.language === filters.language);
+    }
+
+    if (filters?.level) {
+      data = data.filter(c => c.level === filters.level);
+    }
+
+    if (filters?.status) {
+      data = data.filter(c => c.status === filters.status);
+    }
+
+    return of(data).pipe(delay(300));
   }
 
+  // ================= GET BY ID =================
   getCourseById(id: number): Observable<Course> {
-    if (!id || id <= 0) {
-      return throwError(() => new Error('Invalid course ID'));
-    }
-    
-    // Check if we have valid cached data
-    const now = Date.now();
-    if (this.coursesCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
-      const course = this.coursesCache.find(c => c.id === id);
-      if (course) {
-        return new Observable(observer => observer.next(course));
-      } else {
-        return throwError(() => new Error(`Course with ID ${id} not found`));
-      }
-    }
-    
-    // Fetch fresh data and cache it
-    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
-      map((res) => {
-        const courses = res?.data ?? res;
-        
-        if (Array.isArray(courses)) {
-          // Cache the data
-          this.coursesCache = courses as Course[];
-          this.cacheTimestamp = now;
-          
-          const course = courses.find(c => c.id === id);
-          if (course) {
-            return course as Course;
-          } else {
-            throw new Error(`Course with ID ${id} not found`);
-          }
-        } else {
-          throw new Error('Invalid response format');
-        }
-      }),
-      catchError(this.handleError)
-    );
+    const course = this.courses.find(c => c.id === id);
+    return course
+      ? of(course).pipe(delay(200))
+      : throwError(() => new Error('Course not found'));
   }
 
   getCoursesByIds(ids: number[]): Observable<Course[]> {
-    if (!ids || ids.length === 0) {
-      return throwError(() => new Error('No course IDs provided'));
-    }
-
-    // Check if we have valid cached data
-    const now = Date.now();
-    if (this.coursesCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
-      const courses = this.coursesCache.filter(c => c.id && ids.includes(c.id));
-      if (courses.length > 0) {
-        return new Observable(observer => observer.next(courses));
-      }
-    }
-
-    // Build condition for multiple IDs using 'in' operator
-    const condition = JSON.stringify([{
-      key: 'id',
-      value: ids.join(','),
-      compare: 'in'
-    }]);
-    
-    const url = `${this.apiUrl}?condition=${encodeURIComponent(condition)}`;
-    
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map((res) => {
-        const courses = res?.data ?? res;
-        
-        if (Array.isArray(courses)) {
-          // Update cache
-          this.coursesCache = courses as Course[];
-          this.cacheTimestamp = now;
-          
-          return courses as Course[];
-        } else {
-          throw new Error('Invalid response format');
-        }
-      }),
-      catchError(this.handleError)
-    );
+    return of(this.courses.filter(c => c.id && ids.includes(c.id))).pipe(delay(200));
   }
 
+  // ================= ADD =================
   addCourse(course: Course): Observable<Course> {
-    if (!course.course_code || !course.course_name) {
-      return throwError(() => new Error('Course code and name are required'));
-    }
-
-    return this.http.post<Course>(this.apiUrl, course, this.getAuthHeaders()).pipe(
-      map((res) => {
-        this.clearCache(); // Clear cache after adding new course
-        return res;
-      }),
-      catchError(this.handleError)
-    );
+    const newCourse: Course = {
+      ...course,
+      id: this.autoId++,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    this.courses.unshift(newCourse);
+    return of(newCourse).pipe(delay(300));
   }
 
+  // ================= UPDATE =================
   updateCourse(id: number, course: Course): Observable<Course> {
-    if (!id || id <= 0) {
-      return throwError(() => new Error('Invalid course ID'));
+    const index = this.courses.findIndex(c => c.id === id);
+    if (index === -1) {
+      return throwError(() => new Error('Course not found'));
     }
 
-    return this.http.put<Course>(`${this.apiUrl}/${id}`, course, this.getAuthHeaders()).pipe(
-      map((res) => {
-        this.clearCache(); // Clear cache after updating course
-        return res;
-      }),
-      catchError(this.handleError)
-    );
+    this.courses[index] = {
+      ...this.courses[index],
+      ...course,
+      updated_at: new Date()
+    };
+
+    return of(this.courses[index]).pipe(delay(300));
   }
 
+  // ================= DELETE =================
   deleteCourse(id: number): Observable<void> {
-    if (!id || id <= 0) {
-      return throwError(() => new Error('Invalid course ID'));
-    }
-
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(
-      map(() => {
-        this.clearCache(); // Clear cache after deleting course
-      }),
-      catchError(this.handleError)
-    );
+    this.courses = this.courses.filter(c => c.id !== id);
+    return of(void 0).pipe(delay(300));
   }
 
+  // ================= STATISTICS =================
   getCourseStatistics(): Observable<CourseStatistics> {
-    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
-      map((res) => {
-        const courses = res?.data ?? res;
-        if (Array.isArray(courses)) {
-          return this.calculateCourseStatistics(courses);
-        }
-        return this.getDefaultCourseStatistics();
-      }),
-      catchError(this.handleError)
-    );
+    return of(this.calculateCourseStatistics(this.courses)).pipe(delay(300));
   }
 
   private calculateCourseStatistics(courses: Course[]): CourseStatistics {
     const total_courses = courses.length;
     const active_courses = courses.filter(c => c.status === 'Đang hoạt động').length;
     const inactive_courses = courses.filter(c => c.status === 'Không hoạt động').length;
-    
-    const tuitionFees = courses.filter(c => c.tuition_fee != null).map(c => c.tuition_fee!);
-    const average_tuition_fee = tuitionFees.length > 0 
-      ? Math.round(tuitionFees.reduce((sum, fee) => sum + fee, 0) / tuitionFees.length)
-      : 0;
 
-    const durations = courses.filter(c => c.duration_weeks != null).map(c => c.duration_weeks!);
-    const average_duration_weeks = durations.length > 0 
-      ? Math.round(durations.reduce((sum, dur) => sum + dur, 0) / durations.length * 10) / 10
-      : 0;
+    const tuitionFees = courses.map(c => c.tuition_fee || 0).filter(v => v > 0);
+    const durations = courses.map(c => c.duration_weeks || 0).filter(v => v > 0);
+    const hours = courses.map(c => c.total_hours || 0).filter(v => v > 0);
 
-    const totalHours = courses.filter(c => c.total_hours != null).map(c => c.total_hours!);
-    const average_total_hours = totalHours.length > 0 
-      ? Math.round(totalHours.reduce((sum, hours) => sum + hours, 0) / totalHours.length)
-      : 0;
+    const language_distribution = Object.entries(
+      courses.reduce((acc: any, c) => {
+        acc[c.language] = (acc[c.language] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([language, count]) => ({ language, count }));
 
-    // Language distribution
-    const languageCount = courses.reduce((acc, c) => {
-      const lang = c.language || 'Chưa xác định';
-      acc[lang] = (acc[lang] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const language_distribution = Object.entries(languageCount).map(([language, count]) => ({
-      language,
-      count: count as number
-    }));
-
-    // Level distribution
-    const levelCount = courses.reduce((acc, c) => {
-      const level = c.level || 'Chưa xác định';
-      acc[level] = (acc[level] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const level_distribution = Object.entries(levelCount).map(([level, count]) => ({
-      level,
-      count: count as number
-    }));
+    const level_distribution = Object.entries(
+      courses.reduce((acc: any, c) => {
+        acc[c.level] = (acc[c.level] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([level, count]) => ({ level, count }));
 
     return {
       total_courses,
@@ -271,42 +172,20 @@ export class CoursesService {
       inactive_courses,
       language_distribution,
       level_distribution,
-      average_tuition_fee,
-      average_duration_weeks,
-      average_total_hours
+      average_tuition_fee: tuitionFees.length ? Math.round(tuitionFees.reduce((a, b) => a + b) / tuitionFees.length) : 0,
+      average_duration_weeks: durations.length ? Math.round(durations.reduce((a, b) => a + b) / durations.length) : 0,
+      average_total_hours: hours.length ? Math.round(hours.reduce((a, b) => a + b) / hours.length) : 0
     };
   }
 
-  private getDefaultCourseStatistics(): CourseStatistics {
-    return {
-      total_courses: 0,
-      active_courses: 0,
-      inactive_courses: 0,
-      language_distribution: [],
-      level_distribution: [],
-      average_tuition_fee: 0,
-      average_duration_weeks: 0,
-      average_total_hours: 0
-    };
-  }
-
+  // ================= UTIL =================
   validateCourseCode(code: string): Observable<boolean> {
-    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
-      map((res) => {
-        const courses = res?.data ?? res;
-        if (Array.isArray(courses)) {
-          const existingCourse = courses.find((course: any) => course.course_code === code);
-          return !existingCourse;
-        }
-        return true;
-      }),
-      catchError(this.handleError)
-    );
+    const exists = this.courses.some(c => c.course_code === code);
+    return of(!exists).pipe(delay(200));
   }
 
   generateCourseCode(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-    return `KH${timestamp}${random}`;
+    const year = new Date().getFullYear();
+    return `KH${year}${String(this.autoId).padStart(3, '0')}`;
   }
 }
