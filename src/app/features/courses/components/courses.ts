@@ -1,164 +1,561 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
+import { CoursesService } from '../services/courses.service';
+import { Course } from '../models/courses.model';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
-// PrimeNG
 import { TableModule } from 'primeng/table';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { ToolbarModule } from 'primeng/toolbar';
-import { CardModule } from 'primeng/card';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { RippleModule } from 'primeng/ripple';
+import { ToastModule } from 'primeng/toast';
 import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { DialogModule } from 'primeng/dialog';
+import { DrawerModule } from 'primeng/drawer';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Table } from 'primeng/table';
+import { ToolbarModule } from 'primeng/toolbar';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { TooltipModule } from 'primeng/tooltip';
+import { CardModule } from 'primeng/card';
+import { ClassService } from '../../class-management/services/class.service';
+import { ClassModel } from '../../class-management/models/class.model';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { CourseFilters, CourseStatistics } from '../models/courses.model';
 
 @Component({
   selector: 'app-courses',
+  templateUrl: 'courses.html',
   standalone: true,
-  templateUrl: './courses.html',
-  styleUrls: ['./courses.scss'],
   imports: [
     CommonModule,
-    FormsModule,
-
     TableModule,
+    FormsModule,
     ButtonModule,
-    ToolbarModule,
-    CardModule,
-    ConfirmDialogModule,
-    DrawerModule,
+    RippleModule,
+    ToastModule,
     InputTextModule,
-    InputNumberModule
-  ]
+    TextareaModule,
+    SelectModule,
+    InputNumberModule,
+    DialogModule,
+    DrawerModule,
+    ConfirmDialogModule,
+    ToolbarModule,
+    IconFieldModule,
+    InputIconModule,
+    TooltipModule,
+    CardModule,
+  ],
+  providers: [ConfirmationService],
+  styleUrls: ['./courses.scss']
 })
-export class Courses {
-  loading = false;
+export class Courses implements OnInit, OnDestroy {
+  courses: Course[] = [];
+  filteredCourses: Course[] = [];
+  displayDialog: boolean = false; 
+  drawerVisible: boolean = false;
+  selectedCourse: Course | null = null;
+  formCourse: Course | null = null;
+  classesForCourse: any[] = [];
+  newCourse: Course = this.createEmptyCourse();
+  saving: boolean = false;
+  loading: boolean = false;
+  searchQuery: string = '';
+  showClearButton: boolean = false;
+  statistics: CourseStatistics | null = null;
+  statsLoading: boolean = false;
+  
+  @ViewChild('dt', { static: false }) dt!: Table;
+  
+  // RxJS subjects for better memory management
+  private destroy$ = new Subject<void>();
+  private searchSubject$ = new Subject<string>();
+  private searchCache: Map<string, Course[]> = new Map();
 
-  courses: any[] = [];
-  filteredCourses: any[] = [];
+  constructor(
+    private coursesService: CoursesService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService,
+    private classService: ClassService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {}
 
-  searchQuery = '';
-
-  statistics = {
-    total_courses: 0,
-    active_courses: 0,
-    inactive_courses: 0,
-    average_tuition_fee: 0
-  };
-
-  drawerVisible = false;
-  saving = false;
-
-  selectedCourse: any = null;
-  formCourse: any = null;
-
-  constructor() {
-    this.mockData();
+  ngOnInit(): void {
+    this.initializeSearchSubscription();
+    this.loadCourses();
+    this.loadStatistics();
   }
 
-  mockData() {
-    this.courses = [
-      {
-        id: 1,
-        course_code: 'ENG101',
-        course_name: 'Tiếng Anh giao tiếp cơ bản',
-        language: 'Tiếng Anh',
-        level: 'Sơ cấp',
-        duration_weeks: 12,
-        total_hours: 96,
-        tuition_fee: 2000000,
-        status: 'Đang hoạt động'
-      },
-      {
-        id: 2,
-        course_code: 'KOR201',
-        course_name: 'Tiếng Hàn trung cấp',
-        language: 'Tiếng Hàn',
-        level: 'Trung cấp',
-        duration_weeks: 16,
-        total_hours: 120,
-        tuition_fee: 3500000,
-        status: 'Không hoạt động'
-      }
-    ];
-
-    this.filteredCourses = [...this.courses];
-    this.calculateStatistics();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.clearSearchCache();
   }
 
-  calculateStatistics() {
-    this.statistics.total_courses = this.courses.length;
-    this.statistics.active_courses = this.courses.filter(c => c.status === 'Đang hoạt động').length;
-    this.statistics.inactive_courses = this.courses.filter(c => c.status === 'Không hoạt động').length;
-
-    const totalFee = this.courses.reduce((sum, c) => sum + (c.tuition_fee || 0), 0);
-    this.statistics.average_tuition_fee = totalFee / (this.courses.length || 1);
-  }
-
-  formatCurrency(value: number) {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(value || 0);
-  }
-
-  onGlobalFilter(event: any) {
-    const value = event.target.value.toLowerCase();
-    this.filteredCourses = this.courses.filter(c =>
-      Object.values(c).some(v =>
-        String(v).toLowerCase().includes(value)
+  private initializeSearchSubscription(): void {
+    this.searchSubject$
+      .pipe(
+        debounceTime(this.SEARCH_DEBOUNCE_TIME),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
       )
+      .subscribe(query => this.filterCourses(query));
+  }
+
+  private createEmptyCourse(): Course {
+    return {
+      id: undefined,
+      course_code: this.generateCourseCode(),
+      course_name: '',
+      description: '',
+      language: 'Tiếng Anh',
+      level: 'Sơ cấp',
+      duration_weeks: null,
+      total_hours: null,
+      tuition_fee: null,
+      status: 'Đang hoạt động',
+      
+      // New fields
+      prerequisites: '',
+      learning_objectives: '',
+      category: '',
+    };
+  }
+
+  private generateCourseCode(): string {
+    // Tạo mã khóa học tự động theo format: KH + YYYY + số thứ tự
+    const currentYear = new Date().getFullYear();
+    const yearString = currentYear.toString();
+    
+    // Tìm khóa học có mã lớn nhất trong năm hiện tại
+    const currentYearCourses = this.courses.filter(course => 
+      course.course_code && course.course_code.startsWith(`KH${yearString}`)
     );
+    
+    let maxNumber = 0;
+    currentYearCourses.forEach(course => {
+      const match = course.course_code?.match(/KH\d{4}(\d+)/);
+      if (match) {
+        const number = parseInt(match[1], 10);
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+    });
+    
+    // Tăng số thứ tự lên 1
+    const nextNumber = maxNumber + 1;
+    
+    // Format: KH + YYYY + số thứ tự (3 chữ số)
+    return `KH${yearString}${nextNumber.toString().padStart(3, '0')}`;
   }
 
-  clearSearch() {
-    this.searchQuery = '';
-    this.filteredCourses = [...this.courses];
+  // Constants for better maintainability
+  private readonly SEARCH_DEBOUNCE_TIME = 300;
+  private readonly CACHE_SIZE_LIMIT = 50;
+  private readonly DEFAULT_PAGE_SIZE = 5;
+
+  loadCourses(): void {
+    this.loading = true;
+    this.coursesService.getCourses()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.courses = this.processCoursesData(data);
+          this.filteredCourses = [...this.courses];
+          this.clearSearchCache();
+          this.loading = false;
+          // Reload statistics after loading courses
+          this.loadStatistics();
+        },
+        error: (error) => {
+          this.handleLoadCoursesError(error);
+        }
+      });
   }
 
-  forceRefresh() {
-    this.mockData();
+  loadStatistics(): void {
+    this.statsLoading = true;
+    this.coursesService.getCourseStatistics()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (stats) => {
+          this.statistics = stats;
+          this.statsLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading statistics:', error);
+          this.statsLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
+  private processCoursesData(data: Course[]): Course[] {
+    return data.map(course => ({
+      ...course,
+      tuition_fee: Number(course.tuition_fee) || null
+    }));
+  }
+
+  private handleLoadCoursesError(error: any): void {
+    console.error('Error loading courses:', error);
+    this.loading = false;
+    const errorMessage = error?.error?.message || 'Không thể tải danh sách khóa học';
+    
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: errorMessage
+    });
+    
+    this.cdr.detectChanges();
+  }
   onCreate() {
     this.selectedCourse = null;
-    this.formCourse = {};
+    // Tạo mã mới mỗi lần tạo khóa học mới
+    this.formCourse = this.createEmptyCourse();
     this.drawerVisible = true;
-  }
-
-  onEdit(course: any) {
-    this.selectedCourse = course;
-    this.formCourse = { ...course };
-    this.drawerVisible = true;
-  }
-
-  onView(course: any) {
-    alert(`Xem khóa học: ${course.course_name}`);
-  }
-
-  onDelete(course: any) {
-    this.courses = this.courses.filter(c => c !== course);
-    this.filteredCourses = [...this.courses];
-    this.calculateStatistics();
-  }
-
-  onSave() {
-    if (this.selectedCourse) {
-      Object.assign(this.selectedCourse, this.formCourse);
-    } else {
-      this.courses.push({
-        ...this.formCourse,
-        id: Date.now()
-      });
-    }
-
-    this.filteredCourses = [...this.courses];
-    this.calculateStatistics();
-    this.drawerVisible = false;
   }
 
   onDrawerHide() {
     this.formCourse = null;
     this.selectedCourse = null;
+    this.displayDialog = false;
+    this.drawerVisible = false;
+  }
+
+  onEdit(course: Course) {
+    this.selectedCourse = { ...course };
+    this.formCourse = { ...course };
+    this.drawerVisible = true;  
+  }
+
+  onDelete(courseItem: Course): void {
+    this.confirmationService.confirm({
+      message: `Bạn có chắc muốn xóa khóa học <b>${courseItem.course_name}</b> không?`,
+      header: 'Xác nhận xóa',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Đồng ý',
+      rejectLabel: 'Hủy',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.deleteCourse(courseItem);
+      }
+    });
+  }
+
+  private deleteCourse(courseItem: Course): void {
+    if (!courseItem.id) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Không thể xóa khóa học này'
+      });
+      return;
+    }
+
+    this.coursesService.deleteCourse(courseItem.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: `Đã xóa khóa học "${courseItem.course_name}" thành công`
+          });
+          this.loadCourses();
+        },
+        error: (error) => {
+          this.handleDeleteError(error, courseItem.course_name);
+        }
+      });
+  }
+
+  private handleDeleteError(error: any, courseName: string): void {
+    console.error('Error deleting course:', error);
+    const errorMessage = error?.error?.message || 'Không thể xóa khóa học';
+    
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: `${errorMessage}: "${courseName}"`
+    });
+  }  
+  
+  onView(course: Course) {
+    if (course.id) {
+      this.router.navigate(['/features/courses/detail', course.id]);
+    } else {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Không thể xem chi tiết khóa học này'
+      });
+    }
+  }
+
+  private loadClassesForCourse(courseId: number) {
+    if (!courseId) {
+      this.classesForCourse = [];
+      return;
+    }
+    this.classService.getClasses().subscribe({
+      next: (all: ClassModel[]) => {
+        this.classesForCourse = (all || []).filter(c => Number(c.course_id) === Number(courseId));
+      },
+      error: () => {
+        this.classesForCourse = [];
+      }
+    });
+  }
+
+  onSave(): void {
+    if (!this.validateForm()) {
+      return;
+    }
+
+    this.saving = true;
+    
+    if (this.selectedCourse && this.selectedCourse.id) {
+      this.updateCourse();
+    } else {
+      this.addCourse();
+    }
+  }
+
+  private validateForm(): boolean {
+    if (!this.formCourse) {
+      this.showValidationError('Vui lòng điền đầy đủ thông tin khóa học');
+      return false;
+    }
+
+    const errors: string[] = [];
+    
+    // Chỉ kiểm tra mã khóa học khi tạo mới (nếu chưa có mã tự động)
+    if (!this.selectedCourse && !this.formCourse.course_code?.trim()) {
+      errors.push('Mã khóa học');
+    }
+    
+    if (!this.formCourse.course_name?.trim()) {
+      errors.push('Tên khóa học');
+    }
+
+    if (errors.length > 0) {
+      this.showValidationError(`Vui lòng nhập: ${errors.join(', ')}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  private showValidationError(message: string): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Thiếu thông tin',
+      detail: message
+    });
+  }
+
+  private updateCourse(): void {
+    if (!this.selectedCourse?.id || !this.formCourse) {
+      return;
+    }
+
+    this.coursesService.updateCourse(this.selectedCourse.id, this.formCourse)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.handleSaveSuccess('Cập nhật khóa học thành công');
+        },
+        error: (error) => {
+          this.handleSaveError(error, 'Không thể cập nhật khóa học');
+        }
+      });
+  }
+
+  private addCourse(): void {
+    if (!this.formCourse) {
+      return;
+    }
+
+    this.coursesService.addCourse(this.formCourse)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.handleSaveSuccess('Thêm khóa học thành công');
+        },
+        error: (error) => {
+          this.handleSaveError(error, 'Không thể thêm khóa học');
+        }
+      });
+  }
+
+  private handleSaveSuccess(message: string): void {
+    this.saving = false;
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: message
+    });
+    this.loadCourses();
+    this.drawerVisible = false;
+  }
+
+  private handleSaveError(error: any, defaultMessage: string): void {
+    this.saving = false;
+    console.error('Save error:', error);
+    
+    const errorMessage = error?.error?.message || defaultMessage;
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: errorMessage
+    });
+  }
+
+
+  resetForm() {
+    this.newCourse = {
+      id: undefined,
+      course_code: '',
+      course_name: '',
+      description: '',
+      language: 'Tiếng Anh',
+      level: 'Sơ cấp',
+      duration_weeks: null,
+      total_hours: null,
+      tuition_fee: null,
+      status: 'Đang hoạt động'
+    };
+  }
+
+  onGlobalFilter(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = (input?.value || '').trim();
+
+    this.searchQuery = value;
+    this.showClearButton = value.length > 0;
+    
+    this.searchSubject$.next(value);
+  }
+
+
+  forceRefresh(): void {
+    this.loadCourses();
+  }
+
+  formatCurrency(value: number): string {
+    if (!value) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(value);
+  }
+
+  private filterCourses(query: string): void {
+    if (!query || query.trim() === '') {
+      this.filteredCourses = [...this.courses];
+      return;
+    }
+
+    const cacheKey = query.toLowerCase().trim();
+    if (this.searchCache.has(cacheKey)) {
+      this.filteredCourses = [...this.searchCache.get(cacheKey)!];
+      return;
+    }
+
+    const searchTerms = this.parseSearchQuery(query);
+    const results = this.courses.filter(course => 
+      this.advancedSearchInCourse(course, searchTerms)
+    );
+    
+    this.cacheSearchResults(cacheKey, results);
+    this.filteredCourses = [...results];
+  }
+
+
+  private cacheSearchResults(key: string, results: Course[]) {
+    if (this.searchCache.size >= this.CACHE_SIZE_LIMIT) {
+      const firstKey = this.searchCache.keys().next().value;
+      if (firstKey) {
+        this.searchCache.delete(firstKey);
+      }
+    }
+    
+    this.searchCache.set(key, results);
+  }
+  private parseSearchQuery(query: string): string[] {
+    return query.toLowerCase().trim().split(/\s+/).filter(term => term.length > 0);
+  }
+
+  private advancedSearchInCourse(course: Course, searchTerms: string[]): boolean {
+    // Cache searchable fields for better performance
+    const searchableText = [
+      course.course_code,
+      course.course_name,
+      course.language,
+      course.level,
+      course.description,
+      course.status
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const searchableNumbers = [
+      course.tuition_fee,
+      course.duration_weeks,
+      course.total_hours
+    ].filter(num => num !== null && num !== undefined).map(num => num!.toString());
+
+    return searchTerms.every(term => 
+      searchableText.includes(term.toLowerCase()) ||
+      searchableNumbers.some(num => num.includes(term))
+    );
+  }
+
+  private isTermMatched(term: string, fields: string[]): boolean {
+    return fields.some(field => {
+      if (field.includes(term)) return true;
+      if (this.wordBoundaryMatch(field, term)) return true;
+      if (this.numberMatch(field, term)) return true;
+      
+      return false;
+    });
+  }
+
+  private wordBoundaryMatch(text: string, term: string): boolean {
+    if (term.length < 2) return false;
+    const words = text.split(/\s+/);
+    return words.some(word => {
+      if (word === term) return true;
+      if (term.length >= 3 && word.startsWith(term)) return true;
+      
+      return false;
+    });
+  }
+
+  private numberMatch(text: string, term: string): boolean {
+    if (!/^\d+$/.test(term)) return false;
+    const numbers = text.match(/\d+/g);
+    if (!numbers) return false;
+    return numbers.some(num => num === term || num.includes(term));
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.showClearButton = false;
+    this.filteredCourses = [...this.courses];
+  }
+
+  private clearSearchCache() {
+    this.searchCache.clear(); 
   }
 }
