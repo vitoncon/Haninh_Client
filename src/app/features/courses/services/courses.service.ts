@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { delay } from 'rxjs/operators';
 import { Course, CourseFilters, CourseStatistics } from '../models/courses.model';
 
 @Injectable({
@@ -8,7 +8,6 @@ import { Course, CourseFilters, CourseStatistics } from '../models/courses.model
 })
 export class CoursesService {
 
-  // ================= MOCK DATA =================
   private courses: Course[] = [
     {
       id: 1,
@@ -65,7 +64,6 @@ export class CoursesService {
 
   private autoId = 4;
 
-  // ================= GET LIST =================
   getCourses(filters?: CourseFilters): Observable<Course[]> {
     let data = [...this.courses];
 
@@ -92,7 +90,6 @@ export class CoursesService {
     return of(data).pipe(delay(300));
   }
 
-  // ================= GET BY ID =================
   getCourseById(id: number): Observable<Course> {
     const course = this.courses.find(c => c.id === id);
     return course
@@ -104,7 +101,6 @@ export class CoursesService {
     return of(this.courses.filter(c => c.id && ids.includes(c.id))).pipe(delay(200));
   }
 
-  // ================= ADD =================
   addCourse(course: Course): Observable<Course> {
     const newCourse: Course = {
       ...course,
@@ -116,7 +112,6 @@ export class CoursesService {
     return of(newCourse).pipe(delay(300));
   }
 
-  // ================= UPDATE =================
   updateCourse(id: number, course: Course): Observable<Course> {
     const index = this.courses.findIndex(c => c.id === id);
     if (index === -1) {
@@ -132,13 +127,11 @@ export class CoursesService {
     return of(this.courses[index]).pipe(delay(300));
   }
 
-  // ================= DELETE =================
   deleteCourse(id: number): Observable<void> {
     this.courses = this.courses.filter(c => c.id !== id);
     return of(void 0).pipe(delay(300));
   }
 
-  // ================= STATISTICS =================
   getCourseStatistics(): Observable<CourseStatistics> {
     return of(this.calculateCourseStatistics(this.courses)).pipe(delay(300));
   }
@@ -153,18 +146,24 @@ export class CoursesService {
     const hours = courses.map(c => c.total_hours || 0).filter(v => v > 0);
 
     const language_distribution = Object.entries(
-      courses.reduce((acc: any, c) => {
+      courses.reduce<Record<string, number>>((acc, c) => {
         acc[c.language] = (acc[c.language] || 0) + 1;
         return acc;
       }, {})
-    ).map(([language, count]) => ({ language, count }));
+    ).map(([language, count]) => ({
+      language,
+      count
+    }));
 
     const level_distribution = Object.entries(
-      courses.reduce((acc: any, c) => {
+      courses.reduce<Record<string, number>>((acc, c) => {
         acc[c.level] = (acc[c.level] || 0) + 1;
         return acc;
       }, {})
-    ).map(([level, count]) => ({ level, count }));
+    ).map(([level, count]) => ({
+      level,
+      count
+    }));
 
     return {
       total_courses,
@@ -178,7 +177,6 @@ export class CoursesService {
     };
   }
 
-  // ================= UTIL =================
   validateCourseCode(code: string): Observable<boolean> {
     const exists = this.courses.some(c => c.course_code === code);
     return of(!exists).pipe(delay(200));
