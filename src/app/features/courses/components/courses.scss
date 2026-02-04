@@ -1,119 +1,224 @@
-:host {
-  display: block;
+// Bảng tổng thể
+:host ::ng-deep .p-datatable {
+  width: 100%;
+  border-radius: 0.75rem;
+  overflow: visible; // allow dropdown/panels to overflow
+  background: white;
+  transition: all 0.2s ease-in-out;
+
+  th, td {
+    white-space: nowrap;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-weight: 600;
+    background-color: var(--surface-ground);
+  }
+
+  tr:hover {
+    background-color: var(--surface-hover);
+  }
 }
 
-/* =========================
-   STATISTICS CARDS
-========================= */
+// Cột hành động
+:host ::ng-deep .action-column {
+  text-align: center;
+  min-width: 140px;
+
+  button {
+    margin: 0 0.25rem;
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// Loại bỏ thanh cuộn ngang nếu không cần
+:host ::ng-deep .p-datatable-wrapper {
+  overflow-x: auto; // Cho phép cuộn khi thực sự cần
+  scrollbar-width: thin; // Firefox
+  -ms-overflow-style: none; // IE/Edge
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+}
+/* Statistics Cards */
+.stat-card-item {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color);
+  box-shadow: var(--surface-card-shadow);
+  transition: all 0.25s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--surface-card-shadow-hover);
+  }
+  
+  // Dark theme specific adjustments
+  .app-dark & {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background: var(--surface-700);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.stat-number {
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.stat-label {
+  color: var(--text-muted-color);
+  transition: color 0.3s ease;
+}
+
+// Statistics Cards Grid - following responsive patterns from other modules
 .statistics-cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+  width: 100%;
 
   @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  ::ng-deep .p-card {
-    border-radius: 0.75rem;
+  @media (min-width: 1400px) {
+    gap: 2rem;
+  }
+  
+  .p-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-card);
     border: 1px solid var(--surface-border);
-    transition: all 0.2s ease;
+    border-radius: var(--content-border-radius, 0.75rem);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all var(--element-transition-duration, 0.25s);
+    height: 100%;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    // Reduce p-card-body padding to make it smaller
+    ::ng-deep .p-card-body {
+      padding: 0.5rem !important;
     }
 
     .flex {
       align-items: center;
       gap: 1rem;
+      padding: 1rem;
 
-      h6 {
-        font-size: 0.9rem;
-        color: var(--text-color-secondary);
-        margin: 0;
+      .flex-1 {
+        flex: 1;
+
+        h6 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0;
+          color: var(--text-color-secondary);
+          transition: color 0.3s ease;
+        }
+
+        h4 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 0;
+          color: var(--text-color);
+          transition: color 0.3s ease;
+        }
+
+        .mb-0 {
+          margin-top: 0.5rem !important;
+        }
       }
 
-      h4 {
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin: 0;
-      }
-
+      // Icon container with rounded background
       .icon-container {
-        width: 56px;
-        height: 56px;
+        width: 60px;
+        height: 60px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
 
         i {
-          font-size: 1.6rem;
+          font-size: 1.8rem;
+          transition: all 0.3s ease;
         }
       }
 
+      // Icon colors with semantic meaning and backgrounds
       .text-blue-500 {
-        background: #dbeafe;
         color: #3b82f6;
+        background: #dbeafe;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
       }
-
       .text-green-500 {
+        color: #10b981;
         background: #dcfce7;
-        color: #16a34a;
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
       }
-
       .text-orange-500 {
+        color: #f59e0b;
         background: #fef3c7;
-        color: #d97706;
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.15);
       }
-
       .text-red-500 {
+        color: #ef4444;
         background: #fee2e2;
-        color: #dc2626;
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15);
+      }
+    }
+
+    // Dark mode card adjustments
+    .app-dark & {
+      background: var(--surface-700);
+      border-color: var(--surface-600);
+
+      &:hover {
+        background: var(--surface-600);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
       }
     }
   }
 }
 
-/* =========================
-   TOOLBAR
-========================= */
-::ng-deep .p-toolbar {
-  margin-bottom: 0.75rem;
-}
-
-/* =========================
-   TABLE
-========================= */
-:host ::ng-deep .p-datatable {
-  border-radius: 0.75rem;
-  overflow: hidden;
-
-  th {
-    font-weight: 600;
-    background: var(--surface-ground);
-    white-space: nowrap;
+// Statistics Grid Responsive
+.stats-grid-responsive {
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
-
-  td {
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-
-  tr:hover {
-    background: var(--surface-hover);
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
   }
 }
 
-/* =========================
-   STATUS BADGE
-========================= */
+/* Trạng thái khóa học */
 .status-active,
 .status-inactive {
   font-weight: 600;
@@ -121,109 +226,242 @@
   border-radius: 12px;
   display: inline-block;
 }
+.status-active { background-color: #DCFCE7; color: #166534; }
+.status-inactive { background-color: #E5E7EB; color: #374151; }
 
-.status-active {
-  background: #dcfce7;
-  color: #166534;
+.page-card {
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .loading-wrapper,
+    .empty-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    background: white;
+    color: var(--text-color-secondary, #666);
+    position: relative; // rất quan trọng để nút định vị theo khung này
+    
+    // Style cho nút Tạo mới trong empty state
+    button {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+    
+    .add-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 2;
+    }
+
+    .loading-icon,
+    .empty-icon {
+      font-size: 3rem;
+      color: var(--primary-color, #3f51b5);
+      display: block;
+    }
+    
+    .loading-icon {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 !important;
+      color: var(--text-color);
+    }
+
+    p {
+      max-width: 500px;
+      margin: 0 auto;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--text-color-secondary, #666);
+    }
+    }
+
+    p-table {
+      width: 100%;
+    }
+    
+    // Empty message styling
+    ::ng-deep .p-datatable-emptymessage {
+      background: white !important;
+      
+      td {
+        background: white !important;
+        padding: 2rem 1rem;
+      }
+    }
+  }
+  // spacing under the new toolbar
+  ::ng-deep .p-toolbar { 
+    margin-bottom: 0.75rem; 
+    
+    .p-button-outlined.p-button-secondary {
+      border-color: var(--orange-500, #f97316);
+      color: var(--orange-500, #f97316);
+      
+      &:hover {
+        background-color: var(--orange-50, #fff7ed);
+        border-color: var(--orange-600, #ea580c);
+        color: var(--orange-600, #ea580c);
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 2px var(--orange-100, #fed7aa);
+      }
+    }
+  }
 }
 
-.status-inactive {
-  background: #e5e7eb;
-  color: #374151;
-}
+// cua so them khoa hoc 
+$color-required: #e63946;
+$color-label: #333;
+$color-border: #dcdcdc;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
 
-/* =========================
-   EMPTY + LOADING
-========================= */
-.loading-wrapper,
-.empty-wrapper {
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+:host {
+  display: block;
 
-  .loading-icon,
-  .empty-icon {
-    font-size: 3rem;
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-  }
+  ::ng-deep .p-drawer {
+    overflow: hidden !important;
+    
+    .p-drawer-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $color-label;
+      padding: $spacing-md;
+      border-bottom: 1px solid $color-border;
+    }
 
-  .loading-icon {
-    animation: spin 1s linear infinite;
-  }
-
-  h3 {
-    margin: 0.25rem 0;
-    font-weight: 600;
-  }
-
-  p {
-    max-width: 420px;
-    color: var(--text-color-secondary);
+    .p-drawer-content {
+      padding: $spacing-md;
+      overflow: hidden !important;
+      height: auto !important;
+      max-height: none !important;
+    }
+    
+    .p-drawer-wrapper {
+      overflow: hidden !important;
+    }
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* =========================
-   DRAWER (ADD / EDIT COURSE)
-========================= */
+// Global override for drawer scroll
 ::ng-deep .p-drawer {
-  .p-drawer-header {
-    font-size: 1.2rem;
-    font-weight: 600;
+  overflow: hidden !important;
+  
+  .p-drawer-content {
+    overflow: hidden !important;
+    max-height: none !important;
+  }
+  
+  .p-drawer-wrapper {
+    overflow: hidden !important;
+  }
+  
+  .p-drawer-mask {
+    overflow: hidden !important;
   }
 }
 
-/* =========================
-   FORM
-========================= */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
+  gap: $spacing-md;
 
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: $spacing-sm;
 
     label {
       font-weight: 500;
+      color: var(--text-color);
 
       .req {
-        color: #e11d48;
+        color: var(--red-500, #f44336);
+        margin-left: 0.25rem;
       }
+    }
+
+    input,
+    textarea,
+    .p-inputtext,
+    .p-inputnumber,
+    .p-dropdown {
+      width: 100%;
+    }
+
+    // Readonly field styling
+    .readonly-field {
+      background-color: var(--surface-100) !important;
+      color: var(--text-color-secondary) !important;
+      cursor: not-allowed !important;
+      opacity: 0.8;
+      
+      &:focus {
+        border-color: var(--surface-border) !important;
+        box-shadow: none !important;
+      }
+    }
+
+    small.text-muted {
+      color: var(--text-color-secondary);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      display: block;
     }
 
     &.full-width {
       grid-column: 1 / -1;
     }
-
-    .readonly-field {
-      background: var(--surface-100);
-      cursor: not-allowed;
-    }
   }
 }
 
-/* =========================
-   DRAWER ACTIONS
-========================= */
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  border-top: 1px solid $color-border;
+  margin-top: 1rem; 
+
+  button {
+    min-width: 100px;
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
