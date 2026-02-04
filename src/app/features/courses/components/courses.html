@@ -1,325 +1,211 @@
+<!-- Statistics Cards -->
+<div class="statistics-cards-grid" *ngIf="statistics">
+  <p-card>
+    <div class="flex align-items-center">
+      <div class="flex-1">
+        <h6>Tổng khóa học</h6>
+        <h4>{{ statistics.total_courses }}</h4>
+      </div>
+      <i class="pi pi-graduation-cap text-blue-500 text-2xl"></i>
+    </div>
+  </p-card>
 
-  <!-- Statistics Cards - Dashboard Mini -->
-  <div class="statistics-cards-grid" *ngIf="statistics">
-    <p-card>
-      <div class="flex align-items-center">
-        <div class="flex-1">
-          <h6>Tổng khóa học</h6>
-          <h4 class="mb-0">{{ statistics.total_courses }}</h4>
-        </div>
-        <div class="icon-container text-blue-500">
-          <i class="pi pi-graduation-cap"></i>
-        </div>
+  <p-card>
+    <div class="flex align-items-center">
+      <div class="flex-1">
+        <h6>Đang hoạt động</h6>
+        <h4>{{ statistics.active_courses }}</h4>
       </div>
-    </p-card>
-    <p-card>
-      <div class="flex align-items-center">
-        <div class="flex-1">
-          <h6>Đang hoạt động</h6>
-          <h4 class="mb-0">{{ statistics.active_courses }}</h4>
-        </div>
-        <div class="icon-container text-green-500">
-          <i class="pi pi-check-circle"></i>
-        </div>
+      <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+    </div>
+  </p-card>
+
+  <p-card>
+    <div class="flex align-items-center">
+      <div class="flex-1">
+        <h6>Không hoạt động</h6>
+        <h4>{{ statistics.inactive_courses }}</h4>
       </div>
-    </p-card>
-    <p-card>
-      <div class="flex align-items-center">
-        <div class="flex-1">
-          <h6>Không hoạt động</h6>
-          <h4 class="mb-0">{{ statistics.inactive_courses }}</h4>
-        </div>
-        <div class="icon-container text-red-500">
-          <i class="pi pi-times-circle"></i>
-        </div>
+      <i class="pi pi-times-circle text-red-500 text-2xl"></i>
+    </div>
+  </p-card>
+
+  <p-card>
+    <div class="flex align-items-center">
+      <div class="flex-1">
+        <h6>Học phí TB</h6>
+        <h4>{{ formatCurrency(statistics.average_tuition_fee) }}</h4>
       </div>
-    </p-card>
-    <p-card>
-      <div class="flex align-items-center">
-        <div class="flex-1">
-          <h6>Học phí TB</h6>
-          <h4 class="mb-0">{{ formatCurrency(statistics.average_tuition_fee) }}</h4>
-        </div>
-        <div class="icon-container text-orange-500">
-          <i class="pi pi-money-bill"></i>
-        </div>
-      </div>
-    </p-card>
+      <i class="pi pi-money-bill text-orange-500 text-2xl"></i>
+    </div>
+  </p-card>
+</div>
+
+<div class="page-card">
+
+<!-- Toolbar -->
+<p-toolbar *ngIf="!loading && courses.length > 0">
+  <ng-template pTemplate="start">
+    <button
+      pButton
+      label="Làm mới"
+      icon="pi pi-refresh"
+      class="p-button-outlined"
+      (click)="forceRefresh()">
+    </button>
+  </ng-template>
+
+  <ng-template pTemplate="center">
+    <span class="p-input-icon-left">
+      <i class="pi pi-search"></i>
+      <input
+        pInputText
+        type="text"
+        placeholder="Tìm kiếm..."
+        [(ngModel)]="searchQuery"
+        (input)="onGlobalFilter($event)">
+    </span>
+    <i
+      *ngIf="searchQuery"
+      class="pi pi-times ml-2 cursor-pointer"
+      (click)="clearSearch()">
+    </i>
+  </ng-template>
+
+  <ng-template pTemplate="end">
+    <button
+      pButton
+      label="Tạo khóa học"
+      icon="pi pi-plus"
+      (click)="onCreate()">
+    </button>
+  </ng-template>
+</p-toolbar>
+
+<!-- Drawer -->
+<p-drawer
+  header="Thêm / Sửa khóa học"
+  [(visible)]="drawerVisible"
+  position="right"
+  [modal]="true"
+  [style]="{ width: '600px' }"
+  (onHide)="onDrawerHide()">
+
+  <div class="form-grid p-fluid" *ngIf="formCourse">
+
+    <div class="form-group">
+      <label>Mã KH *</label>
+      <input
+        pInputText
+        [(ngModel)]="formCourse.course_code"
+        [readonly]="selectedCourse?.id">
+    </div>
+
+    <div class="form-group">
+      <label>Tên khóa học *</label>
+      <input pInputText [(ngModel)]="formCourse.course_name">
+    </div>
+
+    <div class="form-group full-width">
+      <label>Mô tả</label>
+      <textarea pInputTextarea [(ngModel)]="formCourse.description"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Danh mục</label>
+      <p-dropdown
+        [(ngModel)]="formCourse.category"
+        [options]="['Giao tiếp','Ngữ pháp','Từ vựng','Phát âm','Luyện thi','Khác']">
+      </p-dropdown>
+    </div>
+
+    <div class="form-group">
+      <label>Ngôn ngữ</label>
+      <p-dropdown
+        [(ngModel)]="formCourse.language"
+        [options]="['Tiếng Anh','Tiếng Hàn','Tiếng Trung']">
+      </p-dropdown>
+    </div>
+
+    <div class="form-group">
+      <label>Trình độ</label>
+      <p-dropdown
+        [(ngModel)]="formCourse.level"
+        [options]="['Sơ cấp','Trung cấp','Cao cấp']">
+      </p-dropdown>
+    </div>
+
+    <div class="form-group">
+      <label>Số tuần</label>
+      <p-inputNumber [(ngModel)]="formCourse.duration_weeks"></p-inputNumber>
+    </div>
+
+    <div class="form-group">
+      <label>Tổng giờ</label>
+      <p-inputNumber [(ngModel)]="formCourse.total_hours"></p-inputNumber>
+    </div>
+
+    <div class="form-group">
+      <label>Học phí</label>
+      <p-inputNumber
+        [(ngModel)]="formCourse.tuition_fee"
+        mode="currency"
+        currency="VND">
+      </p-inputNumber>
+    </div>
+
+    <div class="form-group full-width">
+      <label>Trạng thái</label>
+      <p-dropdown
+        [(ngModel)]="formCourse.status"
+        [options]="['Đang hoạt động','Không hoạt động']">
+      </p-dropdown>
+    </div>
+
   </div>
-  
-  <div class="page-card">
-  <p-toolbar *ngIf="!loading && courses.length > 0">
-    <ng-template pTemplate="start">
-      <div class="flex items-center gap-2">
-        <button
-          pButton
-          type="button"
-          label="Làm mới"
-          icon="pi pi-refresh"
-          class="p-button-outlined p-button-primary"
-          (click)="forceRefresh()"
-          [loading]="loading"
-          pTooltip="Làm mới danh sách khóa học"
-        ></button>
-      </div>
-    </ng-template>
-    <ng-template pTemplate="center">
-      <div class="flex items-center gap-3">
-        <p-iconfield iconPosition="left">
-          <p-inputicon class="pi pi-search" />
-          <input 
-            type="text" 
-            pInputText 
-            placeholder="Tìm kiếm ..." 
-            [(ngModel)]="searchQuery"
-            (input)="onGlobalFilter($event)"
-            class="search-input"
-          />
-          <p-inputicon 
-            *ngIf="searchQuery" 
-            class="pi pi-times clear-search" 
-            (click)="clearSearch()"
-            pTooltip="Xóa tìm kiếm"
-            tooltipPosition="bottom"
-          />
-        </p-iconfield>
-      </div>
-    </ng-template>
-    <ng-template pTemplate="end">
-      <div class="flex items-center gap-2">
-        <button
-          pButton
-          type="button"
-          label="Tạo khóa học"
-          icon="pi pi-plus"
-          class="p-button-primary"
-          (click)="onCreate()"
-        ></button>
-      </div>
-    </ng-template>
-  </p-toolbar>
-  <!-- popup thêm/sửa khóa học -->
-  <p-drawer header="Thêm/Sửa khóa học" [(visible)]="drawerVisible" 
-            position="right"
-            (onHide)="onDrawerHide()" 
-            [modal]="true" 
-            [style]="{ width: '600px' }">
-    <div class="form-grid p-fluid" *ngIf="formCourse">
-      <div class="form-group">
-        <label>Mã KH: <span class="req">*</span></label>
-        <input 
-          pInputText 
-          [(ngModel)]="formCourse!.course_code" 
-          placeholder="VD: KH2024001" 
-          [readonly]="selectedCourse && selectedCourse.id"
-          [class.readonly-field]="selectedCourse && selectedCourse.id"
-        />
-        <small *ngIf="selectedCourse && selectedCourse.id" class="text-muted">
-          Mã khóa học không thể chỉnh sửa
-        </small>
-      </div>   
-      <div class="form-group">
-        <label>Tên khóa học: <span class="req">*</span></label>
-        <input pInputText [(ngModel)]="formCourse!.course_name" placeholder="Tiếng Anh cơ bản" />
-      </div>   
-      <div class="form-group full-width">
-        <label>Mô tả:</label>
-        <textarea pTextarea [(ngModel)]="formCourse!.description" rows="3" placeholder="Mô tả chi tiết về khóa học"></textarea>
-      </div>
-      
-      <div class="form-group full-width">
-        <label>Điều kiện tiên quyết:</label>
-        <textarea pTextarea [(ngModel)]="formCourse!.prerequisites" rows="2" placeholder="VD: Kiến thức cơ bản về ngữ pháp, từ vựng 500 từ"></textarea>
-      </div>
-      
-      <div class="form-group full-width">
-        <label>Mục tiêu học tập:</label>
-        <textarea pTextarea [(ngModel)]="formCourse!.learning_objectives" rows="2" placeholder="VD: Có thể giao tiếp cơ bản, đọc hiểu văn bản đơn giản"></textarea>
-      </div>
-      
-      <div class="form-group">
-        <label>Danh mục:</label>
-        <p-select 
-          [(ngModel)]="formCourse!.category" 
-          [options]="['Giao tiếp', 'Ngữ pháp', 'Từ vựng', 'Phát âm', 'Luyện thi', 'Khác']"
-          placeholder="Chọn danh mục">
-        </p-select>
-      </div>   
-      <div class="form-group">
-        <label>Ngôn ngữ:</label>
-        <p-select [(ngModel)]="formCourse!.language" [options]="['Tiếng Anh','Tiếng Hàn','Tiếng Trung']"></p-select>
-      </div>
-      <div class="form-group">
-        <label>Trình độ:</label>
-        <p-select [(ngModel)]="formCourse!.level" [options]="['Sơ cấp','Trung cấp','Cao cấp']"></p-select>
-      </div>
-      <div class="form-group">
-        <label>Số tuần:</label>
-        <p-inputNumber 
-            [(ngModel)]="formCourse!.duration_weeks" 
-            [min]="0" 
-            [allowEmpty]="true"
-            placeholder="VD: 12">
-        </p-inputNumber>
-      </div>    
-      <div class="form-group">
-        <label>Tổng giờ:</label>
-        <p-inputNumber 
-            [(ngModel)]="formCourse!.total_hours" 
-            [min]="0"
-            [allowEmpty]="true"
-            placeholder="VD: 100">
-        </p-inputNumber>
-      </div>   
-      <div class="form-group">
-        <label>Học phí:</label>
-        <p-inputNumber 
-            [(ngModel)]="formCourse!.tuition_fee" 
-            [min]="0"
-            [allowEmpty]="true"
-            mode="currency" 
-            currency="VND" 
-            [useGrouping]="false"
-            placeholder="VD: 2000000">
-        </p-inputNumber>
-      </div>
-      <div class="form-group full-width">
-        <label>Trạng thái:</label>
-        <p-select [(ngModel)]="formCourse!.status" [options]="['Đang hoạt động','Không hoạt động']"></p-select>
-      </div>
-    </div>
-    <div class="dialog-actions">
-        <button pButton label="Hủy" class="p-button-text" (click)="drawerVisible=false" [disabled]="saving"></button>
-        <button pButton label="Lưu" (click)="onSave()" [disabled]="saving || !formCourse?.course_name"></button>
-    </div>
-  </p-drawer>
-  
 
-  <!--main-->
-  <main>
-    <!-- Loading State -->
-    <div *ngIf="loading" class="loading-wrapper">
-      <i class="pi pi-spin pi-spinner loading-icon"></i>
-      <h3>Đang tải...</h3>
-      <p>Vui lòng chờ trong giây lát</p>
-    </div>
+  <div class="dialog-actions">
+    <button pButton label="Hủy" class="p-button-text" (click)="drawerVisible=false"></button>
+    <button pButton label="Lưu" (click)="onSave()" [disabled]="!formCourse?.course_name"></button>
+  </div>
+</p-drawer>
 
-    <!-- Empty State when no courses exist -->
-    <div *ngIf="!loading && courses.length === 0" class="empty-wrapper">
-      <i class="pi pi-graduation-cap empty-icon"></i>
-      <h3>Không có khóa học</h3>
-      <p>
-        Hiện tại không có khóa học nào. Hãy chú ý theo dõi, những trải nghiệm học tập mới đang đến gần!
-      </p>
-      <button
-          pButton
-          type="button"
-          label="Tạo khóa học"
-          icon="pi pi-plus"
-          class="p-button-primary mt-3"
-          (click)="onCreate()"
-        ></button>
-    </div>
+<!-- Table -->
+<p-table
+  *ngIf="!loading && courses.length > 0"
+  [value]="filteredCourses"
+  [paginator]="true"
+  [rows]="5">
 
-    <!-- Table -->
-    <div *ngIf="!loading && courses.length > 0">
-      <p-table #dt
-        [value]="filteredCourses"
-        [paginator]="true"
-        [rows]="5"
-        [rowsPerPageOptions]="[5, 10, 20]"
-        [globalFilterFields]="['course_code','course_name','language','level','tuition_fee','status']"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-striped p-datatable-gridlines p-datatable-sm">
-        <!-- Header -->
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="course_code">
-              Mã KH <p-sortIcon field="course_code"></p-sortIcon>
-            </th>
-            <th pSortableColumn="course_name">
-              Tên khóa học <p-sortIcon field="course_name"></p-sortIcon>
-            </th>
-            <th pSortableColumn="language">
-              Ngôn ngữ <p-sortIcon field="language"></p-sortIcon>
-            </th>
-            <th pSortableColumn="level">
-              Trình độ <p-sortIcon field="level"></p-sortIcon>
-            </th>
-            <th pSortableColumn="duration_weeks">
-              Số tuần <p-sortIcon field="duration_weeks"></p-sortIcon>
-            </th>
-            <th pSortableColumn="total_hours">
-              Tổng giờ <p-sortIcon field="total_hours"></p-sortIcon>
-            </th>
-            <th pSortableColumn="tuition_fee">
-              Học phí <p-sortIcon field="tuition_fee"></p-sortIcon>
-            </th>
-            <th pSortableColumn="status">
-              Trạng thái <p-sortIcon field="status"></p-sortIcon>
-            </th>
-            <th style="width: 8rem">Hành động</th>
-          </tr>
-        </ng-template>
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Mã KH</th>
+      <th>Tên khóa học</th>
+      <th>Ngôn ngữ</th>
+      <th>Trình độ</th>
+      <th>Học phí</th>
+      <th>Trạng thái</th>
+      <th>Hành động</th>
+    </tr>
+  </ng-template>
 
-        <!-- Body -->
-        <ng-template pTemplate="body" let-course>
-          <tr>
-            <td>{{ course.course_code }}</td>
-            <td>{{ course.course_name }}</td>
-            <td>{{ course.language }}</td>
-            <td>{{ course.level }}</td>
-            <td>{{ course.duration_weeks }}</td>
-            <td>{{ course.total_hours }}</td>
-            <td>{{ course.tuition_fee | currency:'VND':'symbol':'1.0-0':'vi' }}</td>
-            <td>
-              <span
-                [ngClass]="{
-                  'status-active': course.status === 'Đang hoạt động',
-                  'status-inactive': course.status === 'Không hoạt động'
-                }"
-              >
-                {{ course.status }}
-              </span>
-            </td>
-            <td>
-              <button
-                pButton
-                icon="pi pi-eye"
-                class="p-button-rounded p-button-text p-button-primary"
-                (click)="onView(course)"
-              ></button>
-              <button
-                pButton
-                icon="pi pi-pencil"
-                class="p-button-rounded p-button-text p-button-info"
-                (click)="onEdit(course)"
-              ></button>
-              <button
-                pButton
-                icon="pi pi-trash"
-                class="p-button-rounded p-button-text p-button-danger"
-                (click)="onDelete(course)"
-              ></button>
-            </td>
-          </tr>
-        </ng-template>
+  <ng-template pTemplate="body" let-course>
+    <tr>
+      <td>{{ course.course_code }}</td>
+      <td>{{ course.course_name }}</td>
+      <td>{{ course.language }}</td>
+      <td>{{ course.level }}</td>
+      <td>{{ course.tuition_fee | currency:'VND' }}</td>
+      <td>{{ course.status }}</td>
+      <td>
+        <button pButton icon="pi pi-eye" class="p-button-text" (click)="onView(course)"></button>
+        <button pButton icon="pi pi-pencil" class="p-button-text" (click)="onEdit(course)"></button>
+        <button pButton icon="pi pi-trash" class="p-button-text p-button-danger" (click)="onDelete(course)"></button>
+      </td>
+    </tr>
+  </ng-template>
 
-        <!-- Empty Message Template for Search Results -->
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="9" class="text-center">
-                <div class="py-4">
-                <div class="text-center">
-                  <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
-                  <p class="mb-0">Không thấy khóa học nào</p>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </main>
-  <p-confirmDialog></p-confirmDialog>
+</p-table>
+
+<p-confirmDialog></p-confirmDialog>
 </div>
