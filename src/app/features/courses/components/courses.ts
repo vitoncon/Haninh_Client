@@ -1,264 +1,259 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-// PrimeNG
-import { CardModule } from 'primeng/card';
+import { Table, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
-import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { DatePickerModule } from 'primeng/datepicker';
+import { TextareaModule } from 'primeng/textarea';
+import { SelectModule } from 'primeng/select';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DrawerModule } from 'primeng/drawer';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { ToolbarModule } from 'primeng/toolbar';
+import { CardModule } from 'primeng/card';
+import { MessageService, ConfirmationService } from 'primeng/api';
+
+import { Course, CourseStatistics } from '../models/courses.model';
 
 @Component({
-  selector: 'app-certificates',
+  selector: 'app-courses',
   standalone: true,
-  templateUrl: './certificates.html',
-  styleUrls: ['./certificates.scss'],
+  templateUrl: './courses.html',
+  styleUrls: ['./courses.scss'],
   imports: [
     CommonModule,
     FormsModule,
-
-    CardModule,
-    ButtonModule,
     TableModule,
-    TagModule,
-    SelectModule,
+    ButtonModule,
     InputTextModule,
-    DatePickerModule,
+    TextareaModule,
+    SelectModule,
+    InputNumberModule,
+    DrawerModule,
     ToastModule,
     ConfirmDialogModule,
-    DrawerModule,
-    MultiSelectModule
-  ]
+    ToolbarModule,
+    CardModule
+  ],
+  providers: [MessageService, ConfirmationService]
 })
-export class CertificatesComponent implements OnInit {
+export class Courses implements OnInit {
 
-  // ===== STATE =====
+  // ================= TABLE =================
+  @ViewChild('dt') dt!: Table;
+
+  courses: Course[] = [];
+  filteredCourses: Course[] = [];
+
+  // ================= UI STATE =================
   loading = false;
   saving = false;
+  drawerVisible = false;
+
+  selectedCourse: Course | null = null;
+  formCourse: Course | null = null;
 
   searchQuery = '';
-  drawerVisible = false;
-  isEditMode = false;
+  showClearButton = false;
 
-  // ===== DATA =====
-  certificates: any[] = [];
-  filteredCertificates: any[] = [];
+  // ================= OPTIONS =================
+  languages = ['Tiếng Anh', 'Tiếng Hàn', 'Tiếng Trung'];
+  levels = ['Sơ cấp', 'Trung cấp', 'Cao cấp'];
+  statuses = ['Đang hoạt động', 'Không hoạt động'];
 
-  statistics: any = null;
+  // ================= STATISTICS =================
+  statistics: CourseStatistics | null = null;
 
-  // ===== FORM / FILTER =====
-  formCertificate: any = null;
+  constructor(
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
+  ) {}
 
-  selectedClassFilter: any = null;
-  selectedExpiryFilter: any = null;
-
-  customDateRange = {
-    from: null,
-    to: null
-  };
-
-  // ===== SELECT OPTIONS (mock) =====
-  availableClasses = [
-    { label: 'English Giao Tiếp K01', value: 1 },
-    { label: 'TOPIK I K02', value: 2 },
-    { label: 'HSK 2 K01', value: 3 }
-  ];
-
-  availableCertificateTypes = [
-    { label: 'Chứng chỉ Tiếng Anh', value: 1 },
-    { label: 'Chứng chỉ Tiếng Hàn', value: 2 },
-    { label: 'Chứng chỉ Tiếng Trung', value: 3 }
-  ];
-
-  availableStudentsInClass = [
-    { label: 'Nguyễn Văn An', value: 1 },
-    { label: 'Trần Thị Mai', value: 2 },
-    { label: 'Lê Minh Hoàng', value: 3 }
-  ];
-
-  certificateStatusOptions = [
-    { label: 'Đã cấp', value: 'Đã cấp' },
-    { label: 'Chờ cấp', value: 'Chờ cấp' }
-  ];
-
-  expirySearchOptions = [
-    { label: 'Tất cả', value: null },
-    { label: 'Đã hết hạn', value: 'expired' },
-    { label: 'Còn hạn', value: 'valid' },
-    { label: 'Tùy chọn', value: 'custom_range' }
-  ];
-
-  selectedClassId: number | null = null;
-  selectedStudentIds: number[] = [];
-
-  currentCertificateTypeDetails: any = null;
-
-  vi = {
-    selectedItems: 'học viên'
-  };
-
-  // ===== INIT =====
+  // ================= INIT =================
   ngOnInit(): void {
-    this.certificates = [
+    this.mockCourses();
+    this.filteredCourses = [...this.courses];
+    this.calculateStatistics();
+  }
+
+  // ================= MOCK DATA =================
+  private mockCourses() {
+    this.courses = [
       {
         id: 1,
-        student_id: 1,
-        student_name: 'Nguyễn Văn An',
-        student_code: 'HV001',
-        class_id: 1,
-        class_name: 'English Giao Tiếp K01',
-        certificate_id: 1,
-        certificate_name: 'Chứng chỉ Tiếng Anh Giao Tiếp',
-        certificate_code: 'ENG-COM',
-        certificate_number: 'ENG-2024-001',
-        issued_date: '2024-06-01',
-        expiry_date: '2025-06-01',
-        is_permanent: 0,
-        status: 'Đã cấp'
+        course_code: 'KH2024001',
+        course_name: 'Tiếng Anh Giao Tiếp',
+        description: 'Khóa học giao tiếp tiếng Anh cho người mất gốc',
+        language: 'Tiếng Anh',
+        level: 'Sơ cấp',
+        duration_weeks: 12,
+        total_hours: 36,
+        tuition_fee: 3500000,
+        status: 'Đang hoạt động',
+        prerequisites: 'Không yêu cầu',
+        learning_objectives: 'Giao tiếp cơ bản, phản xạ nhanh',
+        category: 'Giao tiếp',
+        created_at: new Date()
       },
       {
         id: 2,
-        student_id: 2,
-        student_name: 'Trần Thị Mai',
-        student_code: 'HV002',
-        class_id: 2,
-        class_name: 'TOPIK I K02',
-        certificate_id: 2,
-        certificate_name: 'Chứng chỉ Tiếng Hàn TOPIK I',
-        certificate_code: 'KOR-TOPIK1',
-        certificate_number: 'KOR-2024-015',
-        issued_date: '2024-07-15',
-        expiry_date: null,
-        is_permanent: 1,
-        status: 'Đã cấp'
+        course_code: 'KH2024002',
+        course_name: 'TOPIK I',
+        description: 'Luyện thi chứng chỉ TOPIK I',
+        language: 'Tiếng Hàn',
+        level: 'Trung cấp',
+        duration_weeks: 10,
+        total_hours: 30,
+        tuition_fee: 4200000,
+        status: 'Đang hoạt động',
+        prerequisites: 'Biết bảng chữ cái Hangeul',
+        learning_objectives: 'Đạt TOPIK I',
+        category: 'Luyện thi'
       },
       {
         id: 3,
-        student_id: 3,
-        student_name: 'Lê Minh Hoàng',
-        student_code: 'HV003',
-        class_id: 3,
-        class_name: 'HSK 2 K01',
-        certificate_id: 3,
-        certificate_name: 'Chứng chỉ Tiếng Trung HSK 2',
-        certificate_code: 'CHI-HSK2',
-        certificate_number: 'CHI-2024-021',
-        issued_date: '2024-08-01',
-        expiry_date: '2024-12-01',
-        is_permanent: 0,
-        status: 'Chờ cấp'
+        course_code: 'KH2024003',
+        course_name: 'HSK 2',
+        description: 'Luyện thi chứng chỉ HSK 2',
+        language: 'Tiếng Trung',
+        level: 'Sơ cấp',
+        duration_weeks: 8,
+        total_hours: 24,
+        tuition_fee: 3000000,
+        status: 'Không hoạt động',
+        prerequisites: 'HSK 1',
+        learning_objectives: 'Đạt HSK 2',
+        category: 'Luyện thi'
       }
     ];
-
-    this.filteredCertificates = [...this.certificates];
-
-    this.statistics = {
-      total_certificates: this.certificates.length,
-      issued_certificates: this.certificates.filter(c => c.status === 'Đã cấp').length,
-      expired_certificates: this.certificates.filter(
-        c => c.expiry_date && new Date(c.expiry_date) < new Date()
-      ).length,
-      pending_certificates: this.certificates.filter(c => c.status === 'Chờ cấp').length
-    };
   }
 
-  // ===== TABLE / SEARCH =====
-  onSearch(event: any) {
-    const value = event.target.value.toLowerCase();
-    this.filteredCertificates = this.certificates.filter(c =>
-      c.student_name.toLowerCase().includes(value) ||
-      c.certificate_name.toLowerCase().includes(value) ||
-      c.certificate_number.toLowerCase().includes(value)
+  // ================= CRUD =================
+  onCreate() {
+    this.selectedCourse = null;
+    this.formCourse = this.createEmptyCourse();
+    this.drawerVisible = true;
+  }
+
+  onEdit(course: Course) {
+    this.selectedCourse = course;
+    this.formCourse = { ...course };
+    this.drawerVisible = true;
+  }
+
+  onDelete(course: Course) {
+    this.confirmationService.confirm({
+      message: `Xóa khóa học "${course.course_name}"?`,
+      accept: () => {
+        this.courses = this.courses.filter(c => c.id !== course.id);
+        this.filteredCourses = [...this.courses];
+        this.calculateStatistics();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Đã xóa',
+          detail: 'Xóa khóa học thành công'
+        });
+      }
+    });
+  }
+
+  onSave() {
+    if (!this.formCourse) return;
+
+    if (this.selectedCourse) {
+      const index = this.courses.findIndex(c => c.id === this.selectedCourse!.id);
+      this.courses[index] = { ...this.formCourse };
+    } else {
+      this.formCourse.id = Date.now();
+      this.courses.unshift(this.formCourse);
+    }
+
+    this.filteredCourses = [...this.courses];
+    this.calculateStatistics();
+    this.drawerVisible = false;
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Lưu khóa học thành công'
+    });
+  }
+
+  onDrawerHide() {
+    this.drawerVisible = false;
+    this.formCourse = null;
+    this.selectedCourse = null;
+  }
+
+  // ================= SEARCH =================
+  onGlobalFilter(event: Event) {
+    const value = (event.target as HTMLInputElement).value.toLowerCase();
+    this.searchQuery = value;
+    this.showClearButton = value.length > 0;
+
+    this.filteredCourses = this.courses.filter(c =>
+      c.course_name.toLowerCase().includes(value) ||
+      c.course_code.toLowerCase().includes(value) ||
+      c.language.toLowerCase().includes(value)
     );
   }
 
   clearSearch() {
     this.searchQuery = '';
-    this.filteredCertificates = [...this.certificates];
+    this.showClearButton = false;
+    this.filteredCourses = [...this.courses];
   }
 
-  // ===== HELPERS =====
-  formatDate(date: string) {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('vi-VN');
-  }
-
-  isCertificateExpired(date: string) {
-    return new Date(date) < new Date();
-  }
-
-  getDaysUntilExpiry(date: string) {
-    const diff = new Date(date).getTime() - new Date().getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }
-
-  getStatusSeverity(status: string) {
-    switch (status) {
-      case 'Đã cấp': return 'success';
-      case 'Chờ cấp': return 'warning';
-      default: return 'info';
-    }
-  }
-
-  isPermanentToString(value: number) {
-    return value === 1 ? 'Vĩnh viễn' : 'Có thời hạn';
-  }
-
-  // ===== ACTIONS =====
-  openNew() {
-    this.isEditMode = false;
-    this.formCertificate = {
-      issued_date: new Date(),
-      status: 'Chờ cấp'
+  // ================= HELPERS =================
+  private createEmptyCourse(): Course {
+    return {
+      course_code: `KH${new Date().getFullYear()}${Math.floor(Math.random() * 1000)}`,
+      course_name: '',
+      description: '',
+      language: 'Tiếng Anh',
+      level: 'Sơ cấp',
+      duration_weeks: null,
+      total_hours: null,
+      tuition_fee: null,
+      status: 'Đang hoạt động',
+      prerequisites: '',
+      learning_objectives: '',
+      category: ''
     };
-    this.drawerVisible = true;
   }
 
-  editCertificate(cert: any) {
-    this.isEditMode = true;
-    this.formCertificate = { ...cert };
-    this.drawerVisible = true;
+  formatCurrency(value?: number | null): string {
+    if (!value) return '—';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(value);
   }
 
-  deleteCertificate(_: any) {}
+  private calculateStatistics() {
+    const active = this.courses.filter(c => c.status === 'Đang hoạt động');
+    const inactive = this.courses.filter(c => c.status === 'Không hoạt động');
 
-  cancelEdit() {
-    this.drawerVisible = false;
-    this.formCertificate = null;
-  }
-
-  saveCertificate() {
-    this.drawerVisible = false;
+    this.statistics = {
+      total_courses: this.courses.length,
+      active_courses: active.length,
+      inactive_courses: inactive.length,
+      language_distribution: [
+        { language: 'Tiếng Anh', count: this.courses.filter(c => c.language === 'Tiếng Anh').length },
+        { language: 'Tiếng Hàn', count: this.courses.filter(c => c.language === 'Tiếng Hàn').length },
+        { language: 'Tiếng Trung', count: this.courses.filter(c => c.language === 'Tiếng Trung').length }
+      ],
+      level_distribution: [
+        { level: 'Sơ cấp', count: this.courses.filter(c => c.level === 'Sơ cấp').length },
+        { level: 'Trung cấp', count: this.courses.filter(c => c.level === 'Trung cấp').length },
+        { level: 'Cao cấp', count: this.courses.filter(c => c.level === 'Cao cấp').length }
+      ],
+      average_tuition_fee: 0,
+      average_duration_weeks: 0,
+      average_total_hours: 0
+    };
   }
 
   forceRefresh() {}
-  exportToCSV() {}
-
-  onClassFilterChange() {}
-  onExpiryFilterChange() {}
-  clearExpiryFilter() {}
-
-  onClassSelectionChange(_: any) {}
-  onStudentSelectionChange(_: any) {}
-  onCertificateTypeChange(_: any) {}
-  onIssuedDateChange() {}
-
-  canSave() {
-    return true;
-  }
-
-  getSaveButtonLabel() {
-    return this.isEditMode ? 'Cập nhật' : 'Lưu';
-  }
-
-  getCertificateNumberDisplay() {
-    return this.formCertificate?.certificate_number || '';
-  }
 }
