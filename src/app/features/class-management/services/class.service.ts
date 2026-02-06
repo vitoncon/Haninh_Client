@@ -14,7 +14,7 @@ export class ClassService {
     {
       id: 1,
       class_code: 'ENG-01',
-      class_name: 'Lớp Tiếng Anh Giao Tiếp Cơ Bản',
+      class_name: 'Lớp Tiếng Anh Giao Tiếp',
       course_id: 1,
       start_date: '2026-02-01',
       end_date: '2026-04-30',
