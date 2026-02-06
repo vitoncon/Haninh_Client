@@ -9,154 +9,109 @@ export class ScheduleService {
 
   constructor() {}
 
-  // ================= MOCK SCHEDULE TEMPLATE =================
-  private mockScheduleTemplates: ScheduleModel[] = [
-    {
-      id: 1,
-      class_id: 1,
-      day_of_week: 1,
-      start_time: '18:00',
-      end_time: '20:00',
-      start_date: '2026-02-01',
-      end_date: '2026-04-30',
-      room_name: 'P101',
-      status: 'Đã Lên Lịch',
-      teacher_name: 'Nguyễn Văn A',
-      class_name: 'ENG-01'
-    },
-    {
-      id: 2,
-      class_id: 2,
-      day_of_week: 3,
-      start_time: '18:00',
-      end_time: '20:00',
-      start_date: '2026-03-01',
-      end_date: '2026-06-01',
-      room_name: 'P202',
-      status: 'Đã Lên Lịch',
-      teacher_name: 'Trần Thị B',
-      class_name: 'KOR-01'
-    }
-  ];
-
-  // ================= MOCK CLASS SCHEDULE =================
-  private mockClassSchedules: ScheduleModel[] = [
-    {
-      id: 101,
-      class_id: 1,
-      day_of_week: 1,
-      start_time: '18:00',
-      end_time: '20:00',
-      start_date: '2026-02-10',
-      end_date: '2026-02-10',
-      room_name: 'P101',
-      status: 'Đã Dạy',
-      teacher_name: 'Nguyễn Văn A',
-      class_name: 'ENG-01'
-    },
-    {
-      id: 102,
-      class_id: 1,
-      day_of_week: 3,
-      start_time: '18:00',
-      end_time: '20:00',
-      start_date: '2026-02-12',
-      end_date: '2026-02-12',
-      room_name: 'P101',
-      status: 'Đã Lên Lịch',
-      teacher_name: 'Nguyễn Văn A',
-      class_name: 'ENG-01'
-    }
-  ];
-
-  // ================= TEMPLATE METHODS =================
+  // ===== MOCK SCHEDULE TEMPLATE =====
   getScheduleTemplates(): Observable<ScheduleModel[]> {
-    return of(this.mockScheduleTemplates);
+    return of([
+      {
+        id: 1,
+        class_id: 1,
+        teacher_id: 1,
+        day_of_week: 1,
+        start_time: '08:00',
+        end_time: '10:00',
+        start_date: '2026-02-01',
+        end_date: '2026-03-01',
+        room_name: 'Phòng A1',
+        status: 'Đã Lên Lịch',
+        note: 'Mock lịch sáng'
+      },
+      {
+        id: 2,
+        class_id: 2,
+        teacher_id: 2,
+        day_of_week: 3,
+        start_time: '18:00',
+        end_time: '20:00',
+        start_date: '2026-02-01',
+        end_date: '2026-03-01',
+        room_name: 'Phòng B2',
+        status: 'Đã Lên Lịch',
+        note: 'Mock lịch tối'
+      }
+    ]);
   }
 
-  // ================= BACKWARD METHODS =================
+  // Backward compatibility
   getSchedules(): Observable<ScheduleModel[]> {
-    return of(this.mockClassSchedules);
+    return this.getScheduleTemplates();
   }
 
-  getScheduleById(id: number): Observable<ScheduleModel> {
-    const found = this.mockScheduleTemplates.find(x => x.id === id);
-    return of(found as ScheduleModel);
-  }
-
+  // ===== MOCK CRUD =====
   addScheduleTemplate(schedule: any): Observable<ScheduleModel> {
-    const newItem = {
-      ...schedule,
-      id: Math.floor(Math.random() * 100000)
-    };
-    this.mockScheduleTemplates.unshift(newItem);
-    return of(newItem);
+    return of(schedule);
   }
 
   updateScheduleTemplate(id: number, schedule: any): Observable<ScheduleModel> {
-    const index = this.mockScheduleTemplates.findIndex(x => x.id === id);
-    if (index > -1) {
-      this.mockScheduleTemplates[index] = { ...schedule, id };
-    }
-    return of(this.mockScheduleTemplates[index]);
+    return of(schedule);
   }
 
   deleteScheduleTemplate(id: number): Observable<void> {
-    this.mockScheduleTemplates =
-      this.mockScheduleTemplates.filter(x => x.id !== id);
     return of(void 0);
   }
 
-  // ================= CLASS SCHEDULE =================
   addSchedule(schedule: any): Observable<ScheduleModel> {
-    const newItem = {
-      ...schedule,
-      id: Math.floor(Math.random() * 100000)
-    };
-    this.mockClassSchedules.unshift(newItem);
-    return of(newItem);
+    return of(schedule);
   }
 
   updateSchedule(id: number, schedule: any): Observable<ScheduleModel> {
-    const index = this.mockClassSchedules.findIndex(x => x.id === id);
-    if (index > -1) {
-      this.mockClassSchedules[index] = { ...schedule, id };
-    }
-    return of(this.mockClassSchedules[index]);
+    return of(schedule);
   }
 
   deleteSchedule(id: number): Observable<void> {
-    this.mockClassSchedules =
-      this.mockClassSchedules.filter(x => x.id !== id);
     return of(void 0);
   }
 
+  // ===== MOCK CLASS SCHEDULE =====
   createClassSchedules(classId: number, scheduleData: any): Observable<any> {
-    const newItem = {
-      ...scheduleData,
+    return of({
       class_id: classId,
-      id: Math.floor(Math.random() * 100000)
-    };
-    this.mockClassSchedules.unshift(newItem);
-    return of(newItem);
+      ...scheduleData
+    });
   }
 
   getClassSchedulesByClass(classId: number): Observable<any[]> {
-    if (!classId) return of([]);
-    return of(this.mockClassSchedules.filter(x => x.class_id === classId));
+    return of([
+      {
+        id: 1,
+        class_id: classId,
+        teacher_id: 1,
+        day_of_week: 1,
+        start_time: '08:00',
+        end_time: '10:00',
+        room_name: 'Phòng A1',
+        status: 'Đã Lên Lịch'
+      }
+    ]);
   }
 
   getAllClassSchedulesByClass(classId: number): Observable<any[]> {
-    if (!classId) return of([]);
-    return of(this.mockClassSchedules.filter(x => x.class_id === classId));
+    return this.getClassSchedulesByClass(classId);
   }
 
   getClassScheduleById(id: number): Observable<any> {
-    const found = this.mockClassSchedules.find(x => x.id === id);
-    return of(found);
+    return of({
+      id,
+      class_id: 1,
+      teacher_id: 1,
+      day_of_week: 2,
+      start_time: '08:00',
+      end_time: '10:00',
+      room_name: 'Phòng A1',
+      status: 'Đã Lên Lịch'
+    });
   }
 
   getClassSchedules(): Observable<any[]> {
-    return of(this.mockClassSchedules);
+    return this.getScheduleTemplates();
   }
 }
