@@ -1,179 +1,142 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import {
-  StudyResultWithDetails,
-  StudentStudySummary,
-  ClassStudyStatistics,
-  StudyResultStats
-} from '../models/study-results.model';
-
 @Injectable({
   providedIn: 'root'
 })
 export class StudyResultService {
 
-  constructor() {}
-
-  // ================= MOCK DATA =================
-
-  private mockStudyResults: StudyResultWithDetails[] = [
+  // ================= MOCK STORAGE =================
+  private exams: any[] = [
     {
       id: 1,
-      student_id: 101,
-      class_id: 10,
+      class_id: 1,
+      exam_name: 'Midterm Test',
       exam_type: 'Kiểm tra giữa kỳ',
-      exam_name: 'Midterm Listening',
-      exam_date: '2025-03-15',
+      skill_type: 'Tổng hợp',
       language: 'Tiếng Anh',
-      skill_type: 'Nghe',
-      score: 82,
-      max_score: 100,
-      percentage: 82,
-      level: 'B1',
-      teacher_comment: 'Nghe tốt',
-
-      student: {
-        student_code: 'HV001',
-        full_name: 'Nguyễn Văn An'
-      },
-      class: {
-        class_name: 'English B1 Morning',
-        class_code: 'ENG-B1-01'
-      }
-    },
-    {
-      id: 2,
-      student_id: 102,
-      class_id: 10,
-      exam_type: 'Kiểm tra cuối kỳ',
-      exam_name: 'Final Writing',
-      exam_date: '2025-05-20',
-      language: 'Tiếng Anh',
-      skill_type: 'Viết',
-      score: 75,
-      max_score: 100,
-      percentage: 75,
-      level: 'B1',
-
-      student: {
-        student_code: 'HV002',
-        full_name: 'Lê Thị Mai'
-      },
-      class: {
-        class_name: 'English B1 Morning',
-        class_code: 'ENG-B1-01'
-      }
+      exam_date: '2026-01-10'
     }
   ];
 
-  private mockStudentSummary: StudentStudySummary = {
-    student_id: 101,
-    student_code: 'HV001',
-    full_name: 'Nguyễn Văn An',
-    class_id: 10,
-    class_name: 'English B1 Morning',
-    class_code: 'ENG-B1-01',
-    total_exams: 5,
-    average_score: 80,
-    highest_score: 92,
-    lowest_score: 70,
-    pass_rate: 100,
+  private studyResults: any[] = [];
 
-    level_distribution: {
-      A1: 0,
-      A2: 0,
-      B1: 4,
-      B2: 1,
-      C1: 0,
-      C2: 0
-    },
+  private examSkills: any[] = [];
 
-    recent_results: [],
-    proficiency_level: 'B1',
-    overall_rating: 'Giỏi'
-  };
+  constructor() {}
 
-  private mockClassStats: ClassStudyStatistics = {
-    class_id: 10,
-    class_name: 'English B1 Morning',
-    class_code: 'ENG-B1-01',
-    total_students: 25,
-    total_exams: 120,
-    average_score: 78,
-    pass_rate: 92,
+  // ================= EXAM =================
 
-    level_distribution: {
-      A1: 0,
-      A2: 2,
-      B1: 15,
-      B2: 8,
-      C1: 0,
-      C2: 0
-    },
+  getExams(filters?: any): Observable<any[]> {
+    return of(this.exams);
+  }
 
-    top_performers: [
-      {
-        student_code: 'HV002',
-        full_name: 'Lê Thị Mai',
-        average_score: 90
-      }
-    ],
+  createExam(data: any): Observable<any> {
+    const newExam = {
+      id: Date.now(),
+      ...data
+    };
+    this.exams.push(newExam);
+    return of(newExam);
+  }
 
-    needs_improvement: []
-  };
-
-  private mockStats: StudyResultStats = {
-    total_results: 120,
-    average_score: 78,
-    pass_rate: 92,
-
-    level_distribution: {
-      A1: 0,
-      A2: 2,
-      B1: 60,
-      B2: 50,
-      C1: 8,
-      C2: 0
-    },
-
-    language_distribution: {
-      'Tiếng Anh': 80,
-      'Tiếng Hàn': 25,
-      'Tiếng Trung': 15
-    },
-
-    skill_type_distribution: {
-      'Nghe': 30,
-      'Nói': 25,
-      'Đọc': 35,
-      'Viết': 20,
-      'Tổng hợp': 10
-    },
-
-    exam_type_distribution: {
-      'Kiểm tra định kỳ': 50,
-      'Kiểm tra giữa kỳ': 30,
-      'Kiểm tra cuối kỳ': 40
+  updateExam(id: number, data: any): Observable<any> {
+    const index = this.exams.findIndex(e => e.id === id);
+    if (index !== -1) {
+      this.exams[index] = { ...this.exams[index], ...data };
+      return of(this.exams[index]);
     }
-  };
-
-  // ================= METHODS =================
-
-  getStudyResults(): Observable<StudyResultWithDetails[]> {
-    return of(this.mockStudyResults);
+    return of(null);
   }
 
-  getStudentSummary(): Observable<StudentStudySummary> {
-    return of(this.mockStudentSummary);
+  deleteExam(id: number): Observable<any> {
+    this.exams = this.exams.filter(e => e.id !== id);
+    return of(true);
   }
 
-  getClassStatistics(): Observable<ClassStudyStatistics> {
-    return of(this.mockClassStats);
+  createBulkExam(data: any): Observable<any> {
+    return of(data);
   }
 
-  getStats(): Observable<StudyResultStats> {
-    return of(this.mockStats);
+  // ================= STUDY RESULT =================
+
+  getStudyResultsWithDetails(filters?: any): Observable<any[]> {
+    return of(this.studyResults);
   }
 
+  bulkCreateStudyResults(classId: number, data: any[]): Observable<any> {
+    this.studyResults.push(...data);
+    return of(data);
+  }
+
+  createExamResult(data: any): Observable<any> {
+    const result = { id: Date.now(), ...data };
+    this.studyResults.push(result);
+    return of(result);
+  }
+
+  // ================= EXAM SKILL =================
+
+  getExamSkillsByExamIds(ids: number[]): Observable<any[]> {
+    return of(this.examSkills.filter(s => ids.includes(s.exam_id)));
+  }
+
+  createExamSkill(data: any): Observable<any> {
+    const skill = { id: Date.now(), ...data };
+    this.examSkills.push(skill);
+    return of(skill);
+  }
+
+  updateSingleExamSkill(id: number, data: any): Observable<any> {
+    const index = this.examSkills.findIndex(s => s.id === id);
+    if (index !== -1) {
+      this.examSkills[index] = { ...this.examSkills[index], ...data };
+      return of(this.examSkills[index]);
+    }
+    return of(null);
+  }
+
+  deleteExamSkill(id: number): Observable<any> {
+    this.examSkills = this.examSkills.filter(s => s.id !== id);
+    return of(true);
+  }
+
+  reactivateExamSkill(id: number, data: any): Observable<any> {
+    return of({ id, ...data });
+  }
+
+  getExistingExamSkill(examId: number, skillType: string): Observable<any> {
+    const skill = this.examSkills.find(
+      s => s.exam_id === examId && s.skill_type === skillType
+    );
+    return of(skill || null);
+  }
+
+  // ================= EXAM STATUS =================
+
+  updateExamStatus(examId: number, status: string): Observable<any> {
+    return of({ examId, status });
+  }
+
+  getExamStatusHistory(examId: number): Observable<any[]> {
+    return of([]);
+  }
+
+  // ================= ANALYTICS =================
+
+  getOrganizationSummary(): Observable<any> {
+    return of({
+      total_students: 120,
+      average_score: 78,
+      pass_rate: 85
+    });
+  }
+
+  getClassAnalytics(): Observable<any[]> {
+    return of([]);
+  }
+
+  getSkillAnalytics(): Observable<any[]> {
+    return of([]);
+  }
 }
