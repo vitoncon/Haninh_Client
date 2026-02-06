@@ -1,162 +1,160 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-export interface CertificateFilters {
-  keyword?: string;
-  status?: string;
-  class_id?: number;
+/* =======================
+   MODELS
+======================= */
+
+export interface Certificate {
+  id: number;
+  studentName: string;
+  certificateName: string;
+  certificateCode: string;
+  issueDate: string;
+  expiryDate: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
 }
+
+export interface CertificateSummary {
+  total: number;
+  issued: number;
+  expired: number;
+  pending: number;
+}
+
+/* =======================
+   SERVICE
+======================= */
 
 @Injectable({
   providedIn: 'root'
 })
-export class CertificateService {
+export class CertificatesService {
 
-  constructor() {}
+  /* =======================
+     MOCK DATABASE
+  ======================= */
 
-  // ================= MOCK DATA =================
-
-  private mockCertificates: any[] = [
+  private certificates: Certificate[] = [
     {
       id: 1,
-      certificate_number: 'CERT001',
-      student_id: 1,
-      student_name: 'Nguyễn Văn An',
-      class_id: 1,
-      class_name: 'Angular Basic',
-      status: 'Active',
-      issue_date: '2024-01-01',
-      expiry_date: '2025-01-01'
+      studentName: 'Nguyễn Văn An',
+      certificateName: 'Angular Basic',
+      certificateCode: 'CERT001',
+      issueDate: '2025-01-01',
+      expiryDate: '2026-01-01',
+      status: 'ACTIVE'
+    },
+    {
+      id: 2,
+      studentName: 'Trần Thị Bình',
+      certificateName: 'Java Spring',
+      certificateCode: 'CERT002',
+      issueDate: '2023-01-01',
+      expiryDate: '2024-01-01',
+      status: 'EXPIRED'
+    },
+    {
+      id: 3,
+      studentName: 'Lê Văn Cường',
+      certificateName: 'NodeJS',
+      certificateCode: 'CERT003',
+      issueDate: '',
+      expiryDate: '',
+      status: 'PENDING'
     }
   ];
 
-  private mockStudents = [
-    { id: 1, full_name: 'Nguyễn Văn An', student_code: 'HV001' },
-    { id: 2, full_name: 'Trần Thị Bình', student_code: 'HV002' }
-  ];
+  /* =======================
+     GET LIST
+  ======================= */
 
-  private mockClasses = [
-    { id: 1, class_name: 'Angular Basic' },
-    { id: 2, class_name: 'React Advanced' }
-  ];
-
-  // ================= CERTIFICATE =================
-
-  getCertificates(filters?: CertificateFilters): Observable<any[]> {
-    return of(this.mockCertificates);
+  getCertificates(): Observable<Certificate[]> {
+    return of([...this.certificates]);
   }
 
-  getStudentCertificates(): Observable<any[]> {
-    return of(this.mockCertificates);
+  /* =======================
+     GET BY ID
+  ======================= */
+
+  getCertificateById(id: number): Observable<Certificate | undefined> {
+    return of(this.certificates.find(c => c.id === id));
   }
 
-  getCertificateById(id: number): Observable<any> {
-    return of(this.mockCertificates.find(x => x.id === id));
+  /* =======================
+     CREATE
+  ======================= */
+
+  createCertificate(data: Certificate): Observable<Certificate> {
+    data.id = this.generateId();
+    this.certificates.push(data);
+    return of(data);
   }
 
-  addStudentCertificate(data: any): Observable<any> {
-    const newItem = {
-      id: Date.now(),
-      ...data
-    };
-    this.mockCertificates.push(newItem);
-    return of(newItem);
+  /* =======================
+     UPDATE (FIX LỖI 2 ARG)
+     component gọi:
+     updateCertificate(id, data)
+  ======================= */
+
+  updateCertificate(id: number, data: Certificate): Observable<Certificate> {
+    const index = this.certificates.findIndex(c => c.id === id);
+
+    if (index !== -1) {
+      this.certificates[index] = {
+        ...data,
+        id
+      };
+    }
+
+    return of(this.certificates[index]);
   }
 
-updateStudentCertificate(id: number, data: any): Observable<any> {
-  const index = this.mockCertificates.findIndex(x => x.id === id);
-  if (index !== -1) {
-    this.mockCertificates[index] = {
-      ...this.mockCertificates[index],
-      ...data
-    };
-  }
-  return of(data);
-}
+  /* =======================
+     DELETE
+  ======================= */
 
-
-  deleteStudentCertificate(id: number): Observable<boolean> {
-    this.mockCertificates = this.mockCertificates.filter(x => x.id !== id);
+  deleteCertificate(id: number): Observable<boolean> {
+    this.certificates = this.certificates.filter(c => c.id !== id);
     return of(true);
   }
 
-  // ================= BASE CRUD =================
+  /* =======================
+     SUMMARY DASHBOARD
+     Tổng CC / Đã cấp / Hết hạn / Chờ cấp
+  ======================= */
 
-  createCertificate(data: any): Observable<any> {
-    return this.addStudentCertificate(data);
-  }
+  getSummary(): Observable<CertificateSummary> {
 
-updateCertificate(id: number, data: any): Observable<any> {
-  return this.updateStudentCertificate(id, data);
-}
+    const total = this.certificates.length;
 
+    const issued = this.certificates.filter(c =>
+      c.status === 'ACTIVE'
+    ).length;
 
-  deleteCertificate(id: number): Observable<boolean> {
-    return this.deleteStudentCertificate(id);
-  }
+    const expired = this.certificates.filter(c =>
+      c.status === 'EXPIRED'
+    ).length;
 
-  // ================= STATISTICS =================
+    const pending = this.certificates.filter(c =>
+      c.status === 'PENDING'
+    ).length;
 
-  getCertificateStatistics(filters?: CertificateFilters): Observable<any> {
     return of({
-      total: 10,
-      active: 7,
-      expired: 3
+      total,
+      issued,
+      expired,
+      pending
     });
   }
 
-  // ================= STUDENTS =================
+  /* =======================
+     HELPER
+  ======================= */
 
-  getStudents(): Observable<any[]> {
-    return of(this.mockStudents);
+  private generateId(): number {
+    return this.certificates.length
+      ? Math.max(...this.certificates.map(c => c.id)) + 1
+      : 1;
   }
-
-  getStudentsInClass(classId: number): Observable<any[]> {
-    return of(this.mockStudents);
-  }
-
-  // ================= CLASSES =================
-
-  getClasses(): Observable<any[]> {
-    return of(this.mockClasses);
-  }
-
-  // ================= TYPES =================
-
-  getCertificateTypes(): Observable<any[]> {
-    return of([
-      { id: 1, name: 'Completion', validity_months: 12 }
-    ]);
-  }
-
-  getCertificateTypeDetails(id: number): Observable<any> {
-    return of({
-      id,
-      name: 'Completion',
-      validity_months: 12
-    });
-  }
-
-  // ================= OPTIONS =================
-
-  getCertificateStatusOptions(): any[] {
-    return [
-      { label: 'Active', value: 'Active' },
-      { label: 'Expired', value: 'Expired' },
-      { label: 'Revoked', value: 'Revoked' }
-    ];
-  }
-
-  // ================= UTIL =================
-
-  generateCertificateNumber(): string {
-    return 'CERT-' + Math.floor(Math.random() * 1000000);
-  }
-
-  calculateExpiryDate(issueDate: string, months: number): Observable<string> {
-    const d = new Date(issueDate);
-    d.setMonth(d.getMonth() + months);
-    return of(d.toISOString());
-  }
-
 }
