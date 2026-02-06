@@ -1,150 +1,184 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-/**
- * MODEL ĐÚNG THEO COMPONENT ĐANG DÙNG
- */
-export interface StudentCertificateWithDetails {
-  id: number;
-  student_id: number;
-
-  certificate_id: number;
-  certificate_code: string;
-  certificate_name: string;
-
-  issued_date: string;
-  status: 'issued' | 'pending' | 'revoked';
-
-  student_name?: string;
-  course_name?: string;
-}
+import {
+  Certificate,
+  StudentCertificate,
+  StudentCertificateWithDetails,
+  CertificateFilters,
+  CertificateStatistics
+} from '../models/certificate.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CertificateService {
 
-  constructor() {}
+  /* ================= MOCK DATA ================= */
 
-  /**
-   * MOCK DATA FULL
-   */
-  private certificatesMock: StudentCertificateWithDetails[] = [
+  private certificates: Certificate[] = [
     {
       id: 1,
-      student_id: 101,
-      certificate_id: 1,
-      certificate_code: 'CERT-001',
-      certificate_name: 'Angular Developer',
-      issued_date: '2025-01-10',
-      status: 'issued',
-      student_name: 'Nguyen Van A',
-      course_name: 'Angular Master'
-    },
-    {
-      id: 2,
-      student_id: 102,
-      certificate_id: 2,
-      certificate_code: 'CERT-002',
-      certificate_name: 'Java Spring Boot',
-      issued_date: '2025-02-15',
-      status: 'pending',
-      student_name: 'Tran Thi B',
-      course_name: 'Spring Boot Pro'
-    },
-    {
-      id: 3,
-      student_id: 103,
-      certificate_id: 3,
-      certificate_code: 'CERT-003',
-      certificate_name: 'UI UX Design',
-      issued_date: '2025-03-20',
-      status: 'issued',
-      student_name: 'Le Van C',
-      course_name: 'UI UX Expert'
+      certificate_code: 'CERT-ANG',
+      certificate_name: 'Chứng chỉ Angular',
+      description: 'Hoàn thành khóa Angular',
+      validity_period_months: 12,
+      is_permanent: 0,
+      status: 'Hoạt động',
+      created_at: new Date()
     }
   ];
 
-  /**
-   * GET ALL
-   */
+  private studentCertificates: StudentCertificateWithDetails[] = [
+    {
+      id: 1,
+      student_id: 1,
+      certificate_id: 1,
+      class_id: 1,
+      issued_date: '2025-01-01',
+      expiry_date: '2026-01-01',
+      certificate_number: 'CERT-0001',
+      status: 'Đã cấp',
+
+      student_name: 'Nguyễn Văn A',
+      student_code: 'HV001',
+      certificate_name: 'Chứng chỉ Angular',
+      certificate_code: 'CERT-ANG',
+      class_name: 'Angular Cơ Bản',
+      class_code: 'ANG01'
+    }
+  ];
+
+  private students = [
+    { id: 1, name: 'Nguyễn Văn A', code: 'HV001' },
+    { id: 2, name: 'Trần Thị B', code: 'HV002' }
+  ];
+
+  private classes = [
+    { id: 1, name: 'Angular Cơ Bản', code: 'ANG01' },
+    { id: 2, name: 'Angular Nâng Cao', code: 'ANG02' }
+  ];
+
+  /* ================= CERTIFICATE ================= */
+
   getCertificates(): Observable<StudentCertificateWithDetails[]> {
-    return of(this.certificatesMock);
+    return of(this.studentCertificates);
   }
 
-  /**
-   * GET BY ID
-   */
-  getCertificateById(id: number): Observable<StudentCertificateWithDetails | undefined> {
-    const found = this.certificatesMock.find(c => c.id === id);
-    return of(found);
+  addCertificate(data: Certificate): Observable<Certificate> {
+    data.id = Date.now();
+    this.certificates.push(data);
+    return of(data);
   }
 
-  /**
-   * CREATE
-   */
-  createCertificate(data: StudentCertificateWithDetails): Observable<StudentCertificateWithDetails> {
-    const newItem: StudentCertificateWithDetails = {
-      ...data,
-      id: Date.now()
-    };
-
-    this.certificatesMock.push(newItem);
-    return of(newItem);
+  updateCertificate(id: number, data: Certificate): Observable<boolean> {
+    const index = this.certificates.findIndex(c => c.id === id);
+    if (index !== -1) {
+      this.certificates[index] = { ...this.certificates[index], ...data };
+      return of(true);
+    }
+    return of(false);
   }
 
-  /**
-   * UPDATE
-   */
-  updateCertificate(
-    id: number,
-    data: Partial<StudentCertificateWithDetails>
-  ): Observable<StudentCertificateWithDetails | null> {
-
-    const index = this.certificatesMock.findIndex(c => c.id === id);
-
-    if (index === -1) return of(null);
-
-    this.certificatesMock[index] = {
-      ...this.certificatesMock[index],
-      ...data
-    };
-
-    return of(this.certificatesMock[index]);
-  }
-
-  /**
-   * DELETE
-   */
   deleteCertificate(id: number): Observable<boolean> {
-    const index = this.certificatesMock.findIndex(c => c.id === id);
-
-    if (index === -1) return of(false);
-
-    this.certificatesMock.splice(index, 1);
+    this.certificates = this.certificates.filter(c => c.id !== id);
     return of(true);
   }
 
-  /**
-   * THỐNG KÊ TỔNG HỢP
-   */
-  getCertificateSummary(): Observable<{
-    total: number;
-    issued: number;
-    pending: number;
-    revoked: number;
-  }> {
+  /* ================= STUDENT CERTIFICATE ================= */
 
-    const total = this.certificatesMock.length;
-    const issued = this.certificatesMock.filter(c => c.status === 'issued').length;
-    const pending = this.certificatesMock.filter(c => c.status === 'pending').length;
-    const revoked = this.certificatesMock.filter(c => c.status === 'revoked').length;
+  getStudentCertificates(filters?: CertificateFilters): Observable<StudentCertificateWithDetails[]> {
+    return of(this.studentCertificates);
+  }
 
-    return of({
-      total,
-      issued,
-      pending,
-      revoked
-    });
+  addStudentCertificate(data: StudentCertificate): Observable<StudentCertificate> {
+    const newCert: StudentCertificateWithDetails = {
+      ...data,
+      id: Date.now(),
+      student_name: 'Mock Student',
+      student_code: 'HVXXX',
+      certificate_name: 'Mock Certificate',
+      certificate_code: 'MOCK',
+      class_name: 'Mock Class',
+      class_code: 'CLS'
+    };
+    this.studentCertificates.push(newCert);
+    return of(newCert);
+  }
+
+  updateStudentCertificate(id: number, data: StudentCertificate): Observable<boolean> {
+    const index = this.studentCertificates.findIndex(c => c.id === id);
+    if (index !== -1) {
+      this.studentCertificates[index] = {
+        ...this.studentCertificates[index],
+        ...data
+      };
+      return of(true);
+    }
+    return of(false);
+  }
+
+  deleteStudentCertificate(id: number): Observable<boolean> {
+    this.studentCertificates = this.studentCertificates.filter(c => c.id !== id);
+    return of(true);
+  }
+
+  /* ================= STUDENT / CLASS ================= */
+
+  getStudents(): Observable<any[]> {
+    return of(this.students);
+  }
+
+  getClasses(): Observable<any[]> {
+    return of(this.classes);
+  }
+
+  getStudentsInClass(classId: number): Observable<any[]> {
+    return of(this.students);
+  }
+
+  /* ================= HELPER / OPTIONS ================= */
+
+  getCertificateStatusOptions(): string[] {
+    return ['Đã cấp', 'Đã thu hồi', 'Đã hết hạn', 'Đang chờ'];
+  }
+
+  generateCertificateNumber(): string {
+    return 'CERT-' + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  getCertificateTypeDetails(certificateTypeId: number): Observable<Certificate> {
+    const cert = this.certificates.find(c => c.id === certificateTypeId);
+    return of(cert as Certificate);
+  }
+
+  calculateExpiryDate(
+    issuedDate: string,
+    validityMonths?: number,
+    isPermanent?: number
+  ): Observable<string | null> {
+    if (isPermanent === 1) {
+      return of(null);
+    }
+    if (!validityMonths) {
+      return of(null);
+    }
+    const date = new Date(issuedDate);
+    date.setMonth(date.getMonth() + validityMonths);
+    return of(date.toISOString().split('T')[0]);
+  }
+
+  /* ================= STATISTICS ================= */
+
+  getCertificateStatistics(): Observable<CertificateStatistics> {
+    const stats: CertificateStatistics = {
+      total_certificates: this.studentCertificates.length,
+      issued_certificates: this.studentCertificates.filter(c => c.status === 'Đã cấp').length,
+      expired_certificates: this.studentCertificates.filter(c => c.status === 'Đã hết hạn').length,
+      revoked_certificates: this.studentCertificates.filter(c => c.status === 'Đã thu hồi').length,
+      pending_certificates: this.studentCertificates.filter(c => c.status === 'Đang chờ').length,
+      total_students: this.students.length
+    };
+    return of(stats);
   }
 }
