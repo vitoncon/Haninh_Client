@@ -1,234 +1,162 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ScheduleModel } from '../models/schedule.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ScheduleService {
-  private schedulesApiUrl = 'http://localhost:10093/api/schedules';
-  private classScheduleApiUrl = 'http://localhost:10093/api/class_schedules';
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
-  private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
-    return {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      })
-    };
-  }
+  // ================= MOCK SCHEDULE TEMPLATE =================
+  private mockScheduleTemplates: ScheduleModel[] = [
+    {
+      id: 1,
+      class_id: 1,
+      day_of_week: 1,
+      start_time: '18:00',
+      end_time: '20:00',
+      start_date: '2026-02-01',
+      end_date: '2026-04-30',
+      room_name: 'P101',
+      status: 'Đã Lên Lịch',
+      teacher_name: 'Nguyễn Văn A',
+      class_name: 'ENG-01'
+    },
+    {
+      id: 2,
+      class_id: 2,
+      day_of_week: 3,
+      start_time: '18:00',
+      end_time: '20:00',
+      start_date: '2026-03-01',
+      end_date: '2026-06-01',
+      room_name: 'P202',
+      status: 'Đã Lên Lịch',
+      teacher_name: 'Trần Thị B',
+      class_name: 'KOR-01'
+    }
+  ];
 
-  // Schedule template methods (for table 'schedule')
+  // ================= MOCK CLASS SCHEDULE =================
+  private mockClassSchedules: ScheduleModel[] = [
+    {
+      id: 101,
+      class_id: 1,
+      day_of_week: 1,
+      start_time: '18:00',
+      end_time: '20:00',
+      start_date: '2026-02-10',
+      end_date: '2026-02-10',
+      room_name: 'P101',
+      status: 'Đã Dạy',
+      teacher_name: 'Nguyễn Văn A',
+      class_name: 'ENG-01'
+    },
+    {
+      id: 102,
+      class_id: 1,
+      day_of_week: 3,
+      start_time: '18:00',
+      end_time: '20:00',
+      start_date: '2026-02-12',
+      end_date: '2026-02-12',
+      room_name: 'P101',
+      status: 'Đã Lên Lịch',
+      teacher_name: 'Nguyễn Văn A',
+      class_name: 'ENG-01'
+    }
+  ];
+
+  // ================= TEMPLATE METHODS =================
   getScheduleTemplates(): Observable<ScheduleModel[]> {
-    return this.http.get<any>(this.schedulesApiUrl, this.getAuthHeaders()).pipe(
-      map(res => res?.data ?? res)
-    );
+    return of(this.mockScheduleTemplates);
   }
 
-  // Backward compatibility - returns class schedules (not schedule templates)
+  // ================= BACKWARD METHODS =================
   getSchedules(): Observable<ScheduleModel[]> {
-    return this.http.get<any>(this.classScheduleApiUrl, this.getAuthHeaders()).pipe(
-      map(res => res?.data ?? res)
-    );
+    return of(this.mockClassSchedules);
   }
 
   getScheduleById(id: number): Observable<ScheduleModel> {
-    return this.http.get<ScheduleModel>(`${this.schedulesApiUrl}/${id}`, this.getAuthHeaders());
+    const found = this.mockScheduleTemplates.find(x => x.id === id);
+    return of(found as ScheduleModel);
   }
 
   addScheduleTemplate(schedule: any): Observable<ScheduleModel> {
-    // Format date for server to handle timezone properly (UTC+7 for Vietnam)
-    const formattedSchedule = this.formatScheduleForServer(schedule);
-    return this.http.post<ScheduleModel>(this.schedulesApiUrl, formattedSchedule, this.getAuthHeaders());
+    const newItem = {
+      ...schedule,
+      id: Math.floor(Math.random() * 100000)
+    };
+    this.mockScheduleTemplates.unshift(newItem);
+    return of(newItem);
   }
 
   updateScheduleTemplate(id: number, schedule: any): Observable<ScheduleModel> {
-    // Format date for server to handle timezone properly (UTC+7 for Vietnam)
-    const formattedSchedule = this.formatScheduleForServer(schedule);
-    return this.http.put<ScheduleModel>(`${this.schedulesApiUrl}/${id}`, formattedSchedule, this.getAuthHeaders());
+    const index = this.mockScheduleTemplates.findIndex(x => x.id === id);
+    if (index > -1) {
+      this.mockScheduleTemplates[index] = { ...schedule, id };
+    }
+    return of(this.mockScheduleTemplates[index]);
   }
 
   deleteScheduleTemplate(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.schedulesApiUrl}/${id}`, this.getAuthHeaders());
+    this.mockScheduleTemplates =
+      this.mockScheduleTemplates.filter(x => x.id !== id);
+    return of(void 0);
   }
 
-  // Class schedule methods (for table 'class_schedule') - backward compatibility
+  // ================= CLASS SCHEDULE =================
   addSchedule(schedule: any): Observable<ScheduleModel> {
-    // Format date for server to handle timezone properly (UTC+7 for Vietnam)
-    const formattedSchedule = this.formatScheduleForServer(schedule);
-    return this.http.post<ScheduleModel>(this.classScheduleApiUrl, formattedSchedule, this.getAuthHeaders());
+    const newItem = {
+      ...schedule,
+      id: Math.floor(Math.random() * 100000)
+    };
+    this.mockClassSchedules.unshift(newItem);
+    return of(newItem);
   }
 
   updateSchedule(id: number, schedule: any): Observable<ScheduleModel> {
-    // Format date for server to handle timezone properly (UTC+7 for Vietnam)
-    const formattedSchedule = this.formatScheduleForServer(schedule);
-    return this.http.put<ScheduleModel>(`${this.classScheduleApiUrl}/${id}`, formattedSchedule, this.getAuthHeaders());
+    const index = this.mockClassSchedules.findIndex(x => x.id === id);
+    if (index > -1) {
+      this.mockClassSchedules[index] = { ...schedule, id };
+    }
+    return of(this.mockClassSchedules[index]);
   }
 
   deleteSchedule(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.classScheduleApiUrl}/${id}`, this.getAuthHeaders());
+    this.mockClassSchedules =
+      this.mockClassSchedules.filter(x => x.id !== id);
+    return of(void 0);
   }
 
-  // Create class schedules for a specific class
   createClassSchedules(classId: number, scheduleData: any): Observable<any> {
-    // Format date for server to handle timezone properly (UTC+7 for Vietnam)
-    const formattedScheduleData = this.formatScheduleForServer(scheduleData);
-    return this.http.post<any>(this.classScheduleApiUrl, {
+    const newItem = {
+      ...scheduleData,
       class_id: classId,
-      ...formattedScheduleData
-    }, this.getAuthHeaders());
+      id: Math.floor(Math.random() * 100000)
+    };
+    this.mockClassSchedules.unshift(newItem);
+    return of(newItem);
   }
 
-  // Get class schedules by class ID (only active ones)
   getClassSchedulesByClass(classId: number): Observable<any[]> {
-    if (!classId || classId <= 0) {
-      return new Observable(observer => {
-        observer.next([]);
-        observer.complete();
-      });
-    }
-    
-    const condition = JSON.stringify([{
-      key: 'class_id',
-      value: classId.toString(),
-      compare: '='
-    }]);
-    const url = `${this.classScheduleApiUrl}?condition=${encodeURIComponent(condition)}`;
-    
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map(res => {
-        const data = res?.data ?? res;
-        return data;
-      })
-    );
+    if (!classId) return of([]);
+    return of(this.mockClassSchedules.filter(x => x.class_id === classId));
   }
 
-  // Get ALL class schedules by class ID (including deleted ones)
   getAllClassSchedulesByClass(classId: number): Observable<any[]> {
-    if (!classId || classId <= 0) {
-      return new Observable(observer => {
-        observer.next([]);
-        observer.complete();
-      });
-    }
-    
-    const condition = JSON.stringify([
-      {
-        key: 'class_id',
-        value: classId.toString(),
-        compare: '='
-      },
-      {
-        key: 'include_deleted',
-        value: 'true',
-        compare: '='
-      }
-    ]);
-    const url = `${this.classScheduleApiUrl}?condition=${encodeURIComponent(condition)}`;
-    
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map(res => {
-        const data = res?.data ?? res;
-        return data;
-      })
-    );
+    if (!classId) return of([]);
+    return of(this.mockClassSchedules.filter(x => x.class_id === classId));
   }
 
-  // Get class schedule by ID
   getClassScheduleById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.classScheduleApiUrl}/${id}`, this.getAuthHeaders());
+    const found = this.mockClassSchedules.find(x => x.id === id);
+    return of(found);
   }
 
-  // Get all class schedules
   getClassSchedules(): Observable<any[]> {
-    return this.http.get<any>(this.classScheduleApiUrl, this.getAuthHeaders()).pipe(
-      map(res => res?.data ?? res)
-    );
+    return of(this.mockClassSchedules);
   }
-
-  // Helper method to format schedule data for server with timezone handling
-  private formatScheduleForServer(schedule: any): any {
-    const formattedSchedule = { ...schedule };
-    
-    // Format date fields if they exist
-    if (formattedSchedule.date) {
-      formattedSchedule.date = this.formatDateForServer(formattedSchedule.date);
-    }
-    
-    if (formattedSchedule.start_date) {
-      formattedSchedule.start_date = this.formatDateForServer(formattedSchedule.start_date);
-    }
-    
-    if (formattedSchedule.end_date) {
-      formattedSchedule.end_date = this.formatDateForServer(formattedSchedule.end_date);
-    }
-    
-    return formattedSchedule;
-  }
-
-  // Helper method to format date for server with explicit Vietnam timezone (UTC+7)
-  private formatDateForServer(dateValue: any): string {
-    // Use the new ensureVietnamDate method to handle all cases properly
-    return this.ensureVietnamDate(dateValue);
-  }
-
-  // Helper method to convert any date to Vietnam timezone (UTC+7)
-  private convertToVietnamTimezone(date: Date): Date {
-    // Get the date in Vietnam timezone
-    const vietnamOffset = 7 * 60; // Vietnam is UTC+7 (7 hours = 420 minutes)
-    const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-    const vietnamTime = new Date(utc + (vietnamOffset * 60000));
-    return vietnamTime;
-  }
-
-  // Helper method to ensure date is interpreted as Vietnam date
-  private ensureVietnamDate(dateValue: any): string {
-    if (!dateValue) return '';
-    
-    // If it's a string in YYYY-MM-DD format, treat it as Vietnam date
-    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-      return dateValue;
-    }
-    
-    // If it's a Date object, treat it as Vietnam date by using local date components
-    if (dateValue instanceof Date) {
-      // Use the local date components directly (this is what user selected)
-      const year = dateValue.getFullYear();
-      const month = String(dateValue.getMonth() + 1).padStart(2, '0');
-      const day = String(dateValue.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    
-    // For other formats, try to parse and convert
-    try {
-      const parsedDate = new Date(dateValue);
-      return this.ensureVietnamDate(parsedDate);
-    } catch (error) {
-      console.error('Invalid date format:', dateValue);
-      return String(dateValue);
-    }
-  }
-
-  // Helper method to parse date string to local date (avoiding timezone issues)
-  private parseDateStringToLocal(dateStr: string): Date {
-    // Handle different date formats
-    const cleanDateStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
-    
-    // Parse date manually to avoid timezone issues
-    const parts = cleanDateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1; // Month is 0-indexed
-      const day = parseInt(parts[2]);
-      // Create date in local timezone to avoid UTC conversion issues
-      return new Date(year, month, day, 12, 0, 0); // Use noon to avoid DST issues
-    } else {
-      return new Date(cleanDateStr);
-    }
-  }
-
 }
