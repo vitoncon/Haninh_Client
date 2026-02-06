@@ -7,28 +7,77 @@ import { Observable, of } from 'rxjs';
 export class StudentService {
 
   // ================= MOCK DATA =================
-  private mockStudents = [
-    {
-      id: 1,
-      student_code: 'HV001',
-      full_name: 'Nguyễn Văn A',
-      gender: 'Nam',
-      phone: '0900000001',
-      email: 'a@gmail.com',
-      date_of_entry: '2024-09-01',
-      status: 'Đang học'
-    },
-    {
-      id: 2,
-      student_code: 'HV002',
-      full_name: 'Trần Thị B',
-      gender: 'Nữ',
-      phone: '0900000002',
-      email: 'b@gmail.com',
-      date_of_entry: '2024-10-15',
-      status: 'Đang học'
-    }
-  ];
+ private mockStudents: StudentsModel[] = [
+  {
+    id: 1,
+    student_code: 'HV001',
+    full_name: 'Nguyễn Văn An',
+    gender: 'Nam',
+    date_of_birth: '2002-05-15',
+    email: 'an.nguyen@gmail.com',
+    phone: '0901234567',
+    address: 'Quận 1, TP.HCM',
+    enrollment_date: '2024-09-01',
+    avatar_url: null,
+    status: 'Đang học',
+    note: 'Học viên mới',
+    created_at: '2024-09-01T08:00:00',
+    updated_at: '2024-09-10T10:30:00',
+    is_deleted: 0
+  },
+  {
+    id: 2,
+    student_code: 'HV002',
+    full_name: 'Trần Thị Bình',
+    gender: 'Nữ',
+    date_of_birth: '2001-11-20',
+    email: 'binh.tran@gmail.com',
+    phone: '0912345678',
+    address: 'Quận Bình Thạnh, TP.HCM',
+    enrollment_date: '2024-10-15',
+    avatar_url: null,
+    status: 'Đang học',
+    note: null,
+    created_at: '2024-10-15T09:00:00',
+    updated_at: '2024-10-20T14:00:00',
+    is_deleted: 0
+  },
+  {
+    id: 3,
+    student_code: 'HV003',
+    full_name: 'Lê Minh Châu',
+    gender: 'Khác',
+    date_of_birth: '1999-02-03',
+    email: 'chau.le@gmail.com',
+    phone: '0923456789',
+    address: 'Quận 7, TP.HCM',
+    enrollment_date: '2024-06-05',
+    avatar_url: null,
+    status: 'Tạm dừng',
+    note: 'Tạm dừng vì lý do cá nhân',
+    created_at: '2024-06-05T08:30:00',
+    updated_at: '2024-12-01T16:45:00',
+    is_deleted: 0
+  },
+  {
+    id: 4,
+    student_code: 'HV004',
+    full_name: 'Phạm Quốc Dũng',
+    gender: 'Nam',
+    date_of_birth: '1998-08-12',
+    email: 'dung.pham@gmail.com',
+    phone: '0934567890',
+    address: 'Thủ Đức, TP.HCM',
+    enrollment_date: '2023-03-20',
+    avatar_url: null,
+    status: 'Hoàn thành',
+    note: 'Đã hoàn thành khóa học',
+    created_at: '2023-03-20T08:00:00',
+    updated_at: '2024-03-20T17:00:00',
+    is_deleted: 0
+  }
+];
+
 
   // ================= GET =================
   getStudents(filters?: any): Observable<{ data: any[] }> {
