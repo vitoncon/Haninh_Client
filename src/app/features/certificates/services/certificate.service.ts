@@ -86,9 +86,10 @@ updateStudentCertificate(id: number, data: any): Observable<any> {
     return this.addStudentCertificate(data);
   }
 
-  updateCertificate(id: number, data: any): Observable<any> {
-    return this.updateStudentCertificate({ id, ...data });
-  }
+updateCertificate(id: number, data: any): Observable<any> {
+  return this.updateStudentCertificate(id, data);
+}
+
 
   deleteCertificate(id: number): Observable<boolean> {
     return this.deleteStudentCertificate(id);
