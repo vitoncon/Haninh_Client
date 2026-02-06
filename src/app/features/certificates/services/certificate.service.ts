@@ -7,7 +7,7 @@ import {
   StudentCertificateWithDetails,
   CertificateFilters,
   CertificateStatistics
-} from '../models/certificate.model';
+} from '../models/certificates.model';
 
 @Injectable({
   providedIn: 'root'
