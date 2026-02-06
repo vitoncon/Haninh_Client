@@ -12,7 +12,8 @@ import {
 })
 export class CertificateService {
 
-  // ===== MOCK MASTER DATA =====
+  // ===== MOCK DATA =====
+
   private students = [
     { id: 1, student_code: 'HV001', full_name: 'Nguyễn Văn A', class_id: 1 },
     { id: 2, student_code: 'HV002', full_name: 'Trần Thị B', class_id: 1 },
@@ -29,7 +30,7 @@ export class CertificateService {
       id: 1,
       certificate_code: 'CERT-SPA',
       certificate_name: 'Chứng chỉ Spa',
-      validity_days: 365,
+      validity_period_months: 12,
       is_permanent: 0,
       status: 'Hoạt động'
     },
@@ -37,30 +38,13 @@ export class CertificateService {
       id: 2,
       certificate_code: 'CERT-MASTER',
       certificate_name: 'Chứng chỉ Master',
-      validity_days: 0,
+      validity_period_months: 0,
       is_permanent: 1,
       status: 'Hoạt động'
     }
   ];
 
-  private studentCertificates: StudentCertificateWithDetails[] = [
-    {
-      id: 1,
-      student_id: 1,
-      student_name: 'Nguyễn Văn A',
-      student_code: 'HV001',
-      certificate_id: 1,
-      certificate_name: 'Chứng chỉ Spa',
-      certificate_code: 'CERT-SPA',
-      certificate_number: 'CERT-00001',
-      class_id: 1,
-      class_name: 'Lớp Spa K1',
-      issued_date: '2025-01-01',
-      expiry_date: '2026-01-01',
-      status: 'Đã cấp',
-      note: ''
-    }
-  ];
+  private studentCertificates: StudentCertificateWithDetails[] = [];
 
   // ===== STUDENT CERTIFICATES =====
 
@@ -69,6 +53,7 @@ export class CertificateService {
   }
 
   addStudentCertificate(data: StudentCertificate): Observable<any> {
+
     const newItem: StudentCertificateWithDetails = {
       ...data,
       id: Date.now(),
@@ -83,19 +68,24 @@ export class CertificateService {
     return of(newItem);
   }
 
-  updateStudentCertificate(id: number, data: StudentCertificate): Observable<any> {
-    const index = this.studentCertificates.findIndex(x => x.id === id);
+  updateStudentCertificate(data: StudentCertificate): Observable<any> {
+
+    const index = this.studentCertificates.findIndex(x => x.id === data.id);
+
     if (index >= 0) {
       this.studentCertificates[index] = {
         ...this.studentCertificates[index],
         ...data
       };
     }
+
     return of(true);
   }
 
   deleteStudentCertificate(id: number): Observable<any> {
-    this.studentCertificates = this.studentCertificates.filter(x => x.id !== id);
+    this.studentCertificates =
+      this.studentCertificates.filter(x => x.id !== id);
+
     return of(true);
   }
 
@@ -109,33 +99,35 @@ export class CertificateService {
     return of(this.classes);
   }
 
-  getCertificates(): Observable<Certificate[]> {
-    return of(this.certificateTypes);
-  }
-
   getStudentsInClass(classId: number): Observable<any[]> {
     return of(this.students.filter(s => s.class_id === classId));
   }
 
-  // ===== CERTIFICATE TYPE DETAILS =====
-
-  getCertificateTypeDetails(id: number): Observable<any> {
-    const cert = this.certificateTypes.find(x => x.id === id);
-
-    return of({
-      ...cert,
-      isPermanent: cert?.is_permanent === 1,
-      criteria: 'Đạt yêu cầu khóa học'
-    });
+  getCertificates(): Observable<Certificate[]> {
+    return of(this.certificateTypes);
   }
 
-  calculateExpiryDate(issuedDate: string, certificateId: number): Observable<string | undefined> {
+  // ===== CERTIFICATE TYPE =====
+
+  getCertificateTypeDetails(id: number): Observable<Certificate | undefined> {
+    return of(this.certificateTypes.find(x => x.id === id));
+  }
+
+  // ===== EXPIRY DATE =====
+
+  calculateExpiryDate(
+    issuedDate: string,
+    certificateId: number
+  ): Observable<string | undefined> {
+
     const cert = this.certificateTypes.find(c => c.id === certificateId);
 
     if (!cert || cert.is_permanent === 1) return of(undefined);
 
+    const months = cert.validity_period_months || 0;
+
     const date = new Date(issuedDate);
-    date.setDate(date.getDate() + (cert.validity_days || 0));
+    date.setMonth(date.getMonth() + months);
 
     return of(date.toISOString().split('T')[0]);
   }
@@ -143,16 +135,16 @@ export class CertificateService {
   // ===== STATISTICS =====
 
   getCertificateStatistics(): Observable<CertificateStatistics> {
+
     const total = this.studentCertificates.length;
-    const issued = this.studentCertificates.filter(x => x.status === 'Đã cấp').length;
-    const expired = this.studentCertificates.filter(x => x.status === 'Đã hết hạn').length;
-    const pending = this.studentCertificates.filter(x => x.status === 'Đang chờ').length;
 
     return of({
       total_certificates: total,
-      issued_certificates: issued,
-      expired_certificates: expired,
-      pending_certificates: pending
+      issued_certificates: this.studentCertificates.filter(x => x.status === 'Đã cấp').length,
+      expired_certificates: this.studentCertificates.filter(x => x.status === 'Đã hết hạn').length,
+      revoked_certificates: this.studentCertificates.filter(x => x.status === 'Đã thu hồi').length,
+      pending_certificates: this.studentCertificates.filter(x => x.status === 'Đang chờ').length,
+      total_students: this.students.length
     });
   }
 
@@ -170,8 +162,7 @@ export class CertificateService {
   // ===== UTIL =====
 
   generateCertificateNumber(): string {
-    const num = Math.floor(Math.random() * 100000);
-    return `CERT-${num}`;
+    return 'CERT-' + Math.floor(100000 + Math.random() * 900000);
   }
 
 }
