@@ -7,7 +7,7 @@ import {
   StudentCertificateWithDetails,
   CertificateFilters,
   CertificateStatistics
-} from '../models/certificates.model';
+} from '../models/certificate.model';
 
 @Injectable({
   providedIn: 'root'
@@ -16,14 +16,14 @@ export class CertificateService {
 
   /* ================= MOCK DATA ================= */
 
-  private certificates: Certificate[] = [
+  private certificates: (Certificate & { isPermanent?: boolean })[] = [
     {
       id: 1,
       certificate_code: 'CERT-ANG',
       certificate_name: 'Chứng chỉ Angular',
-      description: 'Hoàn thành khóa Angular',
       validity_period_months: 12,
       is_permanent: 0,
+      isPermanent: false,
       status: 'Hoạt động',
       created_at: new Date()
     }
@@ -65,18 +65,40 @@ export class CertificateService {
     return of(this.studentCertificates);
   }
 
+  getCertificateTypeDetails(id: number): Observable<any> {
+    const cert = this.certificates.find(c => c.id === id);
+
+    if (!cert) return of(null);
+
+    return of({
+      ...cert,
+      isPermanent: cert.is_permanent === 1
+    });
+  }
+
   addCertificate(data: Certificate): Observable<Certificate> {
-    data.id = Date.now();
-    this.certificates.push(data);
-    return of(data);
+    const newCert: any = {
+      ...data,
+      id: Date.now(),
+      isPermanent: data.is_permanent === 1
+    };
+
+    this.certificates.push(newCert);
+    return of(newCert);
   }
 
   updateCertificate(id: number, data: Certificate): Observable<boolean> {
     const index = this.certificates.findIndex(c => c.id === id);
+
     if (index !== -1) {
-      this.certificates[index] = { ...this.certificates[index], ...data };
+      this.certificates[index] = {
+        ...this.certificates[index],
+        ...data,
+        isPermanent: data.is_permanent === 1
+      };
       return of(true);
     }
+
     return of(false);
   }
 
@@ -87,14 +109,20 @@ export class CertificateService {
 
   /* ================= STUDENT CERTIFICATE ================= */
 
-  getStudentCertificates(filters?: CertificateFilters): Observable<StudentCertificateWithDetails[]> {
+  getStudentCertificates(
+    filters?: CertificateFilters
+  ): Observable<StudentCertificateWithDetails[]> {
     return of(this.studentCertificates);
   }
 
-  addStudentCertificate(data: StudentCertificate): Observable<StudentCertificate> {
-    const newCert: StudentCertificateWithDetails = {
+  addStudentCertificate(
+    data: StudentCertificate
+  ): Observable<StudentCertificate> {
+
+    const newItem: StudentCertificateWithDetails = {
       ...data,
       id: Date.now(),
+
       student_name: 'Mock Student',
       student_code: 'HVXXX',
       certificate_name: 'Mock Certificate',
@@ -102,12 +130,18 @@ export class CertificateService {
       class_name: 'Mock Class',
       class_code: 'CLS'
     };
-    this.studentCertificates.push(newCert);
-    return of(newCert);
+
+    this.studentCertificates.push(newItem);
+    return of(newItem);
   }
 
-  updateStudentCertificate(id: number, data: StudentCertificate): Observable<boolean> {
-    const index = this.studentCertificates.findIndex(c => c.id === id);
+  updateStudentCertificate(
+    id: number,
+    data: StudentCertificate
+  ): Observable<boolean> {
+
+    const index = this.studentCertificates.findIndex(x => x.id === id);
+
     if (index !== -1) {
       this.studentCertificates[index] = {
         ...this.studentCertificates[index],
@@ -115,11 +149,14 @@ export class CertificateService {
       };
       return of(true);
     }
+
     return of(false);
   }
 
   deleteStudentCertificate(id: number): Observable<boolean> {
-    this.studentCertificates = this.studentCertificates.filter(c => c.id !== id);
+    this.studentCertificates =
+      this.studentCertificates.filter(x => x.id !== id);
+
     return of(true);
   }
 
@@ -137,7 +174,7 @@ export class CertificateService {
     return of(this.students);
   }
 
-  /* ================= HELPER / OPTIONS ================= */
+  /* ================= OPTIONS ================= */
 
   getCertificateStatusOptions(): string[] {
     return ['Đã cấp', 'Đã thu hồi', 'Đã hết hạn', 'Đang chờ'];
@@ -147,38 +184,43 @@ export class CertificateService {
     return 'CERT-' + Math.floor(100000 + Math.random() * 900000);
   }
 
-  getCertificateTypeDetails(certificateTypeId: number): Observable<Certificate> {
-    const cert = this.certificates.find(c => c.id === certificateTypeId);
-    return of(cert as Certificate);
-  }
+  /* ================= DATE HELPER ================= */
 
   calculateExpiryDate(
     issuedDate: string,
     validityMonths?: number,
-    isPermanent?: number
+    isPermanent?: boolean | number
   ): Observable<string | null> {
-    if (isPermanent === 1) {
+
+    if (isPermanent === true || isPermanent === 1) {
       return of(null);
     }
-    if (!validityMonths) {
-      return of(null);
-    }
+
+    if (!validityMonths) return of(null);
+
     const date = new Date(issuedDate);
     date.setMonth(date.getMonth() + validityMonths);
+
     return of(date.toISOString().split('T')[0]);
   }
 
   /* ================= STATISTICS ================= */
 
   getCertificateStatistics(): Observable<CertificateStatistics> {
+
     const stats: CertificateStatistics = {
       total_certificates: this.studentCertificates.length,
-      issued_certificates: this.studentCertificates.filter(c => c.status === 'Đã cấp').length,
-      expired_certificates: this.studentCertificates.filter(c => c.status === 'Đã hết hạn').length,
-      revoked_certificates: this.studentCertificates.filter(c => c.status === 'Đã thu hồi').length,
-      pending_certificates: this.studentCertificates.filter(c => c.status === 'Đang chờ').length,
+      issued_certificates:
+        this.studentCertificates.filter(x => x.status === 'Đã cấp').length,
+      expired_certificates:
+        this.studentCertificates.filter(x => x.status === 'Đã hết hạn').length,
+      revoked_certificates:
+        this.studentCertificates.filter(x => x.status === 'Đã thu hồi').length,
+      pending_certificates:
+        this.studentCertificates.filter(x => x.status === 'Đang chờ').length,
       total_students: this.students.length
     };
+
     return of(stats);
   }
 }
