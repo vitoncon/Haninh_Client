@@ -6,77 +6,102 @@ import { Observable, of } from 'rxjs';
 })
 export class StudentService {
 
-  constructor() {}
+  // ================= MOCK DATA =================
+  private mockStudents = [
+    {
+      id: 1,
+      student_code: 'HV001',
+      full_name: 'Nguyễn Văn A',
+      gender: 'Nam',
+      phone: '0900000001',
+      email: 'a@gmail.com',
+      date_of_entry: '2024-09-01',
+      status: 'Đang học'
+    },
+    {
+      id: 2,
+      student_code: 'HV002',
+      full_name: 'Trần Thị B',
+      gender: 'Nữ',
+      phone: '0900000002',
+      email: 'b@gmail.com',
+      date_of_entry: '2024-10-15',
+      status: 'Đang học'
+    }
+  ];
 
-  // =====================
-  // MOCK: Danh sách học viên
-  // =====================
-  getStudents(filters?: any): Observable<any[]> {
-    return of([
-      {
-        id: 1,
-        student_code: 'HV001',
-        full_name: 'Nguyễn Văn A',
-        gender: 'Nam',
-        date_of_birth: '2003-11-01',
-        phone: '0912345678',
-        email: 'a@gmail.com',
-        enrollment_date: '2025-01-10',
-        status: 'Đang học',
-        avatar_url: null,
-        note: ''
-      },
-      {
-        id: 2,
-        student_code: 'HV002',
-        full_name: 'Trần Thị B',
-        gender: 'Nữ',
-        date_of_birth: '2004-05-12',
-        phone: '0988888888',
-        email: 'b@gmail.com',
-        enrollment_date: '2025-02-15',
-        status: 'Tạm dừng',
-        avatar_url: null,
-        note: ''
-      }
-    ]);
+  // ================= GET =================
+  getStudents(filters?: any): Observable<{ data: any[] }> {
+    let data = [...this.mockStudents];
+
+    if (filters?.id) {
+      data = data.filter(s => s.id === filters.id);
+    }
+
+    return of({ data });
   }
 
-  // =====================
-  // MOCK: thống kê dashboard
-  // =====================
-  getStudentStatistics(): Observable<any> {
+  // ================= ADD =================
+  addStudent(payload: any): Observable<{ data: any }> {
+    const newStudent = {
+      ...payload,
+      id: Date.now()
+    };
+    this.mockStudents.push(newStudent);
+    return of({ data: newStudent });
+  }
+
+  // ================= UPDATE =================
+  updateStudent(id: number, payload: any): Observable<{ data: any }> {
+    const index = this.mockStudents.findIndex(s => s.id === id);
+    if (index !== -1) {
+      this.mockStudents[index] = {
+        ...this.mockStudents[index],
+        ...payload
+      };
+    }
+    return of({ data: this.mockStudents[index] });
+  }
+
+  // ================= DELETE =================
+  deleteStudent(id: number): Observable<{ data: boolean }> {
+    this.mockStudents = this.mockStudents.filter(s => s.id !== id);
+    return of({ data: true });
+  }
+
+  // ================= EXTRA APIs (component đang gọi) =================
+  getClassTeachers(classIds: number[]): Observable<{ data: any[] }> {
     return of({
-      total_students: 2,
-      active_students: 1,
-      inactive_students: 1,
-      graduated_students: 0
+      data: [
+        { id: 1, name: 'GV Nguyễn Văn X' },
+        { id: 2, name: 'GV Trần Thị Y' }
+      ]
     });
   }
 
-  // =====================
-  // MOCK: chi tiết
-  // =====================
-  getStudentById(id: number): Observable<any> {
-    return this.getStudents().pipe(
-      // đơn giản cho mock
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (source: any) => source
-    );
+  getClassSchedules(params: any): Observable<{ data: any[] }> {
+    return of({
+      data: [
+        {
+          id: 1,
+          class_id: params?.class_ids?.[0] ?? 1,
+          date: '2025-02-20',
+          start_time: '18:00',
+          end_time: '20:00',
+          room_name: 'P101',
+          status: 'Đã Lên Lịch'
+        }
+      ]
+    });
   }
 
-  // =====================
-  // MOCK: các hàm phụ để không vỡ build
-  // =====================
-  getClassTeachers(classIds: number[]): Observable<any[]> {
-    return of([]);
-  }
-
-  getClassSchedules(filters?: any): Observable<any[]> {
-    return of([]);
-  }
-
-  getTeachersByIds(ids: number[]): Observable<any[]> {
-    return of([]);
+  getTeachersByIds(ids: number[]): Observable<{ data: any[] }> {
+    return of({
+      data: ids.map(id => ({
+        id,
+        name: `Giảng viên ${id}`
+      }))
+    });
   }
 }
+
