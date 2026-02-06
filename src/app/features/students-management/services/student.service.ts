@@ -1,385 +1,226 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map, catchError, throwError, of } from 'rxjs';
-import { StudentsModel, StudentFilters, StudentStatistics } from '../models/students.model';
-import { StudentCurrentClasses, StudentOverviewStats } from '../models/student-detail.model';
+import { Observable, of } from 'rxjs';
+import { StudentsModel, StudentStatistics } from '../models/students.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StudentService {
-  private apiUrl = 'http://localhost:10093/api/students';
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
-  /** Lấy header có token xác thực */
-  private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
-    return {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      })
-    };
+  // =========================
+  // MOCK STUDENTS LIST
+  // =========================
+  getStudents(): Observable<any> {
+
+    const now = new Date().toISOString();
+
+    return of({
+      data: [
+        {
+          id: 1,
+          student_code: 'ST001',
+          full_name: 'Nguyễn Văn An',
+          gender: 'Nam',
+          date_of_birth: '2005-05-10',
+          email: 'an@gmail.com',
+          phone: '0901111111',
+          address: 'Thái Nguyên',
+          enrollment_date: '2026-01-10',
+          avatar_url: '',
+          status: 'Đang học',
+          note: '',
+          created_at: now,
+          updated_at: now,
+          is_deleted: 0
+        },
+        {
+          id: 2,
+          student_code: 'ST002',
+          full_name: 'Trần Thị Bình',
+          gender: 'Nữ',
+          date_of_birth: '2004-09-20',
+          email: 'binh@gmail.com',
+          phone: '0902222222',
+          address: 'Hà Nội',
+          enrollment_date: '2026-01-15',
+          avatar_url: '',
+          status: 'Đang học',
+          note: '',
+          created_at: now,
+          updated_at: now,
+          is_deleted: 0
+        },
+        {
+          id: 3,
+          student_code: 'ST003',
+          full_name: 'Lê Văn Cường',
+          gender: 'Nam',
+          date_of_birth: '2003-12-01',
+          email: 'cuong@gmail.com',
+          phone: '0903333333',
+          address: 'Bắc Ninh',
+          enrollment_date: '2026-01-20',
+          avatar_url: '',
+          status: 'Tạm dừng',
+          note: 'Nghỉ tạm',
+          created_at: now,
+          updated_at: now,
+          is_deleted: 0
+        },
+        {
+          id: 4,
+          student_code: 'ST004',
+          full_name: 'Phạm Thị Dung',
+          gender: 'Nữ',
+          date_of_birth: '2006-03-11',
+          email: 'dung@gmail.com',
+          phone: '0904444444',
+          address: 'Vĩnh Phúc',
+          enrollment_date: '2026-02-01',
+          avatar_url: '',
+          status: 'Đang học',
+          note: '',
+          created_at: now,
+          updated_at: now,
+          is_deleted: 0
+        }
+      ]
+    });
+
   }
 
-  /** API: Lấy danh sách học sinh */
-  getStudents(filters?: StudentFilters): Observable<any> {
-    let url = this.apiUrl;
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      // Nếu có filter theo ID, chuyển thành condition array
-      if (filters.id) {
-        const condition = JSON.stringify([{
-          key: 'id',
-          value: filters.id.toString(),
-          compare: '='
-        }]);
-        params.append('condition', condition);
-      } else {
-        // Các filter khác xử lý như bình thường
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '' && key !== 'id') {
-            params.append(key, value.toString());
-          }
-        });
-      }
-    }
-    
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
-  }
-
-  /** API: Lấy thông tin chi tiết học sinh theo ID */
+  // =========================
+  // MOCK STUDENT BY ID
+  // =========================
   getStudentById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+    return this.getStudents();
   }
 
-  /** API: Thêm mới học sinh */
+  // =========================
+  // MOCK ADD / UPDATE / DELETE
+  // =========================
   addStudent(student: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, student, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+    console.log('Mock add student', student);
+    return of(student);
   }
 
-  /** API: Cập nhật thông tin học sinh */
   updateStudent(id: number, student: any): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, student, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+    console.log('Mock update student', id, student);
+    return of(student);
   }
 
-  /** API: Xóa học sinh */
   deleteStudent(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+    console.log('Mock delete student', id);
+    return of(true);
   }
 
-  /** API: Lấy lớp học hiện tại của học viên */
-  getCurrentClasses(studentId: number): Observable<StudentCurrentClasses[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/${studentId}/current-classes`, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+  // =========================
+  // MOCK STATISTICS
+  // =========================
+  getStudentStatistics(): Observable<StudentStatistics> {
+
+    return of({
+      total_students: 4,
+      active_students: 3,
+      inactive_students: 1,
+      graduated_students: 0,
+
+      gender_distribution: [
+        { gender: 'Nam', count: 2 },
+        { gender: 'Nữ', count: 2 }
+      ],
+
+      language_distribution: [
+        { language: 'Tiếng Anh', count: 2 },
+        { language: 'Tiếng Trung', count: 1 },
+        { language: 'Tiếng Hàn', count: 1 }
+      ],
+
+      level_distribution: [
+        { level: 'Beginner', count: 2 },
+        { level: 'Intermediate', count: 1 },
+        { level: 'Advanced', count: 1 }
+      ],
+
+      status_distribution: [
+        { status: 'Đang học', count: 3 },
+        { status: 'Tạm dừng', count: 1 }
+      ],
+
+      average_age: 20,
+
+      enrollment_by_month: [
+        { month: '2025-12', count: 1 },
+        { month: '2026-01', count: 2 },
+        { month: '2026-02', count: 1 }
+      ]
+    });
+
   }
 
-  /** API: Lấy thống kê tổng quan của học viên */
-  getOverviewStats(studentId: number): Observable<StudentOverviewStats> {
-    return this.http.get<any>(`${this.apiUrl}/${studentId}/overview-stats`, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
-  }
-
-  /** API: Lấy lớp học của học viên từ class_students */
-  getClassStudents(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/class_students';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
-  }
-
-  /** API: Lấy lớp học của học viên với thông tin đầy đủ (bao gồm tên lớp, giáo viên, khóa học) */
-  getClassStudentsWithDetails(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/class_students';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      // Xử lý filter theo student_id với condition array
-      if (filters.student_id) {
-        const condition = JSON.stringify([{
-          key: 'student_id',
-          value: filters.student_id.toString(),
-          compare: '='
-        }]);
-        params.append('condition', condition);
+  // =========================
+  // MOCK CLASSES OF STUDENT
+  // =========================
+  getCurrentClasses(): Observable<any[]> {
+    return of([
+      {
+        class_name: 'IELTS Basic',
+        teacher_name: 'Nguyễn Văn A',
+        schedule: 'T2 - T4 - T6'
       }
-      
-      // 🚀 OPTIMIZED: Server-side join trong 1 API call
-      params.append('join', 'class');
-      params.append('join', 'course');
-      params.append('join', 'teacher');
-      
-      // Xử lý các filter khác
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && key !== 'student_id') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+    ]);
   }
 
-  /** API: Lấy danh sách classes với filter student_id */
-  getClasses(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/classes';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      // Xử lý filter theo student_id với condition array
-      if (filters.student_id) {
-        const condition = JSON.stringify([{
-          key: 'student_id',
-          value: filters.student_id.toString(),
-          compare: '='
-        }]);
-        params.append('condition', condition);
-      }
-      
-      // Xử lý các filter khác
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && key !== 'student_id') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService getClasses Error:', error);
-        throw error;
-      })
-    );
+  // =========================
+  // MOCK OVERVIEW
+  // =========================
+  getOverviewStats(): Observable<any> {
+    return of({
+      total_classes: 2,
+      completed_classes: 1,
+      current_classes: 1
+    });
   }
 
-  /** API: Lấy kết quả học tập của học viên */
-  getStudyResults(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/study-results';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+  // =========================
+  // MOCK OTHER API
+  // =========================
+  getClassStudents(): Observable<any[]> {
+    return of([]);
   }
 
-  /** API: Lấy chứng chỉ của học viên */
-  getStudentCertificates(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/student_certificates';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService Error:', error);
-        throw error;
-      })
-    );
+  getClassStudentsWithDetails(): Observable<any[]> {
+    return of([]);
   }
 
-  /** API: Lấy teaching assignments theo class_ids */
-  getTeachingAssignments(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/teaching-assignments';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      // Xử lý filter theo class_ids với IN clause
-      if (filters.class_ids && Array.isArray(filters.class_ids) && filters.class_ids.length > 0) {
-        const condition = JSON.stringify([{
-          key: 'class_id',
-          value: filters.class_ids.join(','),
-          compare: 'in'
-        }]);
-        params.append('condition', condition);
-      }
-      
-      // Xử lý các filter khác
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && key !== 'class_ids') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService getTeachingAssignments Error:', error);
-        throw error;
-      })
-    );
+  getClasses(): Observable<any[]> {
+    return of([]);
   }
 
-  /** API: Lấy teachers theo IDs */
-  getTeachersByIds(ids: number[]): Observable<any> {
-    const condition = JSON.stringify([{
-      key: 'id',
-      value: ids.join(','),
-      compare: 'in'
-    }]);
-    
-    const url = `http://localhost:10093/api/teachers?condition=${encodeURIComponent(condition)}`;
-    
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      catchError((error) => {
-        console.error('StudentService getTeachersByIds Error:', error);
-        throw error;
-      })
-    );
+  getStudyResults(): Observable<any[]> {
+    return of([]);
   }
 
-  /** API: Lấy class schedules để tìm teacher_id làm fallback */
-  getClassSchedules(filters?: any): Observable<any> {
-    let url = 'http://localhost:10093/api/class_schedules';
-    const params = new URLSearchParams();
-
-    if (filters) {
-      if (filters.class_ids && Array.isArray(filters.class_ids) && filters.class_ids.length > 0) {
-        const condition = JSON.stringify([{
-          key: 'class_id',
-          value: filters.class_ids.join(','),
-          compare: 'in'
-        }]);
-        params.append('condition', condition);
-      }
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res),
-      catchError((error) => {
-        console.error('StudentService getClassSchedules Error:', error);
-        return of([]);
-      })
-    );
+  getStudentCertificates(): Observable<any[]> {
+    return of([]);
   }
 
-  /** API: Lấy teacher assignments từ class_teachers table */
-  getClassTeachers(classIds: number[]): Observable<any> {
-    let url = 'http://localhost:10093/api/class_teachers';
-    const params = new URLSearchParams();
+  getTeachingAssignments(): Observable<any[]> {
+    return of([]);
+  }
 
-    if (classIds.length > 0) {
-      const condition = JSON.stringify([{
-        key: 'class_id',
-        value: classIds.join(','),
-        compare: 'in'
-      }]);
-      params.append('condition', condition);
-    }
+  getTeachersByIds(): Observable<any[]> {
+    return of([]);
+  }
 
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
+  getClassSchedules(): Observable<any[]> {
+    return of([]);
+  }
 
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res),
-      catchError((error) => {
-        console.error('StudentService getClassTeachers Error:', error);
-        return of([]);
-      })
-    );
+  getClassTeachers(): Observable<any[]> {
+    return of([]);
   }
 
 }
