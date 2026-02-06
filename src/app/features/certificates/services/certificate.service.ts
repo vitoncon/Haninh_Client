@@ -63,13 +63,17 @@ export class CertificateService {
     return of(newItem);
   }
 
-  updateStudentCertificate(data: any): Observable<any> {
-    const index = this.mockCertificates.findIndex(x => x.id === data.id);
-    if (index !== -1) {
-      this.mockCertificates[index] = data;
-    }
-    return of(data);
+updateStudentCertificate(id: number, data: any): Observable<any> {
+  const index = this.mockCertificates.findIndex(x => x.id === id);
+  if (index !== -1) {
+    this.mockCertificates[index] = {
+      ...this.mockCertificates[index],
+      ...data
+    };
   }
+  return of(data);
+}
+
 
   deleteStudentCertificate(id: number): Observable<boolean> {
     this.mockCertificates = this.mockCertificates.filter(x => x.id !== id);
