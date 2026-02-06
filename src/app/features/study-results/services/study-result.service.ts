@@ -132,6 +132,44 @@ export class StudyResultService {
       max_score: 10
     });
   }
+    getOrganizationSummary(): Observable<any> {
+  return of({
+    total_classes: 5,
+    total_students: 120,
+    total_exams: 45,
+    average_score: 7.6,
+    pass_rate: 86
+  }).pipe(delay(300));
+}
+getClassAnalytics(): Observable<any[]> {
+  return of([
+    {
+      id: 1,
+      class_name: 'Lớp TOPIK 1',
+      class_code: 'KR-01',
+      total_students: 25,
+      total_exams: 8,
+      average_score: 7.8
+    },
+    {
+      id: 2,
+      class_name: 'Lớp IELTS Basic',
+      class_code: 'EN-02',
+      total_students: 30,
+      total_exams: 10,
+      average_score: 7.2
+    },
+    {
+      id: 3,
+      class_name: 'Lớp HSK 3',
+      class_code: 'CN-03',
+      total_students: 20,
+      total_exams: 6,
+      average_score: 8.1
+    }
+  ]).pipe(delay(300));
+}
+
 
   // =====================
   // Analytics
