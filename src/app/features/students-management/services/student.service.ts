@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import {
   StudentsModel,
-  StudentFilters
-} from '../models/student.model';
+  StudentFilters,
+  StudentStatistics,
+  StudentWithDetails
+} from '../models/students.model';
 
 interface ApiResponse<T> {
   data: T;
