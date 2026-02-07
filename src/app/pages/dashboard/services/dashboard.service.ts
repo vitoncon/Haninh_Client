@@ -68,7 +68,8 @@ export class DashboardService {
       created_at: '2026-02-05'
     }
   ]);
-}
+
+      
 }
 
   // ===== MOCK CLASS DISTRIBUTION =====
