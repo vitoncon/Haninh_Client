@@ -35,42 +35,46 @@ export class DashboardService {
   }
 
   // ===== MOCK RECENT STUDENTS =====
-  getRecentStudents(): Observable<any[]> {
+ getRecentStudents(): Observable<any[]> {
   return of([
     {
-      student_name: 'Nguyễn Văn A',
+      id: 1,
+      student_code: 'HV001',
+      full_name: 'Nguyễn Văn A',
       email: 'a@gmail.com',
-      phone: '0900000001',
       created_at: '2026-02-01'
     },
     {
-      student_name: 'Trần Thị B',
+      id: 2,
+      student_code: 'HV002',
+      full_name: 'Trần Thị B',
       email: 'b@gmail.com',
-      phone: '0900000002',
       created_at: '2026-02-02'
     },
     {
-      student_name: 'Lê Văn C',
+      id: 3,
+      student_code: 'HV003',
+      full_name: 'Lê Văn C',
       email: 'c@gmail.com',
-      phone: '0900000003',
       created_at: '2026-02-03'
     },
     {
-      student_name: 'Phạm Thị D',
+      id: 4,
+      student_code: 'HV004',
+      full_name: 'Phạm Thị D',
       email: 'd@gmail.com',
-      phone: '0900000004',
       created_at: '2026-02-04'
     },
     {
-      student_name: 'Hoàng Văn E',
+      id: 5,
+      student_code: 'HV005',
+      full_name: 'Hoàng Văn E',
       email: 'e@gmail.com',
-      phone: '0900000005',
       created_at: '2026-02-05'
     }
   ]);
-
-      
 }
+
 
   // ===== MOCK CLASS DISTRIBUTION =====
   getClassDistributionByCourse(): Observable<ChartData> {
