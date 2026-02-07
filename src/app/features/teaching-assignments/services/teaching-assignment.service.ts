@@ -1,228 +1,275 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, map, catchError, throwError } from 'rxjs';
-import { TeachingAssignment, TeachingAssignmentWithDetails, TeachingAssignmentFilters, ClassPermission, ClassTeacherAssignment } from '../models/teaching-assignment.model';
+import { Observable, of } from 'rxjs';
+import {
+  TeachingAssignment,
+  TeachingAssignmentWithDetails,
+  TeachingAssignmentFilters,
+  ClassPermission,
+  ClassTeacherAssignment
+} from '../models/teaching-assignment.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TeachingAssignmentService {
-  private apiUrl = 'http://localhost:10093/api/teaching-assignments';
-  private classTeachersUrl = 'http://localhost:10093/api/class_teachers';
-  private destroyUrl = 'http://localhost:10093/api/destroy';
 
-  constructor(private http: HttpClient) {}
+  // ================= MOCK MASTER =================
 
-  private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
-    return {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      })
-    };
-  }
+  private teachers = [
+    { id: 1, name: 'Nguyễn Văn Hạo', email: 'hao@center.vn', phone: '0901111111' },
+    { id: 2, name: 'Trần Thị Mai', email: 'mai@center.vn', phone: '0902222222' },
+    { id: 3, name: 'Park Min Soo', email: 'park@center.vn', phone: '0903333333' }
+  ];
+
+  private classes = [
+    { id: 101, name: 'HSK 3 K1', code: 'HSK3-K1', course: 'Tiếng Trung' },
+    { id: 102, name: 'JLPT N3 K2', code: 'N3-K2', course: 'Tiếng Nhật' },
+    { id: 103, name: 'TOPIK 2 K1', code: 'TOPIK2-K1', course: 'Tiếng Hàn' }
+  ];
+
+  // ================= CLASS TEACHER =================
+
+  private classTeachers: ClassTeacherAssignment[] = [
+    {
+      id: 1,
+      class_id: 101,
+      teacher_id: 1,
+      role: 'Giáo viên giảng dạy',
+      assign_date: '2025-01-01',
+      status: 'Đang dạy',
+      teacher_name: 'Nguyễn Văn Hạo',
+      class_name: 'HSK 3 K1',
+      class_code: 'HSK3-K1',
+      course_name: 'Tiếng Trung'
+    }
+  ];
+
+  // ================= TEACHING ASSIGNMENTS =================
+
+  private assignments: TeachingAssignmentWithDetails[] = [
+    {
+      id: 1,
+      teacher_id: 1,
+      class_id: 101,
+      subject: 'HSK Nghe',
+      schedule: 'Thứ 2 - Thứ 4',
+      room: 'A101',
+      status: 'Dang day',
+      start_date: '2025-01-01',
+
+      teacher_name: 'Nguyễn Văn Hạo',
+      teacher_email: 'hao@center.vn',
+      class_name: 'HSK 3 K1',
+      class_code: 'HSK3-K1',
+      course_name: 'Tiếng Trung'
+    }
+  ];
+
+  // ================= BASIC GET =================
 
   getTeachingAssignments(q?: string): Observable<TeachingAssignment[]> {
-    const url = q && q.trim().length > 0 ? `${this.apiUrl}?q=${encodeURIComponent(q.trim())}` : this.apiUrl;
-    return this.http.get<any>(url, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
-  }
 
-  getTeachingAssignmentsWithDetails(filters?: TeachingAssignmentFilters): Observable<TeachingAssignmentWithDetails[]> {
-    let params = new HttpParams();
-    
-    if (filters) {
-      if (filters.teacher_id) params = params.set('teacher_id', filters.teacher_id.toString());
-      if (filters.class_id) params = params.set('class_id', filters.class_id.toString());
-      if (filters.subject) params = params.set('subject', filters.subject);
-      if (filters.status) params = params.set('status', filters.status);
-      if (filters.start_date) params = params.set('start_date', filters.start_date);
-      if (filters.end_date) params = params.set('end_date', filters.end_date);
-      if (filters.search) params = params.set('search', filters.search);
+    let data = [...this.assignments];
+
+    if (q) {
+      const keyword = q.toLowerCase();
+      data = data.filter(x =>
+        x.subject?.toLowerCase().includes(keyword) ||
+        x.teacher_name?.toLowerCase().includes(keyword) ||
+        x.class_name?.toLowerCase().includes(keyword)
+      );
     }
 
-    return this.http.get<any>(this.apiUrl, { 
-      ...this.getAuthHeaders(), 
-      params 
-    }).pipe(
-      map((res) => res?.data ?? res)
-    );
+    return of(data);
+  }
+
+  getTeachingAssignmentsWithDetails(filters?: TeachingAssignmentFilters)
+    : Observable<TeachingAssignmentWithDetails[]> {
+
+    let data = [...this.assignments];
+
+    if (filters?.teacher_id) {
+      data = data.filter(x => x.teacher_id === filters.teacher_id);
+    }
+
+    if (filters?.class_id) {
+      data = data.filter(x => x.class_id === filters.class_id);
+    }
+
+    if (filters?.subject) {
+      data = data.filter(x => x.subject === filters.subject);
+    }
+
+    if (filters?.status) {
+      data = data.filter(x => x.status === filters.status);
+    }
+
+    if (filters?.search) {
+      const k = filters.search.toLowerCase();
+      data = data.filter(x =>
+        x.subject?.toLowerCase().includes(k) ||
+        x.teacher_name?.toLowerCase().includes(k)
+      );
+    }
+
+    return of(data);
   }
 
   getTeachingAssignmentById(id: number): Observable<TeachingAssignment> {
-    const condition = encodeURIComponent(JSON.stringify([{
-      key: "id",
-      value: id.toString(),
-      compare: "=",
-      orWhere: "and"
-    }]));
-    
-    return this.http.get<any>(`${this.apiUrl}?condition=${condition}`, this.getAuthHeaders()).pipe(
-      map((res) => {
-        const data = res?.data ?? res;
-        if (Array.isArray(data)) {
-          const assignment = data.find(a => a.id === id);
-          if (assignment) {
-            return assignment;
-          }
-        }
-        throw new Error('Teaching Assignment not found');
-      })
-    );
+    const found = this.assignments.find(x => x.id === id);
+    return of(found as TeachingAssignment);
   }
 
-  getTeachingAssignmentsByTeacher(teacherId: number): Observable<TeachingAssignmentWithDetails[]> {
-    const condition = encodeURIComponent(JSON.stringify([{
-      key: "teacher_id",
-      value: teacherId.toString(),
-      compare: "=",
-      orWhere: "and"
-    }]));
-    
-    return this.http.get<any>(`${this.apiUrl}?condition=${condition}`, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
+  getTeachingAssignmentsByTeacher(teacherId: number)
+    : Observable<TeachingAssignmentWithDetails[]> {
+
+    return of(this.assignments.filter(x => x.teacher_id === teacherId));
   }
 
-  getTeachingAssignmentsByClass(classId: number): Observable<TeachingAssignmentWithDetails[]> {
-    const condition = encodeURIComponent(JSON.stringify([{
-      key: "class_id",
-      value: classId.toString(),
-      compare: "=",
-      orWhere: "and"
-    }]));
-    
-    return this.http.get<any>(`${this.apiUrl}?condition=${condition}`, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
+  getTeachingAssignmentsByClass(classId: number)
+    : Observable<TeachingAssignmentWithDetails[]> {
+
+    return of(this.assignments.filter(x => x.class_id === classId));
   }
 
-  addTeachingAssignment(assignment: TeachingAssignment): Observable<TeachingAssignment> {
-    return this.http.post<TeachingAssignment>(this.apiUrl, assignment, this.getAuthHeaders());
+  // ================= CRUD =================
+
+  addTeachingAssignment(a: TeachingAssignment): Observable<TeachingAssignment> {
+
+    const newItem: any = {
+      ...a,
+      id: Date.now(),
+      created_at: new Date().toISOString()
+    };
+
+    this.assignments.push(newItem);
+    return of(newItem);
   }
 
-  updateTeachingAssignment(id: number, assignment: TeachingAssignment): Observable<TeachingAssignment> {
-    return this.http.put<TeachingAssignment>(`${this.apiUrl}/${id}`, assignment, this.getAuthHeaders());
+  updateTeachingAssignment(id: number, a: TeachingAssignment)
+    : Observable<TeachingAssignment> {
+
+    const index = this.assignments.findIndex(x => x.id === id);
+
+    if (index >= 0) {
+      this.assignments[index] = {
+        ...this.assignments[index],
+        ...a,
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    return of(this.assignments[index]);
   }
 
   deleteTeachingAssignment(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
+    this.assignments = this.assignments.filter(x => x.id !== id);
+    return of(void 0);
   }
 
-  // Helper methods for dropdowns
-  getSubjects(): any[] {
+  // ================= DROPDOWN =================
+
+  getSubjects() {
     return [
-      { label: 'Tiếng Anh Giao Tiếp', value: 'Tiếng Anh Giao Tiếp' },
-      { label: 'Tiếng Anh Thương Mại', value: 'Tiếng Anh Thương Mại' },
-      { label: 'Tiếng Anh Du Lịch', value: 'Tiếng Anh Du Lịch' },
-      { label: 'Tiếng Anh Học Thuật', value: 'Tiếng Anh Học Thuật' },
-      { label: 'IELTS', value: 'IELTS' },
-      { label: 'TOEIC', value: 'TOEIC' },
-      { label: 'TOEFL', value: 'TOEFL' },
-      { label: 'Tiếng Hàn Cơ Bản', value: 'Tiếng Hàn Cơ Bản' },
-      { label: 'Tiếng Hàn Trung Cấp', value: 'Tiếng Hàn Trung Cấp' },
-      { label: 'Tiếng Hàn Cao Cấp', value: 'Tiếng Hàn Cao Cấp' },
-      { label: 'Tiếng Trung Cơ Bản', value: 'Tiếng Trung Cơ Bản' },
-      { label: 'Tiếng Trung Trung Cấp', value: 'Tiếng Trung Trung Cấp' },
-      { label: 'Tiếng Trung Cao Cấp', value: 'Tiếng Trung Cao Cấp' },
       { label: 'HSK', value: 'HSK' },
-      { label: 'Ngữ Pháp', value: 'Ngữ Pháp' },
-      { label: 'Từ Vựng', value: 'Từ Vựng' },
-      { label: 'Phát Âm', value: 'Phát Âm' },
-      { label: 'Luyện Thi', value: 'Luyện Thi' }
+      { label: 'JLPT', value: 'JLPT' },
+      { label: 'TOPIK', value: 'TOPIK' },
+      { label: 'Ngữ pháp', value: 'Ngữ pháp' },
+      { label: 'Nghe', value: 'Nghe' },
+      { label: 'Nói', value: 'Nói' }
     ];
   }
 
   getStatusOptions() {
     return [
-      { label: 'Đang dạy', value: 'Đang dạy' },
-      { label: 'Tạm dừng', value: 'Tạm dừng' },
+      { label: 'Đang dạy', value: 'Dang day' },
+      { label: 'Tạm dừng', value: 'Tam dừng' },
       { label: 'Hoàn thành', value: 'Hoàn thành' },
       { label: 'Đã hủy', value: 'Đã hủy' }
     ];
   }
 
-  // Class Teacher Assignment Methods (based on class_teachers table)
+  // ================= CLASS TEACHER =================
+
   getAllClassTeacherAssignments(): Observable<ClassTeacherAssignment[]> {
-    return this.http.get<any>(this.classTeachersUrl, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
+    return of(this.classTeachers);
   }
 
-  getTeacherClassAssignments(teacherId: number): Observable<ClassTeacherAssignment[]> {
-    const condition = encodeURIComponent(JSON.stringify([{
-      key: "teacher_id",
-      value: teacherId.toString(),
-      compare: "=",
-      orWhere: "and"
-    }]));
-    
-    return this.http.get<any>(`${this.classTeachersUrl}?condition=${condition}`, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
+  getTeacherClassAssignments(teacherId: number)
+    : Observable<ClassTeacherAssignment[]> {
+
+    return of(this.classTeachers.filter(x => x.teacher_id === teacherId));
   }
 
-  addClassTeacherAssignment(assignment: ClassTeacherAssignment): Observable<ClassTeacherAssignment> {
-    return this.http.post<ClassTeacherAssignment>(this.classTeachersUrl, assignment, this.getAuthHeaders());
+  addClassTeacherAssignment(a: ClassTeacherAssignment)
+    : Observable<ClassTeacherAssignment> {
+
+    const newItem = {
+      ...a,
+      id: Date.now()
+    };
+
+    this.classTeachers.push(newItem);
+    return of(newItem);
   }
 
-  createClassTeacherAssignment(assignment: ClassTeacherAssignment): Observable<ClassTeacherAssignment> {
-    return this.http.post<ClassTeacherAssignment>(this.classTeachersUrl, assignment, this.getAuthHeaders());
+  createClassTeacherAssignment(a: ClassTeacherAssignment)
+    : Observable<ClassTeacherAssignment> {
+
+    return this.addClassTeacherAssignment(a);
   }
 
-  updateClassTeacherAssignment(id: number, assignment: ClassTeacherAssignment): Observable<ClassTeacherAssignment> {
-    return this.http.put<ClassTeacherAssignment>(`${this.classTeachersUrl}/${id}`, assignment, this.getAuthHeaders());
+  updateClassTeacherAssignment(id: number, a: ClassTeacherAssignment)
+    : Observable<ClassTeacherAssignment> {
+
+    const index = this.classTeachers.findIndex(x => x.id === id);
+
+    if (index >= 0) {
+      this.classTeachers[index] = {
+        ...this.classTeachers[index],
+        ...a
+      };
+    }
+
+    return of(this.classTeachers[index]);
   }
 
   deleteClassTeacherAssignment(id: number): Observable<void> {
-    // Use destroy endpoint for hard delete instead of soft delete
-    // Try endpoint router first (uses GuardMiddleware): /api/class_teachers/destroy/{id}
-    const endpointUrl = `${this.classTeachersUrl}/destroy/${id}`;
-    
-    return this.http.delete<void>(endpointUrl, this.getAuthHeaders()).pipe(
-      catchError(error => {
-        // Fallback to destroy router: /api/destroy/class_teachers/{id}
-        const destroyUrl = `${this.destroyUrl}/class_teachers/${id}`;
-        return this.http.delete<void>(destroyUrl, this.getAuthHeaders()).pipe(
-          catchError(fallbackError => {
-            return throwError(() => fallbackError);
-          })
-        );
-      })
-    );
+    this.classTeachers = this.classTeachers.filter(x => x.id !== id);
+    return of(void 0);
   }
 
-  // Permission management methods
+  getClassTeacherAssignments(classId: number)
+    : Observable<ClassTeacherAssignment[]> {
+
+    return of(this.classTeachers.filter(x => x.class_id === classId));
+  }
+
+  // ================= PERMISSION =================
+
   getTeacherPermissions(teacherId: number): Observable<ClassPermission[]> {
-    // This should return the permissions for a teacher across all classes
-    // You might need to adjust the API endpoint based on your backend implementation
-    return this.http.get<any>(`${this.apiUrl}/permissions/${teacherId}`, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
+
+    const data: ClassPermission[] = this.classes.map(c => ({
+      class_id: c.id,
+      class_name: c.name,
+      can_assign_homework: true,
+      can_grade_assignments: true,
+      can_manage_students: teacherId === 1
+    }));
+
+    return of(data);
   }
 
-  saveTeacherPermissions(teacherId: number, permissions: ClassPermission[]): Observable<any> {
-    // Save the permissions for a teacher
-    return this.http.post<any>(`${this.apiUrl}/permissions/${teacherId}`, { permissions }, this.getAuthHeaders());
+  saveTeacherPermissions(
+    teacherId: number,
+    permissions: ClassPermission[]
+  ): Observable<any> {
+
+    return of({ success: true });
   }
 
-  // Get class teacher assignments for a specific class
-  getClassTeacherAssignments(classId: number): Observable<ClassTeacherAssignment[]> {
-    const condition = encodeURIComponent(JSON.stringify([{
-      key: "class_id",
-      value: classId.toString(),
-      compare: "=",
-      orWhere: "and"
-    }]));
-    
-    return this.http.get<any>(`${this.classTeachersUrl}?condition=${condition}`, this.getAuthHeaders()).pipe(
-      map((res) => res?.data ?? res)
-    );
-  }
+  // ================= OPTIONS =================
 
-  // Role options for class teacher assignments
   getRoleOptions() {
     return [
       { label: 'Giáo viên chủ nhiệm', value: 'Giáo viên chủ nhiệm' },
@@ -238,4 +285,5 @@ export class TeachingAssignmentService {
       { label: 'Nghỉ dạy', value: 'Nghỉ dạy' }
     ];
   }
+
 }
