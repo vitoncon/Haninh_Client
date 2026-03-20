@@ -1,0 +1,90 @@
+<div class="public-ai-chat-container">
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- AI Chat Section -->
+    <section class="chat-section">
+      <p-card class="chat-card">
+        <ng-template pTemplate="header">
+          <div class="chat-header">
+            <div class="chat-header-top">
+              <p-button 
+                icon="pi pi-arrow-left" 
+                [text]="true"
+                [rounded]="true"
+                (onClick)="navigateToHome()"
+                title="Về trang chủ"
+                class="back-button">
+              </p-button>
+              <div class="chat-header-content">
+                <h2 class="chat-title">Chat với AI</h2>
+                <p class="chat-subtitle">Hỏi bất kỳ điều gì về khóa học</p>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+
+        <!-- Messages Container -->
+        <div class="chat-messages" id="chat-messages">
+          <div 
+            *ngFor="let message of messages" 
+            class="message-wrapper"
+            [ngClass]="{'user-message': message.role === 'user', 'ai-message': message.role === 'ai'}">
+            <div class="message-bubble">
+              <div class="message-role">
+                <i [class]="message.role === 'user' ? 'pi pi-user' : 'pi pi-android'"></i>
+                <span>{{ message.role === 'user' ? 'Bạn' : 'AI' }}</span>
+              </div>
+              <div class="message-text">{{ message.text }}</div>
+              <div class="message-time" *ngIf="message.timestamp">
+                {{ message.timestamp | date: 'HH:mm' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div *ngIf="isLoading" class="message-wrapper ai-message">
+            <div class="message-bubble">
+              <div class="message-role">
+                <i class="pi pi-android"></i>
+                <span>AI</span>
+              </div>
+              <div class="loading-indicator">
+                <p-progressSpinner 
+                  [style]="{ 'width': '20px', 'height': '20px' }"
+                  strokeWidth="4">
+                </p-progressSpinner>
+                <span>Đang suy nghĩ...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <ng-template pTemplate="footer">
+          <div class="chat-input-area">
+            <textarea
+              pInputTextarea
+              [(ngModel)]="currentMessage"
+              (keydown)="onKeyPress($event)"
+              placeholder="Nhập câu hỏi của bạn..."
+              [rows]="3"
+              [autoResize]="true"
+              [disabled]="isLoading"
+              class="chat-input">
+            </textarea>
+            <p-button
+              label="Gửi"
+              icon="pi pi-send"
+              (onClick)="sendMessage()"
+              [disabled]="!currentMessage.trim() || isLoading"
+              [loading]="isLoading"
+              class="send-button">
+            </p-button>
+          </div>
+        </ng-template>
+      </p-card>
+    </section>
+  </div>
+</div>
+
+<p-toast></p-toast>

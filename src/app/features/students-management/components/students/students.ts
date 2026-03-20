@@ -21,12 +21,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { CardModule } from 'primeng/card';
 import { FileUploadModule } from 'primeng/fileupload';
 import { AvatarModule } from 'primeng/avatar';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import * as XLSX from 'xlsx';
 
 import { StudentsModel, StudentFilters, StudentStatistics } from '../../models/students.model';
 import { StudentService } from '../../services/student.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-students',
@@ -55,6 +56,7 @@ import { StudentService } from '../../services/student.service';
     CardModule,
     FileUploadModule,
     AvatarModule,
+    RouterModule
   ],
   providers: [MessageService, ConfirmationService, DatePipe],
 })
@@ -128,8 +130,14 @@ export class Students implements OnInit, OnDestroy {
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
+
+  get isTeacher(): boolean {
+      const roles = this.authService.getRoles();
+      return roles.includes(2) && !roles.includes(1);
+  }
 
   ngOnInit() {
     this.loadStudents();

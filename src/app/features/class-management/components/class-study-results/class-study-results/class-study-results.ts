@@ -42,6 +42,7 @@ import {
 import { ClassService } from '../../../services/class.service';
 import { ClassStudentService } from '../../../services/class-student.service';
 import { ExamManagementService, SkillUpdateData, DEFAULT_SKILL_SCORE, DEFAULT_SKILL_WEIGHT, CACHE_DURATION } from '../../../services/exam-management.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import { ExamErrorRecoveryService, OperationSnapshot, RollbackResult } from '../../../services/exam-error-recovery.service';
 import { ExamCacheService, StateSnapshot } from '../../../services/exam-cache.service';
 import { 
@@ -198,13 +199,19 @@ export class ClassStudyResults implements OnInit, OnDestroy, AfterViewInit {
     private route: ActivatedRoute,
     private classService: ClassService,
     private classStudentService: ClassStudentService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     // Initialize selectedSkills array
     this.initializeSelectedSkills();
     this.initializeSearchSubscription();
     // Temporarily disable state subscription to avoid assertion errors
     // this.initializeStateSubscription();
+  }
+
+  get isTeacher(): boolean {
+    const roles = this.authService.getRoles();
+    return roles.includes(2) && !roles.includes(1);
   }
 
   ngOnInit(): void {

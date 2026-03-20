@@ -1,0 +1,130 @@
+<div class="page-card">
+    <!-- <div class="card border-none bg-transparent p-0"> -->
+    <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-5 px-3">
+        <div class="flex-grow-1">
+            <div class="font-bold text-4xl text-900 mb-2">Học phí của tôi</div>
+            <p class="text-600 m-0">Quản lý và theo dõi các khoản học phí của bạn</p>
+        </div>
+        <div class="flex-shrink-0 mt-3 md:mt-0 ml-auto">
+            <p-button icon="pi pi-refresh" label="Cập nhật dữ liệu" (onClick)="loadFees()" [loading]="loading"
+                styleClass="p-button-outlined p-button-rounded shadow-sm bg-white"></p-button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading"
+        class="flex flex-column justify-content-center align-items-center py-8 bg-white border-round-xl shadow-1 mx-3">
+        <p-progressSpinner ariaLabel="loading" strokeWidth="4" fill="var(--surface-ground)"></p-progressSpinner>
+        <span class="mt-4 font-medium text-600">Đang tải dữ liệu học phí...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && (!fees || fees.length === 0)"
+        class="text-center py-8 bg-white border-round-xl shadow-1 mx-3">
+        <div
+            class="surface-100 w-4rem h-4rem border-circle flex align-items-center justify-content-center mx-auto mb-4">
+            <i class="pi pi-receipt text-3xl text-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-900 mb-2">Chưa có thông tin học phí</div>
+        <p class="text-600 max-w-20rem mx-auto">Bạn hiện không có khoản học phí nào cần thanh toán hoặc đã hoàn
+            thành.</p>
+    </div>
+
+    <!-- Data State -->
+    <div *ngIf="!loading && fees && fees.length > 0" class="card-container px-3 pb-5">
+        <div *ngFor="let fee of fees"
+             class="fee-card"
+             [ngClass]="{
+                'status-unpaid': normalizeStatus(fee.status) === 'UNPAID',
+                'status-pending': normalizeStatus(fee.status) === 'PENDING',
+                'status-paid': normalizeStatus(fee.status) === 'PAID'
+             }">
+
+            <!-- Header Section -->
+            <div class="card-header">
+                <span class="course-code">{{ fee.course_code || 'N/A' }}</span>
+                <div class="flex align-items-center justify-content-between gap-3">
+                    <div class="course-name">{{ fee.course_name || 'Khóa học chưa xác định' }}</div>
+                    <div class="status-badge ml-auto flex-shrink-0">
+                        <i [class]="'pi ' + (normalizeStatus(fee.status) === 'PAID' ? 'pi-check-circle' : (normalizeStatus(fee.status) === 'PENDING' ? 'pi-clock' : 'pi-exclamation-circle'))"></i>
+                        {{ getPaymentStatusLabel(fee.status) }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Section -->
+            <div class="card-body px-3">
+                <div class="mt-4 flex justify-content-between align-items-end">
+                    <span class="currency-label mb-0">Số tiền cần thanh toán</span>
+                    <div class="amount-value text-right">{{ formatCurrency(fee.amount) }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <span class="label">Hạn thanh toán</span>
+                        <span class="value" [class.text-red-500]="normalizeStatus(fee.status) === 'UNPAID'">
+                            {{ (fee.due_date && fee.due_date > '1900-01-01') ? (fee.due_date | date:'dd/MM/yyyy') : 'Chưa có hạn' }}
+                        </span>
+                    </div>
+                    <div class="info-item" *ngIf="normalizeStatus(fee.status) === 'PAID' && fee.paid_date">
+                        <span class="label">Ngày thanh toán</span>
+                        <span class="value text-green-600">{{ fee.paid_date | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="info-item" *ngIf="fee.receipt_number">
+                        <span class="label">Số hóa đơn</span>
+                        <span class="value font-mono">{{ fee.receipt_number }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Area -->
+            <div class="action-area mt-auto">
+                <!-- Unpaid: Functional QR Button -->
+                <div *ngIf="normalizeStatus(fee.status) === 'UNPAID'">
+                    <p-button label="Thanh toán QR ngay" icon="pi pi-qrcode"
+                        styleClass="w-full p-button-raised p-button-primary border-round-lg p-3 shadow-2 hover:shadow-4 transition-all"
+                        (onClick)="onOpenQrPayment(fee)" [loading]="submitting"></p-button>
+                    <div class="flex align-items-center justify-content-center gap-2 mt-3 text-600 text-xs">
+                        <i class="pi pi-shield text-green-500"></i>
+                        <span>Thanh toán an toàn & tự động</span>
+                    </div>
+                </div>
+
+                <!-- Pending: Waiting Message -->
+                <div *ngIf="normalizeStatus(fee.status) === 'PENDING'"
+                    class="flex align-items-center justify-content-between p-3 surface-100 border-round-lg">
+                    <div class="flex align-items-center gap-2 text-amber-600 font-bold italic">
+                        <i class="pi pi-spinner pi-spin"></i>
+                        <span>Đang chờ xác nhận</span>
+                    </div>
+                    <i class="pi pi-info-circle text-600 cursor-pointer" pTooltip="Hệ thống đang xử lý mã QR của bạn"></i>
+                </div>
+
+                <!-- Paid: Side-by-side Progress and Receipt -->
+                <div *ngIf="normalizeStatus(fee.status) === 'PAID'">
+                    <div class="flex flex-row align-items-center justify-content-between gap-3">
+                        <div class="flex-grow-1">
+                            <div class="text-green-600 font-bold flex align-items-center gap-2">
+                                <i class="pi pi-verified text-xl"></i>
+                                <span>Hoàn tất</span>
+                            </div>
+                            <div class="text-500 text-xs mt-1 text-left">Cảm ơn bạn!</div>
+                        </div>
+                        <p-button label="Hóa đơn" icon="pi pi-file-pdf"
+                            styleClass="p-button-outlined p-button-sm border-round-lg p-button-success"
+                            (onClick)="onDownloadInvoice(fee)"></p-button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- </div> -->
+</div>
+<!-- QR Payment Dialog Custom Component -->
+<app-payment-qr [(visible)]="qrPaymentDialogVisible" [feeId]="selectedQrFeeId" [amount]="selectedQrAmount"
+    [studentName]="selectedQrStudentName" [className]="selectedQrClassName"
+    (paymentSuccess)="onQrPaymentSuccess($event)">
+</app-payment-qr>
+
+<p-toast></p-toast>

@@ -94,7 +94,7 @@
         </div>
       </ng-template>
       <ng-template pTemplate="end">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" *ngIf="!isTeacher">
           <p-button 
             icon="pi pi-plus" 
             label="Tạo lớp học" 
@@ -367,7 +367,7 @@
       <p>
         Hiện tại không có lớp học nào. Hãy tạo lớp học đầu tiên để bắt đầu quản lý!
       </p>
-      <button pButton label="Tạo lớp học" icon="pi pi-plus" class="p-button-primary" (click)="onCreate()"></button>
+      <button pButton label="Tạo lớp học" icon="pi pi-plus" class="p-button-primary" (click)="onCreate()" *ngIf="!isTeacher"></button>
     </div>
 
     <!-- No Search Results -->
@@ -455,12 +455,14 @@
                 (click)="onView(class)"
               ></button>
               <button
+                *ngIf="!isTeacher"
                 pButton
                 icon="pi pi-pencil"
                 class="p-button-rounded p-button-text p-button-info"
                 (click)="onEdit(class)"
               ></button>
               <button
+                *ngIf="!isTeacher"
                 pButton
                 icon="pi pi-trash"
                 class="p-button-rounded p-button-text p-button-danger"

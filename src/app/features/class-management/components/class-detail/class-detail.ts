@@ -39,6 +39,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { PickListModule } from 'primeng/picklist';
 import * as XLSX from 'xlsx';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-class-detail',
@@ -164,8 +165,14 @@ export class ClassDetail implements OnInit, OnDestroy {
     private teacherService: TeacherService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {}
+
+  get isTeacher(): boolean {
+    const roles = this.authService.getRoles();
+    return roles.includes(2) && !roles.includes(1);
+  }
 
   ngOnInit(): void {
     this.initializeTabs();

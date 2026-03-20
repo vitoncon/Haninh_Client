@@ -184,11 +184,9 @@ export class ExamDetail implements OnInit, OnDestroy {
   }
 
   private loadUserRole(): void {
-    this.currentUserRole = this.authService.getRole();
-    
-    // Giả định: Role 1 = Admin, Role 2 = Teacher (có thể cần điều chỉnh theo hệ thống)
-    this.isAdmin = this.currentUserRole === 1;
-    this.isTeacher = this.currentUserRole === 2;
+    const roles = this.authService.getRoles();
+    this.isTeacher = roles.includes(2) && !roles.includes(1);
+    this.isAdmin = roles.includes(1);
   }
 
   loadExamDetailFromSkill(): void {

@@ -86,6 +86,19 @@ export class PermissionService {
         ROLES_CREATE: 'roles.create',
         ROLES_EDIT: 'roles.edit',
         ROLES_DELETE: 'roles.delete',
+        
+        // Chuyên cần
+        ATTENDANCE_VIEW: 'attendance.view',
+        ATTENDANCE_CREATE: 'attendance.create',
+        ATTENDANCE_EDIT: 'attendance.edit',
+        ATTENDANCE_DELETE: 'attendance.delete',
+        ATTENDANCE_ANALYTICS: 'attendance.analytics',
+        
+        // Khách hàng tiềm năng
+        LEADS_VIEW: 'leads.view',
+        LEADS_CREATE: 'leads.create',
+        LEADS_EDIT: 'leads.edit',
+        LEADS_DELETE: 'leads.delete',
     };
 
     // Định nghĩa permissions cho từng role
@@ -142,6 +155,15 @@ export class PermissionService {
                 { id: 47, name: 'Roles Create', code: PermissionService.PERMISSIONS.ROLES_CREATE },
                 { id: 48, name: 'Roles Edit', code: PermissionService.PERMISSIONS.ROLES_EDIT },
                 { id: 49, name: 'Roles Delete', code: PermissionService.PERMISSIONS.ROLES_DELETE },
+                { id: 50, name: 'Attendance View', code: PermissionService.PERMISSIONS.ATTENDANCE_VIEW },
+                { id: 51, name: 'Attendance Create', code: PermissionService.PERMISSIONS.ATTENDANCE_CREATE },
+                { id: 52, name: 'Attendance Edit', code: PermissionService.PERMISSIONS.ATTENDANCE_EDIT },
+                { id: 53, name: 'Attendance Delete', code: PermissionService.PERMISSIONS.ATTENDANCE_DELETE },
+                { id: 54, name: 'Attendance Analytics', code: PermissionService.PERMISSIONS.ATTENDANCE_ANALYTICS },
+                { id: 55, name: 'Leads View', code: PermissionService.PERMISSIONS.LEADS_VIEW },
+                { id: 56, name: 'Leads Create', code: PermissionService.PERMISSIONS.LEADS_CREATE },
+                { id: 57, name: 'Leads Edit', code: PermissionService.PERMISSIONS.LEADS_EDIT },
+                { id: 58, name: 'Leads Delete', code: PermissionService.PERMISSIONS.LEADS_DELETE },
             ]
         },
         {
@@ -149,29 +171,29 @@ export class PermissionService {
             permissions: [
                 { id: 1, name: 'Dashboard View', code: PermissionService.PERMISSIONS.DASHBOARD_VIEW },
                 { id: 10, name: 'Schedule View', code: PermissionService.PERMISSIONS.SCHEDULE_VIEW },
-                { id: 11, name: 'Schedule Create', code: PermissionService.PERMISSIONS.SCHEDULE_CREATE },
-                { id: 12, name: 'Schedule Edit', code: PermissionService.PERMISSIONS.SCHEDULE_EDIT },
                 { id: 14, name: 'Students View', code: PermissionService.PERMISSIONS.STUDENTS_VIEW },
-                { id: 15, name: 'Students Create', code: PermissionService.PERMISSIONS.STUDENTS_CREATE },
-                { id: 16, name: 'Students Edit', code: PermissionService.PERMISSIONS.STUDENTS_EDIT },
+                // Giáo viên chỉ được xem danh sách học viên trong lớp,
+                // không được tự ghi danh / thay đổi danh sách (class_students.* chỉ view)
                 { id: 18, name: 'Class Students View', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_VIEW },
-                { id: 19, name: 'Class Students Create', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_CREATE },
-                { id: 20, name: 'Class Students Edit', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_EDIT },
-                { id: 21, name: 'Class Students Delete', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_DELETE },
+                // Kết quả học tập: giáo viên được xem, tạo và chỉnh sửa trong phạm vi lớp được phân công
                 { id: 22, name: 'Study Results View', code: PermissionService.PERMISSIONS.STUDY_RESULTS_VIEW },
                 { id: 23, name: 'Study Results Create', code: PermissionService.PERMISSIONS.STUDY_RESULTS_CREATE },
                 { id: 24, name: 'Study Results Edit', code: PermissionService.PERMISSIONS.STUDY_RESULTS_EDIT },
+                { id: 50, name: 'Attendance View', code: PermissionService.PERMISSIONS.ATTENDANCE_VIEW },
+                { id: 51, name: 'Attendance Create', code: PermissionService.PERMISSIONS.ATTENDANCE_CREATE },
+                { id: 52, name: 'Attendance Edit', code: PermissionService.PERMISSIONS.ATTENDANCE_EDIT },
             ]
         },
         {
             roleId: 3, // Học viên
             permissions: [
+                // Học viên chỉ được xem các thông tin liên quan đến lớp và kết quả học tập của chính mình
                 { id: 10, name: 'Schedule View', code: PermissionService.PERMISSIONS.SCHEDULE_VIEW },
                 { id: 18, name: 'Class Students View', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_VIEW },
-                { id: 19, name: 'Class Students Edit', code: PermissionService.PERMISSIONS.CLASS_STUDENTS_EDIT },
                 { id: 22, name: 'Study Results View', code: PermissionService.PERMISSIONS.STUDY_RESULTS_VIEW },
-                { id: 23, name: 'Study Results Create', code: PermissionService.PERMISSIONS.STUDY_RESULTS_CREATE },
-                { id: 24, name: 'Study Results Edit', code: PermissionService.PERMISSIONS.STUDY_RESULTS_EDIT },
+                { id: 38, name: 'Fees View', code: PermissionService.PERMISSIONS.FEES_VIEW },
+                { id: 2, name: 'Courses View', code: PermissionService.PERMISSIONS.COURSES_VIEW },
+                // ❌ Không cho phép học viên tạo/sửa/xóa kết quả học tập
             ]
         }
     ];
@@ -232,16 +254,20 @@ export class PermissionService {
      */
     hasPermission(permissionCode: string): boolean {
         const userPermissions = this.getPermissions();
-        if (userPermissions.length === 0) {
-            // Fallback: lấy permissions theo role
-            const roleId = this.getCurrentRoleId();
-            if (roleId) {
-                const rolePermissions = this.getRolePermissions(roleId);
-                return rolePermissions.some(p => p.code === permissionCode);
-            }
-            return false;
+        
+        // Nếu có permissions cụ thể từ storage (từ BE), dùng nó
+        if (userPermissions && userPermissions.length > 0) {
+            return userPermissions.some(p => p.code === permissionCode);
         }
-        return userPermissions.some(p => p.code === permissionCode);
+
+        // Fallback: lấy permissions mặc định theo role id
+        const roleId = this.getCurrentRoleId();
+        if (roleId) {
+            const rolePermissions = this.getRolePermissions(roleId);
+            return rolePermissions.some(p => p.code === permissionCode);
+        }
+
+        return false;
     }
 
     /**
@@ -263,9 +289,24 @@ export class PermissionService {
      */
     private getCurrentRoleId(): number | null {
         try {
+            // 1. Thử lấy từ localStorage trực tiếp
             const roleId = localStorage.getItem('user_role');
-            return roleId ? Number(roleId) : null;
+            if (roleId) return Number(roleId);
+
+            // 2. Fallback: Parse từ JWT token nếu có (đề phòng page refresh mất localStorage user_role nhưng còn token)
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            if (token) {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1]));
+                    const roles = Array.isArray(payload?.roles) ? payload.roles : [];
+                    if (roles.length > 0) return Number(roles[0]);
+                }
+            }
+            
+            return null;
         } catch (error) {
+            console.error('Error getting current role ID:', error);
             return null;
         }
     }

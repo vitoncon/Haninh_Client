@@ -1,0 +1,116 @@
+<div class="student-import-container p-4">
+  <p-card>
+    <div class="flex justify-content-between align-items-center mb-4">
+      <h2 class="m-0">Nhập học viên từ Excel</h2>
+      <p-button 
+        label="Quay lại" 
+        icon="pi pi-arrow-left" 
+        [outlined]="true" 
+        routerLink="/students">
+      </p-button>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section mb-4">
+      <p-fileUpload 
+        mode="advanced" 
+        name="file" 
+        accept=".xlsx,.csv" 
+        [maxFileSize]="5000000"
+        chooseLabel="Chọn file Excel/CSV"
+        uploadLabel="Xem trước"
+        cancelLabel="Hủy"
+        (onUpload)="onUpload($event)"
+        [auto]="true"
+        styleClass="w-full">
+      </p-fileUpload>
+      <small class="text-gray-600 block mt-2">
+        Định dạng hỗ trợ: .xlsx, .csv. Các cột bắt buộc: name, email, phone, class_id.
+      </small>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary-grid mb-4" *ngIf="summary">
+      <div class="grid">
+        <div class="col-12 md:col-3">
+          <div class="p-3 border-round bg-blue-50 text-blue-800">
+            <div class="text-sm font-semibold mb-1">Tổng cộng</div>
+            <div class="text-2xl font-bold">{{ summary.total }}</div>
+          </div>
+        </div>
+        <div class="col-12 md:col-3">
+          <div class="p-3 border-round bg-green-50 text-green-800">
+            <div class="text-sm font-semibold mb-1">Hợp lệ</div>
+            <div class="text-2xl font-bold">{{ summary.valid }}</div>
+          </div>
+        </div>
+        <div class="col-12 md:col-3">
+          <div class="p-3 border-round bg-red-50 text-red-800">
+            <div class="text-sm font-semibold mb-1">Lỗi</div>
+            <div class="text-2xl font-bold">{{ summary.invalid }}</div>
+          </div>
+        </div>
+        <div class="col-12 md:col-3">
+          <div class="p-3 border-round bg-orange-50 text-orange-800">
+            <div class="text-sm font-semibold mb-1">Trùng lặp</div>
+            <div class="text-2xl font-bold">{{ summary.duplicates }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Table -->
+    <div class="preview-table" *ngIf="importResults.length > 0">
+      <p-table 
+        [value]="importResults" 
+        [tableStyle]="{'min-width': '60rem'}"
+        [paginator]="true" 
+        [rows]="10"
+        styleClass="p-datatable-gridlines">
+        
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Họ tên</th>
+            <th>Email</th>
+            <th>Điện thoại</th>
+            <th>Mã lớp</th>
+            <th>Trạng thái</th>
+            <th>Chi tiết lỗi</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-result>
+          <tr [class.bg-red-50]="!result.isValid" [class.bg-orange-50]="result.isDuplicate">
+            <td>{{ result.row.name }}</td>
+            <td>{{ result.row.email }}</td>
+            <td>{{ result.row.phone }}</td>
+            <td>{{ result.row.class_id }}</td>
+            <td>
+              <p-tag 
+                [value]="getValidationStatus(result)" 
+                [severity]="getValidationSeverity(result)">
+              </p-tag>
+            </td>
+            <td>
+              <ul class="m-0 p-0 list-none text-sm text-red-600">
+                <li *ngFor="let err of result.errors">{{ err }}</li>
+              </ul>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <div class="flex justify-content-end mt-4">
+        <p-button 
+          label="Xác nhận Import ({{ summary?.valid }} dòng)" 
+          icon="pi pi-check" 
+          severity="success" 
+          (click)="onConfirm()"
+          [loading]="loading"
+          [disabled]="summary?.valid === 0">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+</div>
+<p-toast></p-toast>

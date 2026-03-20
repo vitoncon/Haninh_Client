@@ -1,0 +1,30 @@
+.student-import-container {
+  .upload-section {
+    border: 2px dashed #e5e7eb;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    text-align: center;
+  }
+
+  .summary-grid {
+    .grid {
+      margin: -0.5rem;
+    }
+  }
+
+  .preview-table {
+    .p-datatable-gridlines {
+      .bg-red-50 {
+        background-color: #fef2f2 !important;
+      }
+      .bg-orange-50 {
+        background-color: #fffaf0 !important;
+      }
+    }
+  }
+
+  .list-none {
+    list-style: none;
+  }
+}

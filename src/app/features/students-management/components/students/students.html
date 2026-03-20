@@ -69,6 +69,15 @@
         >
         </p-button>
         <p-button 
+          *ngIf="!isTeacher"
+          icon="pi pi-upload" 
+          label="Nhập Excel" 
+          [routerLink]="['/features/students/import']"
+          [outlined]="true"
+        >
+        </p-button>
+        <p-button 
+          *ngIf="!isTeacher"
           icon="pi pi-plus" 
           label="Thêm học viên" 
           (click)="onCreate()"
@@ -283,6 +292,7 @@
                   tooltipPosition="top">
                 </p-button>
                 <p-button 
+                  *ngIf="!isTeacher"
                   icon="pi pi-pencil" 
                   [text]="true" 
                   size="small"
@@ -291,6 +301,7 @@
                   tooltipPosition="top">
                 </p-button>
                  <p-button 
+                   *ngIf="!isTeacher"
                    icon="pi pi-trash" 
                    [text]="true" 
                    severity="danger"

@@ -12,40 +12,30 @@
     <div class="results-header">
       <div class="header-content">
         <div class="header-title-section">
-          <button
-            pButton
-            icon="pi pi-arrow-left"
-            class="p-button-text back-button"
-            pTooltip="Quay lại danh sách bài kiểm tra"
-            (click)="onBack()">
+          <button pButton icon="pi pi-arrow-left" class="p-button-text back-button"
+            pTooltip="Quay lại danh sách bài kiểm tra" (click)="onBack()">
           </button>
           <div class="title-text">
             <h3>{{ examDetail.exam_name }}</h3>
             <p>{{ examDetail.class_name }} - {{ examDetail.exam_type }}</p>
           </div>
         </div>
-        
+
         <!-- Approval Log -->
         <div *ngIf="examDetail.status === 'published' && examDetail.approved_by_name" class="approval-log">
           <i class="pi pi-check-circle text-green-500"></i>
           <span class="approval-text">
-            Đã duyệt bởi <strong>{{ examDetail.approved_by_name }}</strong> 
+            Đã duyệt bởi <strong>{{ examDetail.approved_by_name }}</strong>
             lúc <strong>{{ formatApprovalDate(examDetail.approved_at!) }}</strong>
           </span>
         </div>
       </div>
       <div class="header-actions">
         <!-- Special Edit Button (only for admin) -->
-        <button
-          *ngIf="canEnterSpecialEditMode()"
-          pButton
-          label="Sửa điểm đặc biệt"
-          icon="pi pi-exclamation-triangle"
-          class="p-button-warning"
-          (click)="onEnterSpecialEditMode()"
-        ></button>
-        
-        <!-- Import Excel Button (only for teachers) -->
+        <button *ngIf="isAdmin && canEnterSpecialEditMode()" pButton label="Sửa điểm đặc biệt"
+          icon="pi pi-exclamation-triangle" class="p-button-warning" (click)="onEnterSpecialEditMode()"></button>
+
+        <!-- Import Excel Button (available when canImportExcel) -->
         <button
           *ngIf="canImportExcel()"
           pButton
@@ -54,8 +44,8 @@
           class="p-button-success"
           (click)="onImportExcel()"
         ></button>
-        
-        <!-- Edit Button (only for teachers when draft and in_progress) -->
+
+        <!-- Edit Button (available when canEdit) -->
         <button
           *ngIf="!isEditMode && canEdit()"
           pButton
@@ -64,7 +54,7 @@
           class="p-button-primary"
           (click)="onEdit()"
         ></button>
-        
+
         <!-- Approve Button (only for review status) -->
         <button
           *ngIf="canApprove()"
@@ -74,7 +64,7 @@
           class="p-button-success"
           (click)="onApprove()"
         ></button>
-        
+
         <!-- Unlock Button (only for published status) -->
         <button
           *ngIf="canUnlock()"
@@ -84,7 +74,7 @@
           class="p-button-warning"
           (click)="onUnlock()"
         ></button>
-        
+
         <!-- Edit Mode Actions (for teachers and admin special mode) -->
         <div *ngIf="isEditMode && (isTeacher || isSpecialEditMode)" class="edit-actions">
           <!-- Special mode indicator for admin -->
@@ -92,21 +82,10 @@
             <i class="pi pi-exclamation-triangle text-warning"></i>
             <span class="text-warning font-semibold">Chế độ sửa đặc biệt</span>
           </div>
-          
-          <button
-            pButton
-            label="Hủy"
-            icon="pi pi-times"
-            class="p-button-text"
-            (click)="isSpecialEditMode ? onExitSpecialEditMode() : onCancel()"
-          ></button>
-          <button
-            pButton
-            label="Lưu"
-            icon="pi pi-save"
-            class="p-button-success"
-            (click)="onSave()"
-          ></button>
+
+          <button pButton label="Hủy" icon="pi pi-times" class="p-button-text"
+            (click)="isSpecialEditMode ? onExitSpecialEditMode() : onCancel()"></button>
+          <button pButton label="Lưu" icon="pi pi-save" class="p-button-success" (click)="onSave()"></button>
         </div>
       </div>
     </div>
@@ -121,7 +100,8 @@
         <div class="info-item">
           <label>Kỹ năng:</label>
           <div class="skill-tags">
-            <p-tag *ngFor="let skill of examSkills" [value]="skill.skill_type" [severity]="getSkillSeverity(skill.skill_type)" styleClass="skill-tag"></p-tag>
+            <p-tag *ngFor="let skill of examSkills" [value]="skill.skill_type"
+              [severity]="getSkillSeverity(skill.skill_type)" styleClass="skill-tag"></p-tag>
             <span *ngIf="examSkills.length === 0" class="text-muted">Chưa có kỹ năng</span>
           </div>
         </div>
@@ -192,17 +172,11 @@
     <p-card>
       <h4>Danh sách học viên của lớp</h4>
       <p class="text-muted mb-3">
-        Hiển thị tất cả học viên trong lớp {{ examDetail.class_name }}. 
+        Hiển thị tất cả học viên trong lớp {{ examDetail.class_name }}.
         Những học viên chưa có điểm sẽ hiển thị điểm 0.
       </p>
-      <p-table
-        [value]="studentScores"
-        [loading]="loading"
-        styleClass="p-datatable-gridlines"
-        [rowHover]="true"
-        [scrollable]="true"
-        scrollHeight="500px"
-      >
+      <p-table [value]="studentScores" [loading]="loading" styleClass="p-datatable-gridlines" [rowHover]="true"
+        [scrollable]="true" scrollHeight="500px">
         <ng-template pTemplate="header">
           <tr>
             <th>STT</th>
@@ -212,7 +186,7 @@
             <!-- Show skill columns if exam has multiple skills -->
             <ng-container *ngIf="hasMultipleSkills">
               <th *ngFor="let skill of examSkills" style="text-align: center;">
-                {{ skill.skill_type }}<br/>
+                {{ skill.skill_type }}<br />
                 <small style="font-weight: normal;">({{ formatScore(skill.max_score) }}đ)</small>
               </th>
             </ng-container>
@@ -237,74 +211,57 @@
                 <!-- Read-only mode -->
                 <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)">
                   <div class="text-bold">{{ getSkillScore(student, skill.skill_type) }}</div>
-                  <div 
-                    class="score-percentage-small"
-                    [ngClass]="'score-' + getScoreSeverity(getSkillPercentage(student, skill.skill_type))"
-                  >
+                  <div class="score-percentage-small"
+                    [ngClass]="'score-' + getScoreSeverity(getSkillPercentage(student, skill.skill_type))">
                     {{ getSkillPercentage(student, skill.skill_type).toFixed(1) }}%
                   </div>
                 </div>
-                
+
                 <!-- Edit mode -->
                 <div *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)">
-                  <p-inputNumber
-                    [(ngModel)]="editedScores[getSkillKey(student.student_id, skill.skill_type)]"
-                    [min]="0"
-                    [max]="skill.max_score"
-                    [step]="1"
+                  <p-inputNumber [(ngModel)]="editedScores[getSkillKey(student.student_id, skill.skill_type)]" [min]="0"
+                    [max]="skill.max_score" [step]="1"
                     [placeholder]="getSkillScore(student, skill.skill_type) > 0 ? getSkillScore(student, skill.skill_type).toString() : ''"
                     (onInput)="onSkillScoreChange(student.student_id, skill.skill_type, $event.value)"
                     (onBlur)="onSkillScoreBlur(student.student_id, skill.skill_type, skill.max_score)"
-                    styleClass="score-input-small"
-                  ></p-inputNumber>
+                    styleClass="score-input-small"></p-inputNumber>
                 </div>
               </td>
             </ng-container>
-            
+
             <!-- Show single score if exam has only one skill -->
             <ng-container *ngIf="!hasMultipleSkills">
               <td>
-                <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)" class="score-display">
+                <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)"
+                  class="score-display">
                   {{ formatScore(student.score) }}
                 </div>
                 <p-inputNumber
                   *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)"
-                  [(ngModel)]="editedScores[student.student_id]"
-                  [min]="0"
-                  [max]="examDetail.max_score"
-                  [step]="1"
+                  [(ngModel)]="editedScores[student.student_id]" [min]="0" [max]="examDetail.max_score" [step]="1"
                   placeholder="Nhập điểm"
                   (onInput)="onScoreChange(student.student_id, editedScores[student.student_id])"
-                  class="score-input"
-                ></p-inputNumber>
+                  class="score-input"></p-inputNumber>
               </td>
               <td>
-                <span 
-                  class="percentage-badge"
-                  [ngClass]="'score-' + getScoreSeverity(student.percentage)"
-                >
+                <span class="percentage-badge" [ngClass]="'score-' + getScoreSeverity(student.percentage)">
                   {{ formatPercentage(student.percentage) }}
                 </span>
               </td>
             </ng-container>
             <td>
-              <p-tag
-                [value]="getPerformanceLevelText(student.percentage)"
-                [severity]="getScoreSeverity(student.percentage)"
-              ></p-tag>
+              <p-tag [value]="getPerformanceLevelText(student.percentage)"
+                [severity]="getScoreSeverity(student.percentage)"></p-tag>
             </td>
             <td>
-              <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)" class="comment-display">
+              <div *ngIf="!isEditMode || examDetail.status === 'published' || (!isTeacher && !isSpecialEditMode)"
+                class="comment-display">
                 {{ student.teacher_comment || '-' }}
               </div>
-              <input
-                *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)"
-                pInputText
-                [(ngModel)]="editedComments[student.student_id]"
-                placeholder="Nhập nhận xét"
+              <input *ngIf="isEditMode && examDetail.status !== 'published' && (isTeacher || isSpecialEditMode)"
+                pInputText [(ngModel)]="editedComments[student.student_id]" placeholder="Nhập nhận xét"
                 (input)="onCommentChange(student.student_id, editedComments[student.student_id])"
-                class="comment-input"
-              />
+                class="comment-input" />
             </td>
           </tr>
         </ng-template>
@@ -334,7 +291,7 @@
 
   <!-- Toast Messages -->
   <p-toast></p-toast>
-  
+
   <!-- Confirmation Dialog -->
   <p-confirmDialog></p-confirmDialog>
 </div>

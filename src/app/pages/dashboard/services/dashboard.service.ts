@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { StudentService } from '../../../features/students-management/services/student.service';
 import { ClassService } from '../../../features/class-management/services/class.service';
 import { ClassStudentService } from '../../../features/class-management/services/class-student.service';
 import { CoursesService } from '../../../features/courses/services/courses.service';
 import { FeeService } from '../../../features/fees/services/fee.service';
 import { TeacherService } from '../../../features/teacher-management/services/teacher.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 export interface DashboardStatistics {
   totalStudents: number;
@@ -32,22 +34,35 @@ export class DashboardService {
     private classStudentService: ClassStudentService,
     private coursesService: CoursesService,
     private feeService: FeeService,
-    private teacherService: TeacherService
+    private teacherService: TeacherService,
+    private authService: AuthService
   ) {}
 
+  private isTeacher(): boolean {
+    return this.authService.getRole() === 2;
+  }
+
   getDashboardStatistics(): Observable<DashboardStatistics> {
+    const handleUnauthorized = (err: any) => {
+      if (err.status === 403) return of({ data: [], recordTotal: 0, total_amount: 0 });
+      return throwError(() => err);
+    };
+
+    const isTeacher = this.isTeacher();
+
     return forkJoin({
-      students: this.studentService.getStudents(),
-      classes: this.classService.getClasses(),
-      courses: this.coursesService.getCourses(),
-      fees: this.feeService.getFeesWithDetails(),
-      feesStats: this.feeService.getFeeStatistics()
+      students: this.studentService.getStudents().pipe(catchError(handleUnauthorized)),
+      classes: this.classService.getClasses().pipe(catchError(handleUnauthorized)),
+      courses: this.coursesService.getCourses().pipe(catchError(handleUnauthorized)),
+      fees: isTeacher ? of([]) : this.feeService.getFeesWithDetails({ limit: 1000, order: 'desc', orderBy: 'paid_date' }).pipe(catchError(handleUnauthorized)),
+      feesStats: isTeacher ? of({ total_amount: 0, paid_amount: 0, debt_amount: 0, total_students: 0, paid_students: 0, debt_students: 0 }) : this.feeService.getFeeStatistics({ limit: 1000, order: 'desc', orderBy: 'paid_date' }).pipe(catchError(handleUnauthorized))
     }).pipe(
-      map(({ students, classes, courses, fees, feesStats }) => {
+      map(({ students, classes, courses, fees, feesStats }: any) => {
+        // Robust data extraction
+        const feesList = Array.isArray((fees as any)?.data) ? (fees as any).data : (Array.isArray(fees) ? fees : []);
         const studentsList = Array.isArray(students) ? students : (students?.data || []);
-        const classesList = Array.isArray(classes) ? classes : (classes || []);
-        const coursesList = Array.isArray(courses) ? courses : (courses || []);
-        const feesList = Array.isArray(fees) ? fees : (fees || []);
+        const classesList = Array.isArray(classes) ? classes : (classes?.data || []);
+        const coursesList = Array.isArray(courses) ? courses : (courses?.data || []);
         
         const totalStudents = studentsList?.length || 0;
         const totalClasses = classesList?.length || 0;
@@ -161,29 +176,83 @@ export class DashboardService {
   }
 
   getRevenueChartData(): Observable<ChartData> {
-    return this.feeService.getFeesWithDetails().pipe(
+    if (this.isTeacher()) {
+      return of({
+        labels: [],
+        datasets: [{
+          label: 'Doanh thu (VNĐ)',
+          data: [],
+          backgroundColor: '#3B82F6',
+          borderColor: '#2563EB',
+          tension: 0.4,
+          fill: false
+        }]
+      });
+    }
+    return this.feeService.getFeesWithDetails({ limit: 1000, order: 'desc', orderBy: 'paid_date' }).pipe(
+      catchError(err => {
+        if (err.status === 403) {
+          return of([]);
+        }
+        return throwError(() => err);
+      }),
       map(fees => {
-        // Handle response structure
-        const feesList = Array.isArray(fees) ? fees : [];
+        // Safe data extraction
+        const feesList = Array.isArray((fees as any)?.data) ? (fees as any).data : (Array.isArray(fees) ? fees : []);
+        console.log('Revenue Chart: Raw Fees Count:', feesList.length);
+        if (feesList.length > 0) console.log('Revenue Chart: First Fee Example:', feesList[0]);
         
         // Group fees by payment date - use YYYY-MM format for proper sorting
         const monthlyRevenue = new Map<string, number>();
         
-        feesList.forEach((fee: any) => {
-          if (fee.paid_date && fee.amount) {
-            try {
-              const date = new Date(fee.paid_date);
-              // Check if date is valid
-              if (isNaN(date.getTime())) {
-                return;
+        // Use current date for fallback/default
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+        const currentMonthKey = `${currentYear}-${currentMonth}`;
+
+        // Robust date and amount handling function
+        const parseRobustDate = (dateStr: any): Date | null => {
+          if (!dateStr) return null;
+          let d = new Date(dateStr);
+          if (!isNaN(d.getTime())) return d;
+          
+          // Try DD/MM/YYYY
+          if (typeof dateStr === 'string') {
+            const parts = dateStr.split(/[\/\-]/);
+            if (parts.length === 3) {
+              if (parts[0].length === 2 && parts[2].length === 4) {
+                // Assume DD/MM/YYYY
+                d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                if (!isNaN(d.getTime())) return d;
+              } else if (parts[0].length === 4 && parts[2].length === 2) {
+                // Assume YYYY/MM/DD
+                d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                if (!isNaN(d.getTime())) return d;
               }
+            }
+          }
+          return null;
+        };
+
+        feesList.forEach((fee: any) => {
+          const paidDateValue = fee.paid_date || fee.paid_at || fee.paidDate || fee.payment_date;
+          const amountValue = fee.amount;
+
+          if (paidDateValue && amountValue !== undefined && amountValue !== null) {
+            try {
+              const date = parseRobustDate(paidDateValue);
+              if (!date) return;
               
-              // Use YYYY-MM format for proper sorting
               const year = date.getFullYear();
               const month = String(date.getMonth() + 1).padStart(2, '0');
               const monthKey = `${year}-${month}`;
               
-              const amount = typeof fee.amount === 'string' ? parseFloat(fee.amount) : fee.amount;
+              // Safe amount parsing (removing commas, handling strings)
+              const amount = typeof amountValue === 'string' 
+                ? parseFloat(amountValue.replace(/,/g, '')) 
+                : (typeof amountValue === 'number' ? amountValue : 0);
+
               if (!isNaN(amount) && isFinite(amount)) {
                 monthlyRevenue.set(
                   monthKey,
@@ -191,51 +260,30 @@ export class DashboardService {
                 );
               }
             } catch (e) {
-              // Skip invalid entries
-              console.warn('Invalid fee date or amount:', fee);
+              console.warn('Error processing fee:', fee, e);
             }
           }
         });
 
-        // If no data, create default empty chart with current month
-        if (monthlyRevenue.size === 0) {
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const currentMonthKey = `${year}-${month}`;
-          const currentMonthLabel = `Tháng ${now.getMonth() + 1}/${year}`;
+        // Ensure we show EXACTLY the last 6 months leading to now
+        const finalLabels: string[] = [];
+        const finalData: number[] = [];
+
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const year = d.getFullYear();
+          const monthNum = d.getMonth() + 1;
+          const monthKey = `${year}-${String(monthNum).padStart(2, '0')}`;
           
-          return {
-            labels: [currentMonthLabel],
-            datasets: [{
-              label: 'Doanh thu (VNĐ)',
-              data: [0],
-              backgroundColor: '#3B82F6',
-              borderColor: '#2563EB',
-              tension: 0.4,
-              fill: false
-            }]
-          };
+          finalLabels.push(`Tháng ${monthNum}/${year}`);
+          finalData.push(monthlyRevenue.get(monthKey) || 0);
         }
 
-        // Sort by date key (YYYY-MM format sorts correctly as string)
-        const sortedMonthKeys = Array.from(monthlyRevenue.keys()).sort();
-        
-        // Get last 6 months (or all if less than 6)
-        const last6Months = sortedMonthKeys.slice(-6);
-        
-        // Format labels for display (Tháng M/YYYY)
-        const formattedLabels = last6Months.map(monthKey => {
-          const [year, month] = monthKey.split('-');
-          const monthNum = parseInt(month, 10);
-          return `Tháng ${monthNum}/${year}`;
-        });
-
         const chartData = {
-          labels: formattedLabels.length > 0 ? formattedLabels : ['Không có dữ liệu'],
+          labels: finalLabels,
           datasets: [{
             label: 'Doanh thu (VNĐ)',
-            data: last6Months.map(monthKey => monthlyRevenue.get(monthKey) || 0),
+            data: finalData,
             backgroundColor: '#3B82F6',
             borderColor: '#2563EB',
             borderWidth: 2,
@@ -243,6 +291,9 @@ export class DashboardService {
             fill: false
           }]
         };
+
+        console.log('Revenue Chart: finalLabels:', finalLabels);
+        console.log('Revenue Chart: finalData:', finalData);
         
         return chartData;
       })
@@ -250,11 +301,23 @@ export class DashboardService {
   }
 
   getPaymentStatusDistribution(): Observable<ChartData> {
+    if (this.isTeacher()) {
+      return of({
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      });
+    }
+
     return forkJoin({
-      classStudents: this.classStudentService.getAllClassStudents(),
-      classes: this.classService.getClasses(),
-      courses: this.coursesService.getCourses(),
-      fees: this.feeService.getFeesWithDetails()
+      classStudents: this.classStudentService.getAllClassStudents().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err))),
+      classes: this.classService.getClasses().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err))),
+      courses: this.coursesService.getCourses().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err))),
+      fees: this.feeService.getFeesWithDetails().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err)))
     }).pipe(
       map(({ classStudents, classes, courses, fees }) => {
         // Handle response structure
@@ -389,6 +452,7 @@ export class DashboardService {
             borderColor: '#fff'
           }]
         };
+        console.log('Payment Status Distribution: Final Chart Data:', chartData);
         
         return chartData;
       })
@@ -396,9 +460,12 @@ export class DashboardService {
   }
 
   getTopCoursesByRevenue(): Observable<any[]> {
+    if (this.isTeacher()) {
+      return of([]);
+    }
     return forkJoin({
-      fees: this.feeService.getFeesWithDetails(),
-      courses: this.coursesService.getCourses()
+      fees: this.feeService.getFeesWithDetails().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err))),
+      courses: this.coursesService.getCourses().pipe(catchError(err => err.status === 403 ? of([]) : throwError(() => err)))
     }).pipe(
       map(({ fees, courses }) => {
         // Handle response structure

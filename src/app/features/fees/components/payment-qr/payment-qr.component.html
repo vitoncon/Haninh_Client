@@ -1,0 +1,76 @@
+<p-dialog [(visible)]="visible" [modal]="true" [draggable]="false" [resizable]="false" [closable]="!isLoadingPayment"
+  [style]="{width: '100%', maxWidth: '450px'}" (onHide)="closeDialog()" (onShow)="onDialogShow()">
+
+  <ng-template pTemplate="header">
+    <div class="wallet-header"
+      style="display:flex; align-items:center; justify-content:center; gap:10px; white-space:nowrap;">
+      <i class="pi pi-wallet" style="font-size: 1.5rem; color: #1976d2"></i>
+      <h3 style="margin:0;">Thanh toán trực tuyến</h3>
+    </div>
+  </ng-template>
+
+  <div class="payment-qr-container">
+    <!-- Custom Header within the container for better control -->
+
+    <div class="qr-card" [class.success-state]="isPaid">
+      <!-- Amount Info -->
+      <div class="amount-display">
+        <span class="label">Số tiền cần thanh toán</span>
+        <span class="value">{{ amount | number:'1.0-0' }} ₫</span>
+      </div>
+
+      <!-- QR Code Section -->
+      <div class="qr-image-wrapper" [class.expired]="countdownMinutes === 0 && countdownSeconds === 0">
+        <img [src]="qrImageUrl" alt="QR Code Payment">
+
+        <div class="success-overlay" *ngIf="isPaid">
+          <i class="pi pi-check-circle"></i>
+          <span>Thành công</span>
+        </div>
+      </div>
+
+      <!-- Transfer Requirements List -->
+      <div class="transfer-details" *ngIf="!isPaid">
+        <div class="info-row">
+          <span class="label">Học viên</span>
+          <span class="val">{{ studentName }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Lớp</span>
+          <span class="val">{{ className }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Nội dung CK</span>
+          <span class="val">
+            <span class="font-mono text-blue-700 bg-blue-50 px-2 py-1 border-round">{{ paymentContent }}</span>
+            <i class="pi pi-copy" (click)="copyContent()" pTooltip="Sao chép nội dung"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stylized Timer -->
+    <div class="timer-section" *ngIf="!isPaid">
+      <i class="pi pi-clock-fill"></i>
+      <span>Hết hạn sau:</span>
+      <span class="countdown">{{ formatTime(countdownMinutes) }}:{{ formatTime(countdownSeconds) }}</span>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="action-footer">
+      <p-button *ngIf="!isPaid" [label]="isLoadingPayment ? 'Đang xác nhận...' : 'Tôi đã chuyển khoản'"
+        icon="pi pi-shield" styleClass="p-button-success shadow-4" (onClick)="simulateTransfer()"
+        [disabled]="isLoadingPayment || (countdownMinutes === 0 && countdownSeconds === 0)">
+      </p-button>
+
+      <p-button *ngIf="isPaid" label="Hoàn tất" icon="pi pi-check" styleClass="p-button-secondary border-round-lg"
+        (onClick)="closeDialog()">
+      </p-button>
+
+      <div class="trust-badge" *ngIf="!isPaid">
+        <i class="pi pi-lock"></i>
+        <span>Giao dịch bảo mật bởi VietQR</span>
+      </div>
+    </div>
+  </div>
+</p-dialog>

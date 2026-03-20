@@ -22,6 +22,7 @@ import {
 } from '../models/exam-results.model';
 import { ExamSkillsService } from './exam-skills.service';
 import { ClassStudentService } from '../../class-management/services/class-student.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -35,11 +36,21 @@ export class StudyResultService {
   constructor(
     private http: HttpClient,
     private classStudentService: ClassStudentService,
-    private examSkillsService: ExamSkillsService
+    private examSkillsService: ExamSkillsService,
+    private authService: AuthService
   ) {}
 
+  private isTeacher(): boolean {
+    return this.authService.getRole() === 2;
+  }
+
   private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
+    // Prefer the unified AuthService storage key, but keep legacy fallback for safety
+    const token =
+      localStorage.getItem('access_token') ||
+      sessionStorage.getItem('access_token') ||
+      localStorage.getItem('accessToken') ||
+      '';
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,
@@ -130,6 +141,9 @@ export class StudyResultService {
 
   // Xóa kết quả học tập
   deleteStudyResult(id: number): Observable<void> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot delete study results' }));
+    }
     return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders());
   }
 
@@ -556,11 +570,16 @@ export class StudyResultService {
       if (filters.search) params = params.set('search', filters.search);
     }
 
-
     return this.http.get<any>(this.examApiUrl, { 
       ...this.getAuthHeaders(), 
       params 
     }).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of({ data: [], total: 0 });
+        }
+        return throwError(() => error);
+      }),
       switchMap((examsRes) => {
         const exams = examsRes?.data ?? examsRes;
         
@@ -707,7 +726,9 @@ export class StudyResultService {
   }
 
   getExamById(id: number): Observable<ExamWithSkills> {
-    return this.http.get<ExamWithSkills>(`${this.examApiUrl}/${id}`, this.getAuthHeaders());
+    return this.http.get<ExamWithSkills>(`${this.examApiUrl}/${id}`, this.getAuthHeaders()).pipe(
+      catchError(err => err.status === 403 ? of({} as ExamWithSkills) : throwError(() => err))
+    );
   }
 
   updateExam(id: number, exam: Exam): Observable<Exam> {
@@ -897,6 +918,9 @@ export class StudyResultService {
   }
 
   deleteExam(id: number): Observable<void> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot delete exams' }));
+    }
     return this.http.delete<void>(`${this.examApiUrl}/${id}`, this.getAuthHeaders());
   }
 
@@ -1143,10 +1167,20 @@ export class StudyResultService {
     if (examId) params = params.set('exam_id', examId.toString());
     if (classId) params = params.set('class_id', classId.toString());
 
+    if (this.isTeacher()) {
+      return of([]);
+    }
+
     return this.http.get<any>(`${this.examApiUrl}/results-by-skills`, { 
       ...this.getAuthHeaders(), 
       params 
     }).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
+        return throwError(() => error);
+      }),
       map((res) => res?.data ?? res)
     );
   }
@@ -1156,10 +1190,20 @@ export class StudyResultService {
     let params = new HttpParams().set('student_id', studentId.toString());
     if (classId) params = params.set('class_id', classId.toString());
     
+    if (this.isTeacher()) {
+      return of({} as StudentExamSummary);
+    }
+
     return this.http.get<any>(`${this.examApiUrl}/student-summary`, { 
       ...this.getAuthHeaders(), 
       params 
     }).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of({} as StudentExamSummary);
+        }
+        return throwError(() => error);
+      }),
       map((res) => res?.data ?? res)
     );
   }
@@ -1168,41 +1212,75 @@ export class StudyResultService {
   getClassExamStatistics(classId: number): Observable<ExamStatistics[]> {
     const params = new HttpParams().set('class_id', classId.toString());
     
+    if (this.isTeacher()) {
+      return of([]);
+    }
+
     return this.http.get<any>(`${this.examApiUrl}/class-statistics`, { 
       ...this.getAuthHeaders(), 
       params 
     }).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
+        return throwError(() => error);
+      }),
       map((res) => res?.data ?? res)
     );
   }
 
   // Individual Exam Result Management
   createExamResult(examResult: ExamResult): Observable<ExamResult> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot create exam results' }));
+    }
     return this.http.post<ExamResult>(`${this.examApiUrl}/results`, examResult, this.getAuthHeaders());
   }
 
   updateExamResult(id: number, examResult: ExamResult): Observable<ExamResult> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot update exam results' }));
+    }
     return this.http.put<ExamResult>(`${this.examApiUrl}/results/${id}`, examResult, this.getAuthHeaders());
   }
 
   deleteExamResult(id: number): Observable<void> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot delete exam results' }));
+    }
     return this.http.delete<void>(`${this.examApiUrl}/results/${id}`, this.getAuthHeaders());
   }
 
   // Bulk Update Exam Results for a specific exam
   bulkUpdateExamResults(examId: number, results: ExamResult[]): Observable<ExamResult[]> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot bulk update exam results' }));
+    }
     return this.http.put<ExamResult[]>(`${this.examApiUrl}/${examId}/results/bulk`, results, this.getAuthHeaders());
   }
 
   // Get Exam Results for a specific exam
   getExamResults(examId: number): Observable<ExamResultWithDetails[]> {
+    if (this.isTeacher()) {
+      return of([]);
+    }
     return this.http.get<any>(`${this.examApiUrl}/${examId}/results`, this.getAuthHeaders()).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
+        return throwError(() => error);
+      }),
       map((res) => res?.data ?? res)
     );
   }
 
   // Get Student Results for a specific exam
   getStudentExamResults(examId: number, studentId: number): Observable<ExamResultWithDetails[]> {
+    if (this.isTeacher()) {
+      return of([]);
+    }
     const params = new HttpParams()
       .set('student_id', studentId.toString());
     
@@ -1210,6 +1288,12 @@ export class StudyResultService {
       ...this.getAuthHeaders(), 
       params 
     }).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
+        return throwError(() => error);
+      }),
       map((res) => res?.data ?? res)
     );
   }
@@ -1392,10 +1476,14 @@ export class StudyResultService {
 
   // Get organization-wide summary (total classes, students, average scores)
   getOrganizationSummary(): Observable<any> {
+    const examsCall = this.http.get<any>(`${this.examApiUrl}`, this.getAuthHeaders()).pipe(
+      catchError(err => err.status === 403 ? of([]) : throwError(() => err))
+    );
+
     return forkJoin({
       classes: this.http.get<any>(`${this.baseApiUrl}/classes`, this.getAuthHeaders()),
       students: this.http.get<any>(`${this.baseApiUrl}/students`, this.getAuthHeaders()),
-      exams: this.http.get<any>(`${this.examApiUrl}`, this.getAuthHeaders())
+      exams: examsCall
     }).pipe(
       map(({ classes, students, exams }) => {
         const classesData = classes?.data ?? classes;
@@ -1433,15 +1521,31 @@ export class StudyResultService {
           pass_rate: Math.round(passRate * 100) / 100
         };
       }),
-      catchError(this.handleHttpError.bind(this))
+      catchError(err => {
+        if (err.status === 403) {
+          // If the main forkJoin fails with 403 (unlikely but safe), return safe defaults
+          return of({
+            total_classes: 0,
+            total_students: 0,
+            total_exams: 0,
+            average_score: 0,
+            pass_rate: 0
+          });
+        }
+        return this.handleHttpError(err);
+      })
     );
   }
 
   // Get class-level analytics with average scores
   getClassAnalytics(): Observable<any[]> {
+    const examsCall = this.http.get<any>(`${this.examApiUrl}`, this.getAuthHeaders()).pipe(
+      catchError(err => err.status === 403 ? of([]) : throwError(() => err))
+    );
+
     return forkJoin({
       classes: this.http.get<any>(`${this.baseApiUrl}/classes`, this.getAuthHeaders()),
-      exams: this.http.get<any>(`${this.examApiUrl}`, this.getAuthHeaders()),
+      exams: examsCall,
       classStudents: this.http.get<any>(`${this.baseApiUrl}/class_students`, this.getAuthHeaders())
     }).pipe(
       map(({ classes, exams, classStudents }) => {
@@ -1513,6 +1617,12 @@ export class StudyResultService {
   // Get skill comparison across all classes
   getSkillAnalytics(): Observable<any> {
     return this.http.get<any>(`${this.examApiUrl}`, this.getAuthHeaders()).pipe(
+      catchError(error => {
+        if (error.status === 403) {
+          return of({ data: [] });
+        }
+        return throwError(() => error);
+      }),
       switchMap((examsRes) => {
         const exams = examsRes?.data ?? examsRes;
         if (!exams || exams.length === 0) {

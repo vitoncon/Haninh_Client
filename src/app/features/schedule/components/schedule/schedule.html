@@ -274,6 +274,13 @@
             (click)="onCancel()">
           </p-button>
           <p-button 
+            *ngIf="formSchedule?.id"
+            label="Điểm danh" 
+            icon="pi pi-users" 
+            styleClass="p-button-outlined p-button-info mr-2"
+            (click)="openAttendanceDialog()">
+          </p-button>
+          <p-button 
             *ngIf="formSchedule?.id" 
             label="Xóa" 
             icon="pi pi-trash" 
@@ -291,3 +298,12 @@
       </div>
     </ng-template>
   </p-dialog>
+
+  <!-- Attendance Dialog -->
+  <app-attendance-dialog
+    [(visible)]="attendanceDialogVisible"
+    [scheduleId]="attendanceScheduleId"
+    [classId]="attendanceClassId"
+    [scheduleTitle]="attendanceScheduleTitle"
+    (onSaved)="loadSchedules()">
+  </app-attendance-dialog>

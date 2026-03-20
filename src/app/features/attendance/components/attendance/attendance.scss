@@ -1,0 +1,316 @@
+.attendance-container {
+
+
+    // Statistics Cards Grid - following dashboard patterns from certificates
+    .statistics-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        width: 100%;
+
+        @media (max-width: 1200px) {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 1400px) {
+            gap: 2rem;
+        }
+
+        .p-card {
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            }
+
+            ::ng-deep .p-card-body {
+                padding: 0.5rem !important;
+            }
+
+            .flex {
+                align-items: center;
+                gap: 1rem;
+                padding: 1rem;
+
+                .flex-1 {
+                    flex: 1;
+
+                    h6 {
+                        font-size: 1rem;
+                        font-weight: 600;
+                        margin-bottom: 0;
+                        color: var(--text-color-secondary);
+                        transition: color 0.3s ease;
+                    }
+
+                    h4 {
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        margin-bottom: 0;
+                        color: var(--text-color);
+                        transition: color 0.3s ease;
+                    }
+
+                    .mb-0 {
+                        margin-top: 0.5rem !important;
+                    }
+                }
+
+                .icon-container {
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+
+                    i {
+                        font-size: 1.8rem;
+                        transition: all 0.3s ease;
+                    }
+                }
+
+                .text-blue-500 {
+                    color: #3b82f6;
+                    background: #dbeafe;
+                    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+                }
+
+                .text-green-500 {
+                    color: #10b981;
+                    background: #dcfce7;
+                    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+                }
+
+                .text-orange-500 {
+                    color: #f59e0b;
+                    background: #fed7aa;
+                    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+                }
+
+                .text-red-500 {
+                    color: #ef4444;
+                    background: #fee2e2;
+                    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15);
+                }
+            }
+
+            .app-dark & {
+                background: var(--surface-700);
+                border-color: var(--surface-600);
+
+                &:hover {
+                    background: var(--surface-600);
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+                }
+            }
+        }
+    }
+
+    // Main Content Card - standardized from certificates.scss
+    .p-card {
+        h2 {
+
+            color: var(--text-color);
+        }
+
+        .flex.justify-content-between {
+            align-items: center;
+            margin-bottom: 1.5rem;
+
+            h2 {
+                margin: 0;
+                flex: 1;
+            }
+
+            .flex.gap-2 {
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+
+                .p-button {
+                    border-radius: 8px;
+
+                    transition: all 0.2s ease;
+
+                    &.p-button-outlined {
+                        border-width: 1px;
+
+                        &:hover {
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Data Table - standardized from certificates.scss
+    :deep(.p-datatable) {
+        .p-datatable-tbody>tr {
+            transition: background-color 0.15s ease-in-out !important;
+            color: var(--text-color) !important;
+
+            // Light mode alternating rows
+            &:nth-child(odd) {
+                background: #ffffff !important;
+
+                &:hover {
+                    background: #f8fafc !important;
+                }
+            }
+
+            &:nth-child(even) {
+                background: #f8fafc !important;
+
+                &:hover {
+                    background: #f1f5f9 !important;
+                }
+            }
+
+            >td {
+                padding: 1rem 0.75rem;
+
+
+            }
+        }
+
+        .p-datatable-thead>tr>th {
+            background: #f8fafc;
+            color: #475569;
+
+            padding: 1.25rem 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+    }
+
+    // Status Options for Attendance - Refined for compact professional look
+    .status-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        color: #64748b;
+
+        min-width: 40px;
+        justify-content: center;
+
+
+
+        &:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        &.active {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #065f46;
+
+        }
+
+        &.absent.active {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        &.late.active {
+            background: #fffbeb;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        &.excused.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+    }
+
+    // Empty state styling - carbon copy from certificates.scss
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 1rem;
+        text-align: center;
+
+        .empty-icon {
+
+            color: var(--text-color-secondary);
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            color: var(--text-color-secondary);
+            margin: 0;
+
+        }
+    }
+
+    // Dark mode overrides matching certificates patterns
+    .app-dark & {
+        :deep(.p-datatable) {
+            .p-datatable-tbody>tr {
+                &:nth-child(odd) {
+                    background: #1a1a1a !important;
+
+                    &:hover {
+                        background: #2a2a2a !important;
+                    }
+                }
+
+                &:nth-child(even) {
+                    background: #222222 !important;
+
+                    &:hover {
+                        background: #333333 !important;
+                    }
+                }
+
+                >td {
+                    border-bottom: 1px solid var(--surface-border) !important;
+                    color: var(--text-color) !important;
+                }
+            }
+        }
+
+        .status-option {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #adb5bd;
+
+            &.active {
+                border-color: #10b981;
+                color: #10b981;
+                background: rgba(16, 185, 129, 0.1);
+            }
+
+            &.absent.active {
+                border-color: #ef4444;
+                color: #ef4444;
+                background: rgba(239, 68, 68, 0.1);
+            }
+        }
+    }
+}

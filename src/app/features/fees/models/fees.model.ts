@@ -1,3 +1,5 @@
+import { PaymentStatus } from '../../../shared/utils/payment-utils';
+
 export interface Fee {
   id?: number;
   student_id: number;
@@ -5,8 +7,9 @@ export interface Fee {
   course_id: number;
   amount: number;
   payment_type: 'Học phí' | 'Phí thi' | 'Phí tài liệu' | 'Phí khác';
-  payment_method: 'Tiền mặt' | 'Chuyển khoản' | 'Thẻ tín dụng' | 'Ví điện tử';
-  payment_status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Quá hạn' | 'Hoàn thành' | 'Đã hủy';
+  payment_method: 'CASH' | 'BANKING' | 'QR';
+  status: PaymentStatus;
+  payment_status?: PaymentStatus; // legacy support if any
   due_date: string;
   paid_date?: string;
   receipt_number?: string;
@@ -46,13 +49,16 @@ export interface FeeFilters {
   amount_from?: number;
   amount_to?: number;
   search?: string;
+  limit?: number;
+  order?: 'asc' | 'desc';
+  orderBy?: string;
 }
 
 export interface FeeStatistics {
   total_amount: number;
   paid_amount: number;
-  unpaid_amount: number;
+  debt_amount: number;
   total_students: number;
   paid_students: number;
-  unpaid_students: number;
+  debt_students: number;
 }

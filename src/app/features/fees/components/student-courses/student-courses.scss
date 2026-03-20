@@ -1,0 +1,164 @@
+:host ::ng-deep {
+    // Design Tokens & Variables
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --border-radius-lg: 1rem;
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .card-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .page-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 2rem;
+    }
+
+    .course-card {
+        background: #ffffff;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--card-shadow);
+        transition: var(--transition-base);
+        overflow: hidden;
+        border: 1px solid #edf2f7;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+
+        &:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+
+            .card-banner {
+                transform: scale(1.05);
+            }
+        }
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary-color, #3b82f6);
+            z-index: 10;
+        }
+
+        .card-header {
+            position: relative;
+            padding: 0;
+            overflow: hidden;
+            height: 160px;
+
+            .card-banner {
+                width: 100%;
+                height: 100%;
+                background-color: #f8fafc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: var(--transition-base);
+                overflow: hidden;
+                
+                .course-svg {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+
+
+            .language-tag {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                z-index: 5;
+            }
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+
+            .course-name {
+                font-weight: 800;
+                font-size: 1.25rem;
+                color: #1e293b;
+                line-height: 1.4;
+                margin-bottom: 0.75rem;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                min-height: 3.5rem;
+            }
+
+            .course-description {
+                font-size: 0.875rem;
+                color: #64748b;
+                line-height: 1.6;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                margin-bottom: 1.5rem;
+                flex-grow: 1;
+            }
+
+            .price-section {
+                margin-top: auto;
+                padding-top: 1rem;
+                border-top: 1px solid #f1f5f9;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+
+                .price-info {
+                    .price-label {
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        color: #94a3b8;
+                        text-transform: uppercase;
+                        display: block;
+                        margin-bottom: 0.25rem;
+                    }
+                    .price-amount {
+                        font-size: 1.5rem;
+                        font-weight: 900;
+                        color: #10b981;
+                        font-family: 'Inter', sans-serif;
+                    }
+                }
+            }
+        }
+
+        .action-area {
+            padding: 1.25rem 1.5rem;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+    }
+
+    // Custom Scrollbar
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { 
+        background: #cbd5e1; 
+        border-radius: 4px;
+        &:hover { background: #94a3b8; }
+    }
+}
+

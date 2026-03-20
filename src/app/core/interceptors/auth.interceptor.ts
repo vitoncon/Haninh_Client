@@ -102,6 +102,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     }, 1000);
                     return throwError(() => error);
                 }
+            } else if (error.status === 403) {
+                messageService.add({
+                    severity: 'error',
+                    summary: 'Không có quyền truy cập',
+                    detail: 'Bạn không có quyền thực hiện thao tác này.',
+                    life: 5000
+                });
             }
             
             return throwError(() => error);

@@ -42,6 +42,7 @@
                       <div class="class-info-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3>Thông tin lớp học</h3>
                         <button
+                          *ngIf="!isTeacher"
                           pButton
                           label="Chỉnh sửa"
                           icon="pi pi-pencil"
@@ -189,7 +190,7 @@
                       <h2>Học viên trong lớp</h2>
                       <div class="flex gap-2 justify-content-end align-items-center">
                         <p-button 
-                        *ngIf="hasSelectedStudentsFlag"
+                        *ngIf="!isTeacher && hasSelectedStudentsFlag"
                         icon="pi pi-trash" 
                         [label]="'Xóa ' + selectedStudents.length + ' học viên'" 
                         (click)="confirmBulkRemoveStudents()"
@@ -212,6 +213,7 @@
                         >
                         </p-button>
                         <p-button 
+                          *ngIf="!isTeacher"
                           icon="pi pi-plus" 
                           label="Thêm học viên" 
                           (click)="showEnrollDialog()"
@@ -341,6 +343,7 @@
                                   (click)="viewStudentDetail(student.student?.id)">
                                 </p-button>
                                 <p-button 
+                                  *ngIf="!isTeacher"
                                   icon="pi pi-pencil" 
                                   [text]="true" 
                                   size="small"
@@ -348,6 +351,7 @@
                                   (click)="showEditStatusDialog(student)">
                                 </p-button>
                                 <p-button 
+                                  *ngIf="!isTeacher"
                                   icon="pi pi-trash" 
                                   [text]="true" 
                                   size="small"
@@ -381,6 +385,7 @@
                                 <h4 class="text-xl font-semibold text-gray-600 mb-2">Chưa có học viên nào</h4>
                                 <p class="text-gray-500 mb-4">Lớp học này chưa có học viên nào được ghi danh</p>
                                 <p-button 
+                                  *ngIf="!isTeacher"
                                   label="Thêm học viên đầu tiên"
                                   icon="pi pi-user-plus"
                                   (click)="showEnrollDialog()">
@@ -497,7 +502,8 @@
     <button pButton label="Quay lại" icon="pi pi-arrow-left" class="p-button-primary" (click)="onBack()"></button>
   </div>
 
-  <!-- Enroll Student Drawer -->
+  <!-- Enroll Student Drawer (chỉ dành cho Admin) -->
+  <ng-container *ngIf="!isTeacher">
   <p-drawer 
     header="Thêm học viên vào lớp" 
     [(visible)]="enrollDrawerVisible" 
@@ -631,6 +637,7 @@
         </div>
       </div>
   </p-drawer>
+  </ng-container>
 
   <!-- Edit Status Dialog -->
   <p-dialog 

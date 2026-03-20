@@ -1,0 +1,69 @@
+<div class="analytics-container">
+    <p-toast></p-toast>
+    <div class="header mb-4">
+        <h2 class="m-0">Thống kê chuyên cần</h2>
+    </div>
+
+    <div class="grid" *ngIf="analytics">
+        <div class="col-12 lg:col-8">
+            <p-card header="Tỉ lệ chuyên cần theo lớp">
+                <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="300px"></p-chart>
+            </p-card>
+        </div>
+        <div class="col-12 lg:col-4">
+            <p-card header="Tổng quan">
+                <div class="flex flex-column gap-4">
+                    <div class="stat-item">
+                        <span class="text-600 block mb-1">Tổng số buổi dạy</span>
+                        <span class="text-3xl font-bold">{{ analytics.total_days }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="text-600 block mb-1">Trung bình chuyên cần</span>
+                        <span class="text-3xl font-bold text-blue-500">{{ analytics.avg_rate }}%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="text-600 block mb-1">Học viên vắng nhiều nhất</span>
+                        <span class="text-xl font-bold text-red-500">{{ analytics.top_absent_student || 'N/A' }}</span>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+
+        <div class="col-12 mt-4">
+            <p-card header="Chi tiết chuyên cần theo học viên">
+                <p-table [value]="analytics.student_rates" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>Học viên</th>
+                            <th>Lớp</th>
+                            <th class="text-center">Số buổi học</th>
+                            <th class="text-center">Tỉ lệ (%)</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-student>
+                        <tr>
+                            <td>{{ student.full_name }}</td>
+                            <td>{{ student.class_name }}</td>
+                            <td class="text-center">{{ student.present_count }}/{{ student.total_count }}</td>
+                            <td class="text-center">
+                                <span [class]="student.rate < 80 ? 'text-red-500 font-bold' : ''">
+                                    {{ student.rate }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span *ngIf="student.rate >= 90" class="text-green-500">Tốt</span>
+                                <span *ngIf="student.rate >= 80 && student.rate < 90" class="text-blue-500">Khá</span>
+                                <span *ngIf="student.rate < 80" class="text-red-500">Cần lưu ý</span>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-card>
+        </div>
+    </div>
+
+    <div *ngIf="!analytics && !loading" class="text-center p-8">
+        <p>Không có dữ liệu thống kê.</p>
+    </div>
+</div>

@@ -1,0 +1,142 @@
+<div class="home-container">
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <div class="navbar-brand">
+        <i class="pi pi-graduation-cap"></i>
+        <span>AI Learning Center</span>
+      </div>
+      <div class="navbar-menu">
+        <a (click)="scrollToCourses()" class="nav-link">Khóa học</a>
+        <a (click)="navigateToChat()" class="nav-link">Chat AI</a>
+        <p-button 
+          label="Đăng nhập" 
+          icon="pi pi-sign-in"
+          [outlined]="true"
+          (onClick)="navigateToLogin()"
+          class="login-button">
+        </p-button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">AI tư vấn khóa học thông minh</h1>
+      <p class="hero-subtitle">
+        Khám phá khóa học phù hợp với bạn chỉ trong vài giây với trợ lý AI
+      </p>
+      <div class="hero-buttons">
+        <p-button 
+          label="Xem khóa học" 
+          icon="pi pi-book"
+          (onClick)="scrollToCourses()"
+          class="hero-button primary">
+        </p-button>
+        <p-button 
+          label="Chat với AI" 
+          icon="pi pi-comments"
+          [outlined]="true"
+          (onClick)="navigateToChat()"
+          class="hero-button secondary">
+        </p-button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Courses Section -->
+  <section id="courses-section" class="courses-section">
+    <div class="section-container">
+      <h2 class="section-title">Khóa học nổi bật</h2>
+      <p class="section-subtitle">Chọn khóa học phù hợp với mục tiêu của bạn</p>
+      <div class="courses-grid">
+        <p-card 
+          *ngFor="let course of courses" 
+          class="course-card">
+          <ng-template pTemplate="header">
+            <div class="course-header">
+              <h3 class="course-name">{{ course.name }}</h3>
+            </div>
+          </ng-template>
+          <div class="course-body">
+            <p class="course-description">{{ course.description }}</p>
+            <div class="course-info">
+              <p-tag 
+                [value]="course.level" 
+                [severity]="getLevelSeverity(course.level)"
+                class="course-level">
+              </p-tag>
+              <p class="course-price">{{ course.price }}</p>
+            </div>
+            <p-button 
+              label="Xem chi tiết" 
+              icon="pi pi-arrow-right" 
+              [outlined]="true"
+              [style]="{ 'width': '100%', 'margin-top': '1rem' }">
+            </p-button>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us Section -->
+  <section class="features-section">
+    <div class="section-container">
+      <h2 class="section-title">Tại sao chọn chúng tôi</h2>
+      <p class="section-subtitle">Những lý do khiến chúng tôi khác biệt</p>
+      <div class="features-grid">
+        <p-card *ngFor="let feature of features" class="feature-card">
+          <div class="feature-content">
+            <div class="feature-icon">
+              <i [class]="feature.icon"></i>
+            </div>
+            <h3 class="feature-title">{{ feature.title }}</h3>
+            <p class="feature-description">{{ feature.description }}</p>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Student Reviews Section -->
+  <section class="reviews-section">
+    <div class="section-container">
+      <h2 class="section-title">Học viên nói gì về chúng tôi</h2>
+      <p class="section-subtitle">Phản hồi từ những học viên đã tham gia</p>
+      <div class="reviews-grid">
+        <p-card *ngFor="let review of reviews" class="review-card">
+          <div class="review-content">
+            <div class="review-rating">
+              <i *ngFor="let i of [1,2,3,4,5]" 
+                 class="pi pi-star-fill"
+                 [ngClass]="{'filled': i <= review.rating}">
+              </i>
+            </div>
+            <p class="review-text">"{{ review.content }}"</p>
+            <div class="review-author">
+              <strong>{{ review.name }}</strong>
+              <span>{{ review.role }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2024 AI Learning Center. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Floating AI Chat Button -->
+  <button 
+    class="floating-chat-button"
+    (click)="navigateToChat()"
+    title="Chat với AI">
+    <i class="pi pi-comments"></i>
+  </button>
+</div>

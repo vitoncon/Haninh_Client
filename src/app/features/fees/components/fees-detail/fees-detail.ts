@@ -24,6 +24,12 @@ import { TextareaModule } from 'primeng/textarea';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { 
+  getDisplayStatus, 
+  getDisplaySeverity, 
+  PaymentStatus,
+  normalizeStatus
+} from '../../../../shared/utils/payment-utils';
 
 import { ClassModel } from '../../../class-management/models/class.model';
 import { ClassStudentWithDetails } from '../../../class-management/models/class-student.model';
@@ -35,6 +41,7 @@ import { FeeWithDetails, FeeStatistics, Fee } from '../../models/fees.model';
 import { StudentsModel } from '../../../students-management/models/students.model';
 import { CoursesService } from '../../../courses/services/courses.service';
 import { Course } from '../../../courses/models/courses.model';
+import { SocketService } from '../../../../core/services/socket.service';
 
 interface ClassInfo {
   id: number;
@@ -54,7 +61,9 @@ interface StudentPayment {
   due_date: string;
   paid_date: string | null;
   payment_method: string | null;
-  payment_status: string | null; // Allow null to match database schema
+  payment_status: PaymentStatus | null; // Allow null to match database schema
+  status?: PaymentStatus | null;
+  is_payment_submitted?: boolean;
   notes?: string;
 }
 
@@ -89,7 +98,7 @@ interface ClassFeeDetailsResponse {
     DatePickerModule,
     TextareaModule,
     ConfirmDialogModule,
-    CheckboxModule,
+    CheckboxModule
   ],
   providers: [ConfirmationService],
   styleUrls: ['./fees-detail.scss']
@@ -114,6 +123,8 @@ export class FeesDetail implements OnInit, OnDestroy {
   editDialogVisible: boolean = false;
   confirmPaymentDialogVisible: boolean = false;
   viewPaymentDialogVisible: boolean = false;
+  qrPaymentDialogVisible: boolean = false;
+  
   selectedStudent: StudentPayment | null = null;
   editForm: any = {};
   confirmForm: any = {};
@@ -129,6 +140,9 @@ export class FeesDetail implements OnInit, OnDestroy {
   sendingReminder: boolean = false;
   messageTemplates: any[] = [];
 
+  // Minimum date for paid_date (matching legacy logic)
+  minPaidDate: Date = new Date(2020, 0, 1);
+  
   // Confirm payment dialog constraints
   confirmMaxPaidDate: Date | null = null;
   
@@ -179,6 +193,11 @@ export class FeesDetail implements OnInit, OnDestroy {
   private monthKeyCache: Map<string, string | null> = new Map(); // Cache parsed month keys
   private dateParseCache: Map<string, Date | null> = new Map(); // Cache parsed dates
 
+  // Export utility functions for template
+  getDisplayStatus = getDisplayStatus;
+  getDisplaySeverity = getDisplaySeverity;
+  normalizeStatus = normalizeStatus;
+
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
   private studentDetailsLoaded = false;
@@ -193,7 +212,8 @@ export class FeesDetail implements OnInit, OnDestroy {
     private coursesService: CoursesService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private socketService: SocketService
   ) {}
 
   ngOnInit(): void {
@@ -216,6 +236,17 @@ export class FeesDetail implements OnInit, OnDestroy {
         }
       });
     this.setupSearchDebounce();
+
+    // Listen for realtime socket updates to auto-refresh fees
+    this.socketService.onPaymentUpdated().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((data) => {
+      // If any fee gets PAID via external Webhook, reload list (reusing standard methods like refreshDataFromDatabase / loadClassFeeDetails depending on component)
+      if (data.status === 'PAID') {
+        this.messageService.add({severity: 'info', summary: 'Cập nhật', detail: 'Học viên vừa hoàn tất chuyển khoản thẻ Học phí (Realtime).'});
+        this.refreshDataFromDatabase();
+      }
+    });
   }
 
   /**
@@ -259,11 +290,8 @@ export class FeesDetail implements OnInit, OnDestroy {
   private initializeStatusOptions(): void {
     this.statusOptions = [
       { label: 'Tất cả', value: '' },
-      { label: 'Đã thanh toán', value: 'Đã thanh toán' },
-      { label: 'Chưa đóng', value: 'Chưa đóng' },
-      { label: 'Quá hạn', value: 'Quá hạn' },
-      { label: 'Hoàn thành', value: 'Hoàn thành' },
-      { label: 'Đã hủy', value: 'Đã hủy' }
+      { label: 'Đã thanh toán', value: 'paid' },
+      { label: 'Còn nợ', value: 'debt' }
     ];
   }
 
@@ -461,23 +489,12 @@ export class FeesDetail implements OnInit, OnDestroy {
       return sum;
     }, 0);
     
-    // Calculate collected amount - sử dụng hàm getPaymentStatus để đảm bảo tính nhất quán
+    console.log('FEES:', studentsArray);
+    console.log('STATUS:', studentsArray.map((f: any) => f.status));
+    
     this.collected = studentsArray
-      .filter(student => {
-        if (!student || typeof student !== 'object') return false;
-        // Sử dụng hàm getPaymentStatus để đảm bảo logic nhất quán
-        const status = this.getPaymentStatus(student);
-        return status === 'Đã thanh toán';
-      })
-      .reduce((sum, student) => {
-        if (!student || typeof student !== 'object') return sum;
-        
-        const amount = this.getStudentAmount(student);
-        if (typeof amount === 'number' && !isNaN(amount) && isFinite(amount)) {
-          return sum + amount;
-        }
-        return sum;
-      }, 0);
+      .filter((f: any) => f.status === 'PAID')
+      .reduce((sum: number, f: any) => sum + (Number(f.amount) || 0), 0);
     
     // Calculate debt - ensure no NaN result and logical consistency
     const totalTuitionNum = typeof this.totalTuition === 'number' && !isNaN(this.totalTuition) ? this.totalTuition : 0;
@@ -673,21 +690,6 @@ export class FeesDetail implements OnInit, OnDestroy {
     }
   }
 
-  // Calculate due date: 3 days before class start date
-  private calculateDueDate(classData: ClassModel | null): string {
-    if (!classData?.start_date) return '';
-    
-    try {
-      const startDate = new Date(classData.start_date);
-      // Subtract 3 days (3 * 24 * 60 * 60 * 1000 milliseconds)
-      const dueDate = new Date(startDate.getTime() - (3 * 24 * 60 * 60 * 1000));
-      
-      // Format as YYYY-MM-DD
-      return dueDate.toISOString().split('T')[0];
-    } catch (error) {
-      return '';
-    }
-  }
 
   private loadClassStudents(): void {
     if (!this.classId) return;
@@ -788,10 +790,12 @@ export class FeesDetail implements OnInit, OnDestroy {
         student_id: fee.student_id || 0, // Student ID for filtering
         name: studentName,
         amount: fee.amount || 0,
-        due_date: fee.due_date || this.calculateDueDate(this.classData),
+        due_date: fee.due_date || '',
         paid_date: fee.paid_date || null,
         payment_method: fee.payment_method || null,
-        payment_status: fee.payment_status || 'Chưa thanh toán',
+        payment_status: normalizeStatus(fee.status || fee.payment_status),
+        status: normalizeStatus(fee.status || fee.payment_status),
+        is_payment_submitted: !!(fee as any).is_payment_submitted,
         notes: fee.notes
       };
     });
@@ -802,15 +806,11 @@ export class FeesDetail implements OnInit, OnDestroy {
     this.classFees = fees;
     this.filteredFees = [...fees];
 
-    // If we have classStudents data, we should build the students list based on classStudents
-    // rather than just fees data to ensure we show ALL students in the class
-    if (this.classStudents.length > 0) {
-      this.buildStudentsListFromClassStudents(fees);
-    } else {
-      // Fallback: transform fees to student payments if no classStudents data
-      this.students = this.transformFeesToStudentPayments(fees);
-      this.ensureAllClassStudentsAreIncluded();
-    }
+    // Luôn bắt đầu bằng việc chuyển đổi toàn bộ học phí từ API để hiển thị đầy đủ
+    this.students = this.transformFeesToStudentPayments(fees);
+    
+    // Sau đó đảm bảo các học viên trong lớp chưa có học phí sẽ được thêm vào (UNPAID)
+    this.ensureAllClassStudentsAreIncluded();
 
     this.filteredStudents = [...this.students];
 
@@ -836,65 +836,10 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   private buildStudentsListFromClassStudents(fees: FeeWithDetails[]): void {
-    // Start with empty students array
-    this.students = [];
-
-    // For each student in the class, create or find their fee entry
-    this.classStudents.forEach(classStudent => {
-      // Look for existing fee data for this student
-      const existingFee = fees.find(fee => fee.student_id === classStudent.student_id);
-
-      let studentPayment: StudentPayment;
-
-      if (existingFee) {
-        // Transform existing fee data
-        const transformedFees = this.transformFeesToStudentPayments([existingFee]);
-        studentPayment = transformedFees[0];
-      } else {
-        // Create default fee entry for student with no fee record
-        studentPayment = {
-          id: 0, // No fee ID yet
-          fee_id: 0,
-          student_id: classStudent.student_id,
-          name: '', // Will be resolved from cached data
-          amount: 0, // Default amount
-          due_date: '', // Will be set based on class info if available
-          paid_date: null,
-          payment_method: null,
-          payment_status: 'Chưa thanh toán',
-          notes: ''
-        };
-
-        // Always prioritize cached student data for name resolution
-        if (this.studentsData.has(classStudent.student_id)) {
-          const studentData = this.studentsData.get(classStudent.student_id);
-          if (studentData?.full_name) {
-            studentPayment.name = studentData.full_name;
-          }
-        }
-
-        // Fallback to classStudents data if cached data not available
-        if (!studentPayment.name || studentPayment.name.trim() === '') {
-          studentPayment.name = classStudent.student?.full_name || classStudent.student_name || `Học viên ${classStudent.student_id}`;
-        }
-      }
-
-      // Gán số tiền từ course tuition fee cho học viên (nếu chưa có)
-      if (!this.hasValidAmount(studentPayment.amount)) {
-        const tuitionFee = this.getCourseTuitionFee(this.classData);
-        if (tuitionFee && tuitionFee > 0) {
-          studentPayment.amount = tuitionFee;
-        }
-      }
-
-      // Set due date: 3 days before class start date (if not already set)
-      if (!studentPayment.due_date || studentPayment.due_date === '') {
-        studentPayment.due_date = this.calculateDueDate(this.classData);
-      }
-
-      this.students.push(studentPayment);
-    });
+    this.processFeesData(fees);
   }
+
+
 
   private ensureAllClassStudentsAreIncluded(): void {
     if (!this.classStudents.length) {
@@ -915,12 +860,15 @@ export class FeesDetail implements OnInit, OnDestroy {
           student_id: classStudent.student_id,
           name: classStudent.student?.full_name || classStudent.student_name || `Học viên ${classStudent.student_id}`,
           amount: 0, // Default amount - will be updated if class has tuition info
-          due_date: '', // Will be set based on class info if available
+          due_date: '', // Will be stored in DB
           paid_date: null,
           payment_method: null,
-          payment_status: 'Chưa thanh toán',
+          payment_status: 'UNPAID',
+          status: 'UNPAID',
+          is_payment_submitted: false,
           notes: ''
         };
+// ...
 
         // Try to get student name from cached data if not available
         if (this.studentsData.has(classStudent.student_id)) {
@@ -936,8 +884,8 @@ export class FeesDetail implements OnInit, OnDestroy {
           studentPayment.amount = tuitionFee;
         }
 
-        // Set due date: 3 days before class start date
-        studentPayment.due_date = this.calculateDueDate(this.classData);
+        // Set due date: Rely on API/DB
+        studentPayment.due_date = '';
 
         this.students.push(studentPayment);
       }
@@ -1087,39 +1035,39 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   private calculateBasicStatistics(): void {
-    if (!this.classFees.length) return;
+    if (!this.classFees || this.classFees.length === 0) return;
 
-    const total = this.classFees.reduce((sum, fee) => sum + fee.amount, 0);
-    
-    // Sử dụng logic mới để phân loại trạng thái - đảm bảo tính nhất quán với getPaymentStatus
-    const paid = this.classFees
-      .filter(fee => {
-        const status = this.getPaymentStatus(fee);
-        return status === 'Đã thanh toán';
-      })
-      .reduce((sum, fee) => sum + fee.amount, 0);
+    let totalAmount = 0;
+    let paidAmount = 0;
+    let debtAmount = 0;
+    const uniqueStudents = new Set<number>();
+    const paidStudents = new Set<number>();
+    const debtStudents = new Set<number>();
+
+    this.classFees.forEach(f => {
+      const amount = f.amount || 0;
+      totalAmount += amount;
       
-    const unpaid = this.classFees
-      .filter(fee => {
-        const status = this.getPaymentStatus(fee);
-        return status === 'Chưa đóng' || status === 'Chưa thanh toán' || status === 'Quá hạn';
-      })
-      .reduce((sum, fee) => sum + fee.amount, 0);
+      const studentId = f.student_id;
+      if (studentId) uniqueStudents.add(studentId);
+
+      const status = this.getPaymentStatus(f);
+      if (status === 'PAID') {
+        paidAmount += amount;
+        if (studentId) paidStudents.add(studentId);
+      } else {
+        debtAmount += amount;
+        if (studentId) debtStudents.add(studentId);
+      }
+    });
 
     this.statistics = {
-      total_amount: total,
-      paid_amount: paid,
-      unpaid_amount: unpaid,
-      total_students: this.classFees.map(f => f.student_id).filter((v, i, a) => a.indexOf(v) === i).length,
-      paid_students: this.classFees.filter(f => {
-        const status = this.getPaymentStatus(f);
-        return status === 'Đã thanh toán';
-      }).map(f => f.student_id).filter((v, i, a) => a.indexOf(v) === i).length,
-      unpaid_students: this.classFees.filter(f => {
-        const status = this.getPaymentStatus(f);
-        return status === 'Chưa đóng' || status === 'Chưa thanh toán' || status === 'Quá hạn';
-      })
-        .map(f => f.student_id).filter((v, i, a) => a.indexOf(v) === i).length
+      total_amount: totalAmount,
+      paid_amount: paidAmount,
+      debt_amount: debtAmount,
+      total_students: uniqueStudents.size,
+      paid_students: paidStudents.size,
+      debt_students: debtStudents.size
     };
   }
 
@@ -1177,17 +1125,6 @@ export class FeesDetail implements OnInit, OnDestroy {
     this.filteredTableData = filtered;
   }
 
-  getPaymentStatusSeverity(status: string): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
-    switch (status) {
-      case 'Đã thanh toán': return 'success';
-      case 'Chưa đóng': return 'warn';
-      case 'Chưa thanh toán': return 'warn'; // Keep for backward compatibility
-      case 'Quá hạn': return 'danger';
-      case 'Hoàn thành': return 'success';
-      case 'Đã hủy': return 'secondary';
-      default: return 'secondary';
-    }
-  }
 
   formatCurrency(amount: number): string {
     // Handle NaN, null, undefined, or non-numeric values
@@ -1224,37 +1161,24 @@ export class FeesDetail implements OnInit, OnDestroy {
         due_date: item.due_date,
         paid_date: item.paid_date || null,
         payment_method: item.payment_method || null,
-        payment_status: item.payment_status || 'Chưa thanh toán',
+        payment_status: (item as any).status || (item as any).payment_status || 'UNPAID',
+        is_payment_submitted: !!(item as any).is_payment_submitted,
         notes: item.notes || ''
       };
     }
     
-    // Initialize confirm form - payment_method is required
-    // Determine max allowed paid date from selectedStudent.due_date
-    const dueDateStr = this.getDueDate(this.selectedStudent as StudentPayment);
-    const parsedDue = this.parseDateStringToDate(dueDateStr);
-    this.confirmMaxPaidDate = parsedDue;
+    // Determine max allowed paid date - always today for confirmation
+    this.confirmMaxPaidDate = new Date(); 
 
-    // Default paid_date is today but must not be after due date
+    // Default paid_date is always today (actual approval date)
     const today = new Date();
-    // Normalize times
     today.setHours(0, 0, 0, 0);
-    if (parsedDue) {
-      const due = new Date(parsedDue);
-      due.setHours(0, 0, 0, 0);
-      // If today is after due date, default to due date to keep within bounds
-      this.confirmForm = {
-        payment_method: '',
-        paid_date: today <= due ? today : due,
-        notes: ''
-      };
-    } else {
-      this.confirmForm = {
-        payment_method: '',
-        paid_date: today,
-        notes: ''
-      };
-    }
+    
+    this.confirmForm = {
+      payment_method: '',
+      paid_date: today,
+      notes: ''
+    };
 
     this.confirmPaymentDialogVisible = true;
   }
@@ -1272,7 +1196,8 @@ export class FeesDetail implements OnInit, OnDestroy {
         due_date: item.due_date,
         paid_date: item.paid_date || null,
         payment_method: item.payment_method || null,
-        payment_status: item.payment_status || 'Chưa thanh toán',
+        payment_status: (item as any).status || (item as any).payment_status || 'UNPAID',
+        is_payment_submitted: !!(item as any).is_payment_submitted,
         notes: item.notes || ''
       };
     }
@@ -1317,10 +1242,16 @@ export class FeesDetail implements OnInit, OnDestroy {
   onSaveEdit(): void {
     if (!this.selectedStudent) return;
 
+    let paidDateLocal = null;
+    if (this.editForm.paid_date) {
+      const d = this.editForm.paid_date;
+      paidDateLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
     const updateData = {
-      paid_date: this.editForm.paid_date ? this.editForm.paid_date.toISOString().split('T')[0] : null,
+      paid_date: paidDateLocal as any,
       payment_method: this.editForm.payment_method,
-      payment_status: this.editForm.payment_status,
+      status: this.editForm.payment_status || this.editForm.status,
       notes: this.editForm.notes || ''
     };
 
@@ -1379,32 +1310,24 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   onSaveConfirmPayment(): void {
-    if (!this.selectedStudent) return;
+    if (!this.confirmForm.payment_method || !this.selectedStudent) return;
 
-    // Extra validation: ensure paid_date is not after due date
-    if (this.confirmMaxPaidDate && this.confirmForm && this.confirmForm.paid_date) {
-      const selected = new Date(this.confirmForm.paid_date);
-      selected.setHours(0, 0, 0, 0);
-      const max = new Date(this.confirmMaxPaidDate);
-      max.setHours(0, 0, 0, 0);
-      if (selected.getTime() > max.getTime()) {
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Ngày không hợp lệ',
-          detail: 'Ngày thanh toán không được lớn hơn hạn nộp.'
-        });
-        return;
-      }
+    let paidDateLocal = null;
+    if (this.confirmForm.paid_date) {
+      const d = this.confirmForm.paid_date;
+      paidDateLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    if (!this.isConfirmPaymentFormValid()) return;
-
-    const updateData = {
-      paid_date: this.confirmForm.paid_date ? this.confirmForm.paid_date.toISOString().split('T')[0] : null,
+    const updateData: any = {
       payment_method: this.confirmForm.payment_method,
-      payment_status: 'Đã thanh toán' as const, // Always set to paid when confirming
+      status: 'PAID',
       notes: this.confirmForm.notes || ''
     };
+    
+    // Only send paid_date if it was explicitly selected. Let backend default to server time otherwise.
+    if (paidDateLocal) {
+      updateData.paid_date = paidDateLocal;
+    }
 
     // Check if we need to create a new fee record first (id = 0 or null)
     if (!this.selectedStudent.id || this.selectedStudent.id === 0) {
@@ -1414,6 +1337,7 @@ export class FeesDetail implements OnInit, OnDestroy {
       this.updateExistingFeeRecord(updateData);
     }
   }
+
 
   private createNewFeeRecordAndConfirm(updateData: any): void {
     if (!this.selectedStudent || !this.selectedStudent.student_id || 
@@ -1434,8 +1358,8 @@ export class FeesDetail implements OnInit, OnDestroy {
       amount: typeof this.selectedStudent.amount === 'string' ? parseFloat(this.selectedStudent.amount) : this.selectedStudent.amount,
       payment_type: 'Học phí',
       payment_method: updateData.payment_method,
-      payment_status: updateData.payment_status,
-      due_date: this.selectedStudent.due_date || this.calculateDueDate(this.classData),
+      status: updateData.status || updateData.payment_status,
+      due_date: this.selectedStudent.due_date || '',
       paid_date: updateData.paid_date,
       receipt_number: updateData.receipt_number,
       transaction_id: updateData.transaction_id,
@@ -1525,11 +1449,11 @@ export class FeesDetail implements OnInit, OnDestroy {
   isConfirmPaymentFormValid(): boolean {
     if (!this.confirmForm) return false;
     const hasMethod = !!this.confirmForm.payment_method;
-    const hasDate = !!this.confirmForm.paid_date;
-    if (!hasMethod || !hasDate) return false;
+    // paid_date is now optional to allow server-side default
+    if (!hasMethod) return false;
 
     // If a max paid date is set, ensure selected date is not after it
-    if (this.confirmMaxPaidDate) {
+    if (this.confirmForm.paid_date && this.confirmMaxPaidDate) {
       const selected = new Date(this.confirmForm.paid_date);
       selected.setHours(0, 0, 0, 0);
       const max = new Date(this.confirmMaxPaidDate);
@@ -1541,6 +1465,7 @@ export class FeesDetail implements OnInit, OnDestroy {
 
     return true;
   }
+
 
   // Helper method to determine if we should show new student payment structure
   get isUsingNewData(): boolean {
@@ -1607,24 +1532,115 @@ export class FeesDetail implements OnInit, OnDestroy {
     return 0;
   }
 
+  getStatusSeverity(status: any): 'success' | 'secondary' | 'info' | 'warn' | 'danger' {
+    const s = typeof status === 'string' ? status : status?.status;
+
+    switch (s) {
+      case 'PAID':
+        return 'success';
+      case 'PENDING':
+        return 'warn';
+      case 'UNPAID':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  }
+
+  getStatusLabel(fee: any): string {
+    return getDisplayStatus(fee);
+  }
+
+  onApprovePayment(item: StudentPayment | FeeWithDetails): void {
+    const feeId = this.isStudentPayment(item) ? item.id : item.id;
+    if (!feeId) return;
+
+    this.confirmationService.confirm({
+      message: `Xác nhận đã nhận được khoản thanh toán của ${this.getStudentName(item)}?`,
+      header: 'Phê duyệt thanh toán',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Phê duyệt',
+      rejectLabel: 'Hủy',
+      accept: () => {
+        this.loading = true;
+        this.feeService.approvePayment(feeId).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Thành công',
+              detail: 'Đã phê duyệt thanh toán'
+            });
+            this.refreshDataFromDatabase();
+          },
+          error: (err) => {
+            console.error('Error approving payment:', err);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: 'Không thể phê duyệt thanh toán'
+            });
+            this.loading = false;
+          }
+        });
+      }
+    });
+  }
+
+  onRejectPayment(item: StudentPayment | FeeWithDetails): void {
+    const feeId = this.isStudentPayment(item) ? item.id : item.id;
+    if (!feeId) return;
+
+    this.confirmationService.confirm({
+      message: `Từ chối xác nhận thanh toán của ${this.getStudentName(item)}?`,
+      header: 'Từ chối thanh toán',
+      icon: 'pi pi-times-circle',
+      acceptLabel: 'Từ chối',
+      rejectLabel: 'Hủy',
+      accept: () => {
+        this.loading = true;
+        this.feeService.rejectPayment(feeId).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Đã từ chối',
+              detail: 'Yêu cầu thanh toán đã bị từ chối'
+            });
+            this.refreshDataFromDatabase();
+          },
+          error: (err) => {
+            console.error('Error rejecting payment:', err);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: 'Không thể từ chối thanh toán'
+            });
+            this.loading = false;
+          }
+        });
+      }
+    });
+  }
+
   // Helper method to safely get payment status from union type
-  getPaymentStatus(item: StudentPayment | FeeWithDetails): string {
-    // Nếu đã thanh toán, hiển thị "Đã thanh toán"
-    if (item.payment_status === 'Đã thanh toán' || item.paid_date) {
-      return 'Đã thanh toán';
+  getPaymentStatus(item: any): string {
+    return item?.status || 'UNPAID';
+  }
+
+  getPaymentStatusLabel(status: string): string {
+    switch (status) {
+      case 'UNPAID':
+        return 'Chưa thanh toán';
+      case 'PENDING':
+        return 'Chờ xác nhận';
+      case 'PAID':
+        return 'Đã thanh toán';
+      default:
+        return status;
     }
-    
-    // Kiểm tra quá hạn trước khi hiển thị trạng thái khác
-    const daysOverdue = this.getDaysOverdue(item);
-    
-    // Nếu có người chưa nộp mà quá hạn thì ghi "Quá hạn"
-    if (daysOverdue > 0) {
-      return 'Quá hạn';
-    }
-    
-    // Nếu chưa đến hạn đóng mà chưa đóng thì ghi "Chưa đóng"
-    // Thay vì "Chưa thanh toán"
-    return 'Chưa đóng';
+  }
+
+  getPaymentStatusSeverity(status: string): 'success' | 'secondary' | 'info' | 'warn' | 'danger' {
+    return this.getStatusSeverity(status);
   }
 
   // Helper method to safely get payment method from union type
@@ -1649,12 +1665,7 @@ export class FeesDetail implements OnInit, OnDestroy {
       }
     }
     
-    // If due_date is empty, calculate from class start date
-    if (!dueDate || dueDate === '') {
-      dueDate = this.calculateDueDate(this.classData);
-    }
-    
-    return dueDate;
+    return dueDate || '';
   }
 
   get classCode(): string {
@@ -1727,19 +1738,19 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   // Helper để lấy số tiền chưa thu an toàn
-  getUnpaidAmount(): number {
+  getDebtAmount(): number {
     // If a month is selected, use monthly statistics
     if (this.selectedMonth && this.monthlyStatistics.has(this.selectedMonth)) {
       return this.monthlyStatistics.get(this.selectedMonth)!.debt;
     }
     
-    // If there are no students, unpaid amount should be zero
+    // If there are no students, debt amount should be zero
     if (!this.students || this.students.length === 0) {
       return 0;
     }
 
     // Ưu tiên sử dụng debt đã được tính toán lại, fallback về statistics
-    return (typeof this.debt === 'number' ? this.debt : (this.statistics?.unpaid_amount || 0)) || 0;
+    return (typeof this.debt === 'number' ? this.debt : (this.statistics?.debt_amount || 0)) || 0;
   }
 
 
@@ -1758,12 +1769,12 @@ export class FeesDetail implements OnInit, OnDestroy {
         if (!fee || typeof fee !== 'object') return false;
         
         // Đã thanh toán thì không quá hạn
-        if (fee.paid_date || fee.payment_status === 'Đã thanh toán') {
+        if (fee.paid_date || normalizeStatus(fee.status || fee.payment_status) === 'PAID') {
           return false;
         }
 
         // Kiểm tra trạng thái "Quá hạn" từ database
-        if (fee.payment_status === 'Quá hạn') {
+        if (normalizeStatus(fee.status || fee.payment_status) === 'UNPAID' && this.getDaysOverdue(fee) > 0) {
           return true;
         }
 
@@ -1788,12 +1799,12 @@ export class FeesDetail implements OnInit, OnDestroy {
         if (!student || typeof student !== 'object') return false;
         
         // Đã thanh toán thì không quá hạn
-        if (student.paid_date || student.payment_status === 'Đã thanh toán') {
+        if (student.paid_date || normalizeStatus(student.status || student.payment_status) === 'PAID') {
           return false;
         }
 
         // Kiểm tra trạng thái "Quá hạn" từ database
-        if (student.payment_status === 'Quá hạn') {
+        if (normalizeStatus(student.status || student.payment_status) === 'UNPAID' && this.getDaysOverdue(student) > 0) {
           return true;
         }
 
@@ -1827,12 +1838,12 @@ export class FeesDetail implements OnInit, OnDestroy {
       if (!student || typeof student !== 'object') return false;
       
       // Đã thanh toán thì không quá hạn
-      if (student.paid_date || student.payment_status === 'Đã thanh toán') {
+      if (student.paid_date || normalizeStatus(student.status || student.payment_status) === 'PAID') {
         return false;
       }
 
       // Kiểm tra trạng thái "Quá hạn" từ database
-      if (student.payment_status === 'Quá hạn') {
+      if (normalizeStatus(student.status || student.payment_status) === 'UNPAID' && this.getDaysOverdue(student) > 0) {
         return true;
       }
 
@@ -1847,7 +1858,7 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   // Hàm để đếm số học viên "Chưa đóng" (chưa đến hạn)
-  getUnpaidCount(): number {
+  getDebtCount(): number {
     // If a month is selected, filter students from that month
     const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
       ? (this.monthlyFees.get(this.selectedMonth) || [])
@@ -1855,7 +1866,7 @@ export class FeesDetail implements OnInit, OnDestroy {
     
     return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
-      return status === 'Chưa đóng' || status === 'Chưa thanh toán';
+      return status === 'UNPAID' && this.getDaysOverdue(student) === 0;
     }).length || 0;
   }
 
@@ -1868,12 +1879,12 @@ export class FeesDetail implements OnInit, OnDestroy {
     
     return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
-      return status === 'Quá hạn';
+      return status === 'UNPAID' && this.getDaysOverdue(student) > 0;
     }).length || 0;
   }
 
   // Hàm để đếm tổng số học viên chưa thanh toán (cả "Chưa đóng" và "Quá hạn")
-  getTotalUnpaidCount(): number {
+  getTotalDebtCount(): number {
     // If a month is selected, filter students from that month
     const studentsToCheck = this.selectedMonth && this.monthlyFees.has(this.selectedMonth)
       ? (this.monthlyFees.get(this.selectedMonth) || [])
@@ -1881,7 +1892,7 @@ export class FeesDetail implements OnInit, OnDestroy {
     
     return studentsToCheck.filter(student => {
       const status = this.getPaymentStatus(student);
-      return status === 'Chưa đóng' || status === 'Chưa thanh toán' || status === 'Quá hạn';
+      return status === 'UNPAID' || status === 'PENDING';
     }).length || 0;
   }
 
@@ -2104,12 +2115,12 @@ export class FeesDetail implements OnInit, OnDestroy {
   }
 
   onSendReminders(): void {
-    const unpaidStudents = this.students?.filter(student => {
+    const debtStudents = this.students?.filter(student => {
       const status = this.getPaymentStatus(student);
-      return status !== 'Đã thanh toán';
+      return status !== 'PAID';
     }) || [];
 
-    if (unpaidStudents.length === 0) {
+    if (debtStudents.length === 0) {
       this.messageService.add({
         severity: 'info',
         summary: 'Thông báo',
@@ -2118,8 +2129,8 @@ export class FeesDetail implements OnInit, OnDestroy {
       return;
     }
 
-    // Open reminder dialog for all unpaid students
-    this.selectedReminderStudents = unpaidStudents;
+    // Open reminder dialog for all debt students
+    this.selectedReminderStudents = debtStudents;
     this.reminderMessage = this.messageTemplates[0]?.content || '';
     this.selectedTemplate = this.messageTemplates[0];
     this.reminderDialogVisible = true;
@@ -2144,7 +2155,8 @@ export class FeesDetail implements OnInit, OnDestroy {
         due_date: fee.due_date || '',
         paid_date: fee.paid_date || null,
         payment_method: fee.payment_method,
-        payment_status: fee.payment_status || 'Chưa thanh toán',
+        payment_status: fee.status || fee.payment_status || 'UNPAID',
+        is_payment_submitted: !!(fee as any).is_payment_submitted,
         notes: fee.notes || ''
       };
     }
@@ -2333,7 +2345,7 @@ export class FeesDetail implements OnInit, OnDestroy {
         total += numAmount;
 
         // Check payment status once
-        if (this.getPaymentStatus(s) === 'Đã thanh toán') {
+        if (this.getPaymentStatus(s) === 'PAID') {
           collected += numAmount;
         }
       });

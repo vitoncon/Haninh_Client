@@ -59,6 +59,16 @@ export class StudentService {
     );
   }
 
+  /** API: Lấy thông tin học viên hiện tại (mapping an toàn từ user_id -> student_id) */
+  getCurrentStudent(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/me`, this.getAuthHeaders()).pipe(
+      catchError((error) => {
+        console.error('StudentService getCurrentStudent Error:', error);
+        throw error;
+      })
+    );
+  }
+
   /** API: Lấy thông tin chi tiết học sinh theo ID */
   getStudentById(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(

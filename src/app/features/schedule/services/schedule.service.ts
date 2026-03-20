@@ -13,7 +13,12 @@ export class ScheduleService {
   constructor(private http: HttpClient) {}
 
   private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('accessToken') || '';
+    // Prefer the unified AuthService storage key, but keep legacy fallback for safety
+    const token =
+      localStorage.getItem('access_token') ||
+      sessionStorage.getItem('access_token') ||
+      localStorage.getItem('accessToken') ||
+      '';
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,

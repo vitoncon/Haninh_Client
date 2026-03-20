@@ -151,11 +151,11 @@ export class AuthService {
                                 // Admin
                                 this.router.navigate(['/dashboard']);
                             } else if (roleId === 2) {
-                                // Giáo viên -> use main schedule route
+                                // Giáo viên -> schedule page in read-only mode
                                 this.router.navigate(['/features/schedule']);
                             } else if (roleId === 3) {
-                                // Học viên
-                                this.router.navigate(['/unauthorized']);
+                                // Học viên -> điều hướng đến trang có quyền truy cập (ví dụ: lịch học)
+                                this.router.navigate(['/features/schedule']);
                             } else {
                                 this.router.navigate(['/unauthorized']);
                             }                            

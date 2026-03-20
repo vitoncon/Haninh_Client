@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Fee, FeeWithDetails, FeeFilters, FeeStatistics } from '../models/fees.model';
+import { normalizeStatus } from '../../../shared/utils/payment-utils';
 
 @Injectable({
   providedIn: 'root'
@@ -66,6 +67,9 @@ export class FeeService {
       if (filters.amount_from) params = params.set('amount_from', filters.amount_from.toString());
       if (filters.amount_to) params = params.set('amount_to', filters.amount_to.toString());
       if (filters.search) params = params.set('search', filters.search);
+      if (filters.limit) params = params.set('limit', filters.limit.toString());
+      if (filters.order) params = params.set('order', filters.order);
+      if (filters.orderBy) params = params.set('orderBy', filters.orderBy);
     }
 
     return this.http.get<any>(this.apiUrl, { 
@@ -140,34 +144,34 @@ export class FeeService {
         // Đơn giản hóa - chỉ tính basic tổng và đã trả
         const totalAmount = fees.reduce((sum, fee) => sum + parseAmount(fee.amount), 0);
         
-        // Đã trả = có paid_date hoặc payment_status
+        // Đã trả = có paid_date hoặc status
         const paidAmount = fees
-          .filter(fee => fee.paid_date || fee.payment_status === 'Đã thanh toán')
+          .filter(fee => fee.paid_date || normalizeStatus(fee.status || fee.payment_status) === 'PAID')
           .reduce((sum, fee) => sum + parseAmount(fee.amount), 0);
         
         // Chưa trả = tổng - đã trả (đơn giản nhất)
-        const unpaidAmount = totalAmount - paidAmount;
+        const debtAmount = totalAmount - paidAmount;
         
         // Tính số học sinh đơn giản
         const uniqueStudents = new Set(fees.map(fee => fee.student_id));
         const paidStudents = new Set(
           fees
-            .filter(fee => fee.paid_date || fee.payment_status === 'Đã thanh toán')
+            .filter(fee => fee.paid_date || normalizeStatus(fee.status || fee.payment_status) === 'PAID')
             .map(fee => fee.student_id)
         );
-        const unpaidStudents = new Set(
+        const debtStudents = new Set(
           fees
-            .filter(fee => !fee.paid_date && fee.payment_status !== 'Đã thanh toán')
+            .filter(fee => !fee.paid_date && normalizeStatus(fee.status || fee.payment_status) !== 'PAID')
             .map(fee => fee.student_id)
         );
 
         const statistics = {
           total_amount: totalAmount,
           paid_amount: paidAmount,
-          unpaid_amount: unpaidAmount,
+          debt_amount: debtAmount,
           total_students: uniqueStudents.size,
           paid_students: paidStudents.size,
-          unpaid_students: unpaidStudents.size
+          debt_students: debtStudents.size
         };
 
         return statistics;
@@ -177,6 +181,18 @@ export class FeeService {
 
   getClassFeeStatistics(classId: number): Observable<FeeStatistics> {
     return this.getFeeStatistics({ class_id: classId });
+  }
+
+  getAggregatedClassFeeStatistics(): Observable<any[]> {
+    return this.http.get<any>('http://localhost:10093/api/admin-fees/class-statistics', this.getAuthHeaders()).pipe(
+      map((res) => res?.data ?? res)
+    );
+  }
+
+  // Simulate payment webhook from QR Code
+  simulateWebhookPayment(content: string, amount: number): Observable<any> {
+    const url = 'http://localhost:10093/api/payments/fake-callback';
+    return this.http.post<any>(url, { content, amount }, this.getAuthHeaders());
   }
 
   addFee(fee: Fee): Observable<Fee> {
@@ -209,8 +225,8 @@ export class FeeService {
     }, this.getAuthHeaders());
   }
 
-  markAsUnpaid(id: number): Observable<Fee> {
-    return this.http.put<Fee>(`${this.apiUrl}/${id}/mark-unpaid`, {}, this.getAuthHeaders());
+  markAsDebt(id: number): Observable<Fee> {
+    return this.http.put<Fee>(`${this.apiUrl}/${id}/mark-debt`, {}, this.getAuthHeaders());
   }
 
   // Helper methods for dropdowns
@@ -225,20 +241,41 @@ export class FeeService {
 
   getPaymentMethods(): any[] {
     return [
-      { label: 'Tiền mặt', value: 'Tiền mặt' },
-      { label: 'Chuyển khoản', value: 'Chuyển khoản' },
-      { label: 'Thẻ tín dụng', value: 'Thẻ tín dụng' },
-      { label: 'Ví điện tử', value: 'Ví điện tử' }
+      { label: 'Tiền mặt', value: 'CASH' },
+      { label: 'Chuyển khoản', value: 'BANKING' },
+      { label: 'Mã QR / Ví điện tử', value: 'QR' }
     ];
   }
 
   getPaymentStatusOptions(): any[] {
     return [
-      { label: 'Chưa thanh toán', value: 'Chưa thanh toán' },
-      { label: 'Đã thanh toán', value: 'Đã thanh toán' },
-      { label: 'Quá hạn', value: 'Quá hạn' },
-      { label: 'Hoàn thành', value: 'Hoàn thành' },
-      { label: 'Đã hủy', value: 'Đã hủy' }
+      { label: 'Chưa thanh toán', value: 'UNPAID' },
+      { label: 'Chờ xác nhận', value: 'PENDING' },
+      { label: 'Đã thanh toán', value: 'PAID' }
     ];
+  }
+
+  // Student specific methods
+  getStudentFees(): Observable<FeeWithDetails[]> {
+    return this.http.get<any>(this.apiUrl, this.getAuthHeaders()).pipe(
+      map((res) => res?.data ?? res)
+    );
+  }
+
+  // Admin specific methods for Payment Approval Flow
+  approvePayment(feeId: number): Observable<any> {
+    const adminUrl = 'http://localhost:10093/api/payments';
+    return this.http.put<any>(`${adminUrl}/${feeId}/approve`, {}, this.getAuthHeaders());
+  }
+
+  rejectPayment(feeId: number, reason?: string): Observable<any> {
+    const adminUrl = 'http://localhost:10093/api/payments';
+    return this.http.put<any>(`${adminUrl}/${feeId}/reject`, {}, this.getAuthHeaders());
+  }
+
+  // Student submission (can also be here for convenience)
+  submitPayment(feeId: number, paymentMethod: string = 'QR'): Observable<any> {
+    const studentUrl = 'http://localhost:10093/api/payments';
+    return this.http.post<any>(`${studentUrl}`, { fee_id: feeId, payment_method: paymentMethod }, this.getAuthHeaders());
   }
 }

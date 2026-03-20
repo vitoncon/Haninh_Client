@@ -1,0 +1,138 @@
+<div class="page-card">
+    <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-5 px-3">
+        <div class="flex-grow-1">
+            <div class="font-bold text-4xl text-900 mb-2">Danh sách khóa học</div>
+            <p class="text-600 m-0">Khám phá các khóa học ngoại ngữ tại HaNinh Academy</p>
+        </div>
+        <div class="flex-shrink-0 mt-3 md:mt-0 ml-auto">
+            <p-button icon="pi pi-refresh" label="Cập nhật" (onClick)="loadCourses()" [loading]="loading"
+                styleClass="p-button-outlined p-button-rounded shadow-sm bg-white"></p-button>
+        </div>
+    </div>
+
+    <p-toast></p-toast>
+
+    <!-- Loading State -->
+    <div *ngIf="loading"
+        class="flex flex-column justify-content-center align-items-center py-8 bg-white border-round-xl shadow-1 mx-3">
+        <p-progressSpinner ariaLabel="loading" strokeWidth="4" fill="var(--surface-ground)"></p-progressSpinner>
+        <span class="mt-4 font-medium text-600">Đang tải danh sách khóa học...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && (!courses || courses.length === 0)"
+        class="text-center py-8 bg-white border-round-xl shadow-1 mx-3">
+        <div
+            class="surface-100 w-4rem h-4rem border-circle flex align-items-center justify-content-center mx-auto mb-4">
+            <i class="pi pi-book text-3xl text-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-900 mb-2">Không tìm thấy khóa học nào</div>
+        <p class="text-600 max-w-20rem mx-auto">Hiện tại chưa có khóa học nào được đăng tải. Vui lòng quay lại sau.</p>
+    </div>
+
+    <!-- Data State -->
+    <div *ngIf="!loading && courses && courses.length > 0" class="card-container px-3 pb-5">
+        <div *ngFor="let course of courses" class="course-card">
+            <!-- Header Section with Banner and Tag -->
+            <div class="card-header">
+                <div class="card-banner" [ngSwitch]="course.language?.toLowerCase()?.trim()">
+                    <!-- English Illustration -->
+                    <ng-container *ngSwitchCase="['tiếng anh', 'anh', 'english'].includes(course.language?.toLowerCase()?.trim()) ? course.language?.toLowerCase()?.trim() : '___nonexistent___'">
+                        <svg viewBox="0 0 200 120" class="course-svg">
+                            <defs>
+                                <linearGradient id="grad-en" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect width="200" height="120" fill="#f0f7ff" />
+                            <circle cx="100" cy="55" r="35" fill="url(#grad-en)" opacity="0.1" />
+                            <path d="M70,45 L130,45 L135,80 L65,80 Z" fill="url(#grad-en)" />
+                            <rect x="75" y="50" width="50" height="4" fill="white" opacity="0.4" />
+                            <rect x="75" y="60" width="50" height="4" fill="white" opacity="0.4" />
+                            <rect x="75" y="70" width="35" height="4" fill="white" opacity="0.4" />
+                            <path d="M140,30 Q155,30 155,45 Q155,60 145,60 L140,70 L135,60 Q125,60 125,45 Q125,30 140,30" fill="#fbbf24" />
+                            <text x="140" y="48" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">A</text>
+                        </svg>
+                    </ng-container>
+
+                    <!-- Chinese Illustration -->
+                    <ng-container *ngSwitchCase="['tiếng trung', 'trung', 'chinese'].includes(course.language?.toLowerCase()?.trim()) ? course.language?.toLowerCase()?.trim() : '___nonexistent___'">
+                        <svg viewBox="0 0 200 120" class="course-svg">
+                            <defs>
+                                <linearGradient id="grad-zh" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#b91c1c;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect width="200" height="120" fill="#fff5f5" />
+                            <circle cx="100" cy="60" r="40" fill="url(#grad-zh)" opacity="0.1" />
+                            <path d="M85,35 L115,35 L120,75 Q100,85 80,75 Z" fill="url(#grad-zh)" />
+                            <circle cx="100" cy="42" r="4" fill="#fbbf24" />
+                            <path d="M92,50 L108,50 M92,62 L108,62" stroke="white" stroke-width="3" stroke-linecap="round" />
+                            <path d="M140,40 L160,40 L150,70 Z" fill="#fbbf24" opacity="0.8" />
+                        </svg>
+                    </ng-container>
+
+                    <!-- Korean Illustration -->
+                    <ng-container *ngSwitchCase="['tiếng hàn', 'hàn', 'korean'].includes(course.language?.toLowerCase()?.trim()) ? course.language?.toLowerCase()?.trim() : '___nonexistent___'">
+                        <svg viewBox="0 0 200 120" class="course-svg">
+                            <defs>
+                                <linearGradient id="grad-ko" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#6d28d9;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect width="200" height="120" fill="#f5f3ff" />
+                            <rect x="65" y="35" width="70" height="50" rx="8" fill="url(#grad-ko)" opacity="0.1" />
+                            <path d="M85,45 L115,45 M100,45 L100,75 M85,75 L115,75" stroke="url(#grad-ko)" stroke-width="6" stroke-linecap="round" />
+                            <circle cx="140" cy="45" r="12" stroke="#ec4899" stroke-width="3" fill="none" />
+                            <path d="M135,45 L145,45 M140,40 L140,50" stroke="#ec4899" stroke-width="2" />
+                        </svg>
+                    </ng-container>
+
+                    <!-- Default / Other Illustration -->
+                    <svg *ngSwitchDefault viewBox="0 0 200 120" class="course-svg">
+                        <rect width="200" height="120" fill="#f8fafc" />
+                        <path d="M70,35 L130,35 L130,85 L70,85 Z" fill="#94a3b8" opacity="0.1" />
+                        <path d="M80,45 L120,45 M80,58 L115,58 M80,71 L110,71" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+                        <text x="100" y="65" font-family="PrimeIcons" font-size="40" fill="#94a3b8" text-anchor="middle" opacity="0.5">&#xe921;</text>
+                    </svg>
+                </div>
+
+
+                <div class="language-tag">
+                    <p-tag [value]="course.language" [severity]="getLanguageSeverity(course.language)" 
+                           styleClass="shadow-1 px-3 py-1 text-xs font-bold uppercase"></p-tag>
+                </div>
+            </div>
+
+            <!-- Body Section -->
+            <div class="card-body">
+                <div class="course-name">{{ course.name }}</div>
+                <div class="course-description">
+                    {{ course.description || 'Chưa có mô tả cho khóa học này. Hãy tham gia cùng chúng tôi để nâng cao trình độ của bạn.' }}
+                </div>
+                
+                <div class="price-section">
+                    <div class="price-info">
+                        <span class="price-label">Học phí</span>
+                        <span class="price-amount">{{ formatCurrency(course.price) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Area -->
+            <div class="action-area">
+                <p-button [label]="course.enrollment_status ? 'Đã đăng ký' : 'Đăng ký ngay'" 
+                    [icon]="course.enrollment_status ? 'pi pi-check' : 'pi pi-arrow-right'" 
+                    iconPos="right" [loading]="loading" [disabled]="!!course.enrollment_status"
+                    (onClick)="onEnroll(course)"
+                    [styleClass]="'w-full p-button-raised border-round-lg p-3 shadow-2 hover:shadow-4 transition-all ' + (course.enrollment_status ? 'p-button-success' : 'p-button-primary')"></p-button>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+

@@ -28,11 +28,13 @@ import { fullCalendarViLocale } from '../../../../config/translation-vi';
 import { forkJoin } from 'rxjs';
 import { TeachingAssignmentService } from '../../../teaching-assignments/services/teaching-assignment.service';
 import { ClassTeacherAssignment } from '../../../teaching-assignments/models/teaching-assignment.model';
+import { AuthService } from '../../../../core/services/auth.service';
+import { AttendanceDialog } from '../attendance-dialog/attendance-dialog';
 
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule, DialogModule, InputTextModule, ButtonModule, SelectModule, TextareaModule, ToastModule, DatePickerModule, TooltipModule],
+  imports: [CommonModule, FormsModule, FullCalendarModule, DialogModule, InputTextModule, ButtonModule, SelectModule, TextareaModule, ToastModule, DatePickerModule, TooltipModule, AttendanceDialog],
   templateUrl: './schedule.html',
   styleUrls: ['./schedule.scss'],
   providers: [ConfirmationService, MessageService]
@@ -43,10 +45,18 @@ export class Schedule implements OnInit, AfterViewInit {
   calendarOptions!: CalendarOptions;
   displayDialog = false;
   saving = false;
+  isTeacherReadonly = false;
+  isStudent = false;
 
   schedules: ScheduleModel[] = [];
   selectedEvent: any = null;
   formSchedule!: ScheduleModel;
+
+  // Attendance Dialog State
+  attendanceDialogVisible = false;
+  attendanceScheduleId = 0;
+  attendanceClassId = 0;
+  attendanceScheduleTitle = '';
 
   // Time picker variables (giống class.html)
   startTimeDate: Date | null = null;
@@ -101,7 +111,8 @@ export class Schedule implements OnInit, AfterViewInit {
     private teacherService: TeacherService,
     private coursesService: CoursesService,
     private teachingAssignmentService: TeachingAssignmentService,
-    private layoutService: LayoutService
+    private layoutService: LayoutService,
+    private authService: AuthService
   ) {
     // Listen to layout state changes (sidebar toggle) and resize calendar
     effect(() => {
@@ -114,6 +125,12 @@ export class Schedule implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    // Teacher & Student roles should use schedule page in read-only mode.
+    // Chỉ Admin mới được phép tạo/chỉnh sửa lịch học.
+    const roles = this.authService.getRoles();
+    this.isStudent = roles.includes(3) && !roles.includes(1) && !roles.includes(2);
+    this.isTeacherReadonly = (roles.includes(2) || roles.includes(3)) && !roles.includes(1);
+
     // Initialize form to avoid undefined bindings before any user interaction
     this.formSchedule = this.createEmptySchedule();
     // Initialize calendar to avoid empty config error
@@ -124,19 +141,21 @@ export class Schedule implements OnInit, AfterViewInit {
       firstDay: 1, // Monday first
       events: [],
       headerToolbar: {
-        left: 'prev,next today addScheduleButton',
+        left: this.isTeacherReadonly ? 'prev,next today' : 'prev,next today addScheduleButton',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
-      customButtons: {
-        addScheduleButton: {
-          text: 'Thêm lịch học',
-          hint: 'Thêm lịch học mới',
-          click: () => {
-            this.onAddNew();
-          }
-        }
-      },
+      customButtons: this.isTeacherReadonly
+        ? {}
+        : {
+            addScheduleButton: {
+              text: 'Thêm lịch học',
+              hint: 'Thêm lịch học mới',
+              click: () => {
+                this.onAddNew();
+              }
+            }
+          },
       buttonText: {
         today: 'Hôm nay',
         month: 'Tháng',
@@ -207,6 +226,40 @@ export class Schedule implements OnInit, AfterViewInit {
   }
 
   loadAllData(): void {
+    // Student MUST NOT call /api/teachers or /api/courses.
+    // Admin/Teacher: load full data for richer UI (teacher names, language mapping, filters).
+    if (this.isStudent) {
+      forkJoin({
+        classes: this.classService.getClasses(),
+        schedules: this.scheduleService.getScheduleTemplates()
+      }).subscribe({
+        next: (data) => {
+          this.classes = data.classes;
+          this.classOptions = data.classes.map(c => ({
+            label: `${c.class_name} (${c.class_code})`,
+            value: c.id!
+          }));
+
+          // Skip teachers/courses for students
+          this.teachers = [];
+          this.teacherOptions = [];
+          this.courses = [];
+          this.classTeacherAssignments = [];
+
+          // Load schedules directly (no teacher assignments needed for student)
+          this.loadSchedulesData(data.schedules);
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: 'Không thể tải dữ liệu'
+          });
+        }
+      });
+      return;
+    }
+
     forkJoin({
       classes: this.classService.getClasses(),
       teachers: this.teacherService.getTeachers(),
@@ -234,7 +287,7 @@ export class Schedule implements OnInit, AfterViewInit {
         // Load teacher assignments for all classes, then load schedules
         this.loadAllTeacherAssignmentsAndSchedules(data.schedules);
       },
-      error: (error) => {
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Lỗi',
@@ -601,6 +654,10 @@ export class Schedule implements OnInit, AfterViewInit {
   }
 
   onDateClick(arg: any): void {
+    // Giáo viên chỉ được xem lịch, không tạo mới
+    if (this.isTeacherReadonly) {
+      return;
+    }
     this.selectedEvent = null;
     const clickedDate = new Date(arg.dateStr);
     const dayOfWeek = clickedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
@@ -658,7 +715,32 @@ export class Schedule implements OnInit, AfterViewInit {
     this.displayDialog = true;
   }
 
+  openAttendanceDialog(): void {
+    if (!this.formSchedule?.id || !this.formSchedule?.class_id) return;
+    
+    // Find class info for title
+    const classInfo = this.classes.find(c => c.id === this.formSchedule.class_id);
+    const className = classInfo ? classInfo.class_name : `Lớp ${this.formSchedule.class_id}`;
+    
+    // Format date string
+    const dateStr = this.formSchedule.start_date ? new Date(this.formSchedule.start_date).toLocaleDateString('vi-VN') : '';
+    
+    this.attendanceScheduleId = this.formSchedule.id;
+    this.attendanceClassId = this.formSchedule.class_id;
+    this.attendanceScheduleTitle = `${className} (${dateStr})`;
+    
+    this.attendanceDialogVisible = true;
+  }
+
   onSave(): void {
+    if (this.isTeacherReadonly) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Chỉ xem',
+        detail: 'Tài khoản giáo viên không có quyền tạo hoặc chỉnh sửa lịch học.'
+      });
+      return;
+    }
     // Sync time picker values to form schedule
     if (this.startTimeDate) {
       const hours = this.startTimeDate.getHours().toString().padStart(2, '0');
@@ -765,6 +847,14 @@ export class Schedule implements OnInit, AfterViewInit {
   }
 
   onDelete(): void {
+    if (this.isTeacherReadonly) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Chỉ xem',
+        detail: 'Tài khoản giáo viên không có quyền xóa lịch.'
+      });
+      return;
+    }
     if (!this.formSchedule?.id) return;
 
     this.confirmationService.confirm({
@@ -816,6 +906,7 @@ export class Schedule implements OnInit, AfterViewInit {
   }
 
   onAddNew(): void {
+    if (this.isTeacherReadonly) return;
     this.selectedEvent = null;
     this.formSchedule = this.createEmptySchedule();
     this.startTimeDate = null;

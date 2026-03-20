@@ -32,7 +32,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ScheduleService } from '../../../schedule/services/schedule.service';
 import { TeacherService } from '../../../teacher-management/services/teacher.service';
 import { TeacherModel } from '../../../teacher-management/models/teacher.model';
-
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-class',
@@ -117,8 +117,14 @@ export class Class implements OnInit {
     private coursesService: CoursesService,
     private router: Router,
     private scheduleService: ScheduleService,
-    private teacherService: TeacherService
+    private teacherService: TeacherService,
+    private authService: AuthService
   ) {}
+
+  get isTeacher(): boolean {
+      const roles = this.authService.getRoles();
+      return roles.includes(2) && !roles.includes(1);
+  }
 
   ngOnInit(): void {
     this.loadCourses();

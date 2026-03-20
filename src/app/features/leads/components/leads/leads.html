@@ -1,0 +1,181 @@
+<div class="leads-container">
+    <p-toast position="top-right"></p-toast>
+    <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+    <!-- Statistics Cards -->
+    <div class="statistics-cards-grid" *ngIf="statistics">
+        <p-card>
+            <div class="flex align-items-center">
+                <div class="flex-1">
+                    <h6>Tổng số Leads</h6>
+                    <h4 class="mb-0">{{ statistics.total }}</h4>
+                </div>
+                <div class="icon-container text-blue-500">
+                    <i class="pi pi-users"></i>
+                </div>
+            </div>
+        </p-card>
+        <p-card>
+            <div class="flex align-items-center">
+                <div class="flex-1">
+                    <h6>Mới</h6>
+                    <h4 class="mb-0">{{ statistics.new }}</h4>
+                </div>
+                <div class="icon-container text-green-500">
+                    <i class="pi pi-star-fill"></i>
+                </div>
+            </div>
+        </p-card>
+        <p-card>
+            <div class="flex align-items-center">
+                <div class="flex-1">
+                    <h6>Đã liên hệ</h6>
+                    <h4 class="mb-0">{{ statistics.contacted }}</h4>
+                </div>
+                <div class="icon-container text-orange-500">
+                    <i class="pi pi-phone"></i>
+                </div>
+            </div>
+        </p-card>
+        <p-card>
+            <div class="flex align-items-center">
+                <div class="flex-1">
+                    <h6>Đã chuyển đổi</h6>
+                    <h4 class="mb-0">{{ statistics.converted }}</h4>
+                </div>
+                <div class="icon-container text-purple-500">
+                    <i class="pi pi-check-circle"></i>
+                </div>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Main Content -->
+    <p-card>
+        <div class="flex justify-content-between align-items-center header-with-buttons mb-4">
+            <h2 class="m-0">Khách hàng tiềm năng</h2>
+            <div class="flex gap-2 justify-content-end" style="display: flex !important; gap: 0.5rem !important; justify-content: flex-end !important; align-items: center !important; flex-direction: row !important; margin-left: auto !important;">
+                <p-button 
+                    icon="pi pi-refresh" 
+                    label="Làm mới" 
+                    (click)="loadData()"
+                    [outlined]="true"
+                    [loading]="loading">
+                </p-button>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="flex flex-wrap gap-3 mb-4">
+            <!-- Text Search -->
+            <div class="flex-1 min-w-0">
+                <p-iconField iconPosition="left">
+                    <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+                    <input 
+                        pInputText 
+                        type="text" 
+                        placeholder="Tìm kiếm theo tên, email, sđt..."
+                        [(ngModel)]="searchQuery"
+                        (input)="onSearch($event)"
+                        class="w-full">
+                </p-iconField>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-2">
+                <p-select 
+                    [ngModel]="selectedStatusFilter"
+                    (ngModelChange)="selectedStatusFilter = $event; onStatusFilterChange()"
+                    [options]="statusOptions"
+                    placeholder="Lọc theo trạng thái"
+                    [showClear]="true"
+                    class="min-w-0">
+                </p-select>
+            </div>
+        </div>
+
+        <!-- Leads Table -->
+        <main class="main-content">
+            <p-table 
+                #dt
+                [value]="filteredLeads" 
+                [tableStyle]="{'min-width': '60rem'}"
+                [paginator]="true" 
+                [rows]="20"
+                [showCurrentPageReport]="true"
+                currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} mục"
+                [rowsPerPageOptions]="[10, 20, 50]"
+                [globalFilterFields]="['fullname', 'email', 'phone', 'course_name', 'message']"
+                responsiveLayout="scroll"
+                styleClass="p-datatable-gridlines"
+                [loading]="loading">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="created_at" style="width: 12%;">Thời gian <p-sortIcon field="created_at"></p-sortIcon></th>
+                        <th pSortableColumn="fullname" style="width: 15%;">Họ tên <p-sortIcon field="fullname"></p-sortIcon></th>
+                        <th pSortableColumn="phone" style="width: 12%;">SĐT <p-sortIcon field="phone"></p-sortIcon></th>
+                        <th pSortableColumn="course_name" style="width: 18%;">Quan tâm <p-sortIcon field="course_name"></p-sortIcon></th>
+                        <th style="width: 20%;">Lời nhắn</th>
+                        <th pSortableColumn="status" style="width: 15%;">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
+                        <th style="width: 8rem; text-align: center;">Thao tác</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-lead>
+                    <tr>
+                        <td>{{ lead.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td class="font-semibold">{{ lead.fullname }}</td>
+                        <td><a [href]="'tel:' + lead.phone" class="text-blue-500 hover:underline">{{ lead.phone }}</a></td>
+                        <td>
+                            <span *ngIf="lead.course_id">{{ lead.course_name || 'Khóa học Đăng ký' }}</span>
+                            <span *ngIf="!lead.course_id" class="text-500">Tư vấn chung</span>
+                        </td>
+                        <td>
+                            <span class="inline-block max-w-12rem overflow-hidden text-overflow-ellipsis white-space-nowrap" [pTooltip]="lead.message" tooltipPosition="top" *ngIf="lead.message">
+                                {{ lead.message }}
+                            </span>
+                            <span *ngIf="!lead.message" class="text-500">-</span>
+                        </td>
+                        <td class="status-dropdown">
+                            <p-select [options]="statusOptions | slice:1" [(ngModel)]="lead.status" 
+                                      (onChange)="updateStatus(lead, $event.value)"
+                                      appendTo="body" [style]="{'border': 'none', 'background': 'transparent', 'padding': '0'}">
+                                <ng-template let-selected pTemplate="selectedItem">
+                                    <p-tag [severity]="getStatusSeverity(lead.status)" [value]="getStatusLabel(lead.status)"></p-tag>
+                                </ng-template>
+                                <ng-template let-option pTemplate="item">
+                                    <p-tag [severity]="getStatusSeverity(option.value)" [value]="option.label"></p-tag>
+                                </ng-template>
+                            </p-select>
+                        </td>
+                        <td style="text-align: center;">
+                            <p-button 
+                                icon="pi pi-trash" 
+                                [text]="true" 
+                                severity="danger"
+                                size="small"
+                                (click)="deleteLead(lead)"
+                                pTooltip="Xóa"
+                                tooltipPosition="top">
+                            </p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="py-4">
+                                <div class="text-center">
+                                    <i class="pi pi-inbox text-4xl" style="color: #6b7280; display: block; margin-bottom: 0.5rem;"></i>
+                                    <p class="mb-0">Không tìm thấy khách hàng nào</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </main>
+    </p-card>
+</div>

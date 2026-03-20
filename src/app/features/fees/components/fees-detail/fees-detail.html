@@ -89,15 +89,15 @@
       <div class="flex align-items-center">
         <div class="flex-1">
           <h6>Chưa thu <span *ngIf="selectedMonth" class="text-sm text-muted">({{ formatMonthKey(selectedMonth) }})</span></h6>
-          <h4 class="mb-0">{{ formatCurrency(getUnpaidAmount()) }}</h4>
-          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getUnpaidCount() > 0">
-            {{ getOverdueCountOnly() }} quá hạn, {{ getUnpaidCount() }} chưa đóng
+          <h4 class="mb-0">{{ formatCurrency(getDebtAmount()) }}</h4>
+          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getDebtCount() > 0">
+            {{ getOverdueCountOnly() }} quá hạn, {{ getDebtCount() }} chưa đóng
           </small>
-          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getUnpaidCount() === 0">
+          <small class="text-warning" *ngIf="getOverdueCountOnly() > 0 && getDebtCount() === 0">
             {{ getOverdueCountOnly() }} học viên quá hạn
           </small>
-          <small class="text-warning" *ngIf="getOverdueCountOnly() === 0 && getUnpaidCount() > 0">
-            {{ getUnpaidCount() }} học viên chưa đóng
+          <small class="text-warning" *ngIf="getOverdueCountOnly() === 0 && getDebtCount() > 0">
+            {{ getDebtCount() }} học viên chưa đóng
           </small>
         </div>
         <div class="icon-container text-orange-500">
@@ -162,7 +162,7 @@
         [outlined]="true"
         pTooltip="Gửi nhắc nhở"
         (click)="onSendReminders()"
-        [disabled]="getTotalUnpaidCount() === 0"
+        [disabled]="getTotalDebtCount() === 0"
         styleClass="mr-2"
       ></button>
       
@@ -237,9 +237,9 @@
           <th style="width: 160px; text-align: center;" class="text-center">Hạn nộp</th>
           <th style="width: 160px; text-align: center;" class="text-center">Ngày thanh toán</th>
           <th style="width: 140px; text-align: center;" class="text-center">Số ngày chậm</th>
-          <th pSortableColumn="payment_status" style="width: 160px; text-align: center;" class="text-center">
+          <th pSortableColumn="status" style="width: 160px; text-align: center;" class="text-center">
             Trạng thái
-            <p-sortIcon field="payment_status"></p-sortIcon>
+            <p-sortIcon field="status"></p-sortIcon>
           </th>
           <th style="width: 140px; text-align: center;" class="text-center">Thao tác</th>
         </tr>
@@ -257,7 +257,9 @@
             <span class="font-semibold text-blue-600">{{ formatCurrency(getStudentAmount(item)) }}</span>
           </td>
           <td style="text-align: center;" class="text-center">
-            <span class="text-sm">{{ formatDate(getDueDate(item)) }}</span>
+            <span class="text-sm">
+              {{ (getDueDate(item) && getDueDate(item) > '1900-01-01') ? formatDate(getDueDate(item)) : 'Chưa có hạn' }}
+            </span>
           </td>
           <td style="text-align: center;" class="text-center">
             <span class="text-sm" *ngIf="getPaidDate(item)">{{ formatDate(getPaidDate(item)) }}</span>
@@ -290,24 +292,47 @@
           </td>
           <td style="text-align: center;" class="text-center">
             <p-tag 
-              [value]="getPaymentStatus(item)" 
-              [severity]="getPaymentStatusSeverity(getPaymentStatus(item))"
-            ></p-tag>
+              [value]="getPaymentStatusLabel(item.status)" 
+              [severity]="getStatusSeverity(item.status)"
+              styleClass="px-2 py-1 text-sm font-medium">
+            </p-tag>
           </td>
           <td style="text-align: center;" class="text-center">
-            <div class="flex gap-1 action-buttons-container">
-              <!-- Xác nhận thanh toán - chỉ hiển thị khi chưa thanh toán -->
+            <div class="flex justify-content-center gap-1 action-buttons-container">
+              <!-- Approve/Reject buttons for submitted payments -->
+              <ng-container *ngIf="normalizeStatus(item.status) === 'PENDING'">
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-check-circle"
+                  class="action-button p-button-success"
+                  pTooltip="Phê duyệt thanh toán"
+                  (click)="onApprovePayment(item)"
+                ></button>
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-times-circle"
+                  class="action-button p-button-danger"
+                  pTooltip="Từ chối thanh toán"
+                  (click)="onRejectPayment(item)"
+                ></button>
+              </ng-container>
+
+              <!-- Confirm payment (manual) - only for UNPAID and NOT submitted -->
+
+
               <button
-                *ngIf="getPaymentStatus(item) !== 'Đã thanh toán'"
+                *ngIf="normalizeStatus(item.status) === 'UNPAID'"
                 pButton
                 type="button"
                 icon="pi pi-check"
                 class="action-button confirm-payment-btn"
-                pTooltip="Xác nhận thanh toán"
+                pTooltip="Xác nhận thanh toán (thủ công)"
                 (click)="onConfirmPayment(item)"
               ></button>
               
-              <!-- Gửi nhắc nhở -->
+              <!-- Gửi nhắc nhở - disable if approved or submitted (waiting) -->
               <button
                 pButton
                 type="button"
@@ -316,12 +341,12 @@
                 [outlined]="true"
                 pTooltip="Gửi nhắc nhở"
                 (click)="onSendReminderToStudent(item)"
-                [disabled]="getPaymentStatus(item) === 'Đã thanh toán'"
+                [disabled]="normalizeStatus(item.status) !== 'UNPAID'"
               ></button>
               
-              <!-- Xem chi tiết - chỉ hiển thị khi đã thanh toán -->
+              <!-- Xem chi tiết - hiển thị cho paid -->
               <button
-                *ngIf="getPaymentStatus(item) === 'Đã thanh toán'"
+                *ngIf="normalizeStatus(item.status) === 'PAID'"
                 pButton
                 type="button"
                 icon="pi pi-eye"
@@ -494,10 +519,10 @@
       <div class="detail-row">
         <label class="detail-label">Trạng thái:</label>
         <span class="detail-value">
-          <p-tag 
-            [value]="getPaymentStatus(selectedStudent)" 
-            [severity]="getPaymentStatusSeverity(getPaymentStatus(selectedStudent))"
-          ></p-tag>
+            <p-tag 
+              [value]="getPaymentStatusLabel(getPaymentStatus(selectedStudent))" 
+              [severity]="getPaymentStatusSeverity(getPaymentStatus(selectedStudent))"
+            ></p-tag>
         </span>
       </div>
       
@@ -653,3 +678,5 @@
 
 <!-- Confirmation Dialog -->
 <p-confirmDialog></p-confirmDialog>
+
+

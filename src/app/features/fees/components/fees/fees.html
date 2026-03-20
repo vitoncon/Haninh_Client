@@ -27,7 +27,7 @@
       <div class="flex align-items-center">
         <div class="flex-1">
           <h6>Chưa thu</h6>
-          <h4 class="mb-0">{{ formatCurrency(statistics?.unpaid_amount || 0) }}</h4>
+          <h4 class="mb-0">{{ formatCurrency(statistics?.debt_amount || 0) }}</h4>
         </div>
         <div class="icon-container text-orange-500">
           <i class="pi pi-clock"></i>
@@ -122,11 +122,12 @@
           <th style="width: 130px; text-align: center;" class="text-center">Mã lớp</th>
           <th style="width: 150px; text-align: center;" class="text-center">Học phí (VNĐ)</th>
           <th style="width: 100px; text-align: center;" class="text-center">Tổng HV</th>
-          <th style="width: 160px; text-align: center;" class="text-center">Tổng cần thu</th>
-          <th style="width: 160px; text-align: center;" class="text-center">Còn nợ</th>
-          <th pSortableColumn="status" style="width: 190px; text-align: center;" class="text-center">
+          <th style="width: 130px; text-align: center;" class="text-center">Tổng cần thu</th>
+          <th style="width: 130px; text-align: center;" class="text-center">Đã thu</th>
+          <th style="width: 130px; text-align: center;" class="text-center">Còn nợ</th>
+          <th pSortableColumn="paymentStatus" style="width: 190px; text-align: center;" class="text-center">
             Trạng thái thu
-            <p-sortIcon field="status"></p-sortIcon>
+            <p-sortIcon field="paymentStatus"></p-sortIcon>
           </th>
           <th style="width: 80px; text-align: center;" class="text-center">Thao tác</th>
         </tr>
@@ -147,39 +148,42 @@
           </td>
           <td style="text-align: center;" class="text-center">
             <span class="font-semibold">
-              <ng-container *ngIf="getCourseTuitionFee(classData) !== null; else noFee">
-                {{ formatCurrency(getCourseTuitionFee(classData)!) }}
+              <ng-container *ngIf="classData.tuition_fee !== null && classData.tuition_fee > 0; else noFee">
+                {{ formatCurrency(classData.tuition_fee) }}
               </ng-container>
               <ng-template #noFee>N/A</ng-template>
             </span>
           </td>
           <td style="text-align: center;" class="text-center">
-            <span class="font-semibold">{{ getTotalStudents(classData.id) }}</span>
+            <span class="font-semibold">{{ classData.totalStudents }}</span>
+          </td>
+          <td style="text-align: center;" class="text-center">
+            <span class="font-semibold">{{ formatCurrency(classData.totalRevenue || 0) }}</span>
           </td>
           <td style="text-align: center;" class="text-center">
             <p-tag 
-              [value]="formatCurrency(getTotalAmountToCollect(classData))" 
-              severity="success"
+              [value]="formatCurrency(classData.totalPaid || 0)" 
+              severity="info"
             ></p-tag>
           </td>
           <td style="text-align: center;" class="text-center">
-            <ng-container *ngIf="getRemainingDebt(classData) > 0; else noDebt">
+            <ng-container *ngIf="classData.totalDebt > 0; else noDebt">
               <p-tag 
-                [value]="formatCurrency(getRemainingDebt(classData))" 
+                [value]="formatCurrency(classData.totalDebt)" 
                 severity="danger"
               ></p-tag>
             </ng-container>
             <ng-template #noDebt>
               <p-tag 
-                [value]="formatCurrency(getRemainingDebt(classData))" 
+                [value]="formatCurrency(classData.totalDebt || 0)" 
                 severity="success"
               ></p-tag>
             </ng-template>
           </td>
           <td style="text-align: center;" class="text-center">
             <p-tag 
-              [value]="getClassPaymentStatus(classData.id)" 
-              [severity]="getPaymentStatusSeverity(getClassPaymentStatus(classData.id))"
+              [value]="getClassStatusLabel(classData.paymentStatus)" 
+              [severity]="getPaymentStatusSeverity(classData.paymentStatus)"
             ></p-tag>
           </td>
           <td style="text-align: center;" class="text-center">

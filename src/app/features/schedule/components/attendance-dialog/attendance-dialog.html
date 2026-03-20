@@ -1,0 +1,53 @@
+<p-dialog 
+  [header]="'Điểm Danh: ' + scheduleTitle" 
+  [(visible)]="visible" 
+  [modal]="true" 
+  [style]="{width: '800px'}"
+  [closable]="true"
+  (onHide)="onHide()"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <p-toast></p-toast>
+  
+  <div class="flex justify-content-between mb-3 mt-2" *ngIf="students.length > 0 && !loading">
+      <span>Đánh dấu trạng thái điểm danh cho tất cả học viên trong lớp:</span>
+      <p-button label="Đánh dấu tất cả: Có mặt" icon="pi pi-check-circle" size="small" [outlined]="true" (click)="markAllPresent()"></p-button>
+  </div>
+  
+  <p-table [value]="students" [loading]="loading" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-gridlines mt-2">
+      <ng-template pTemplate="header">
+          <tr>
+              <th style="width: 50px">STT</th>
+              <th>Mã HV</th>
+              <th>Họ và tên</th>
+              <th style="width: 200px">Trạng thái</th>
+          </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row let-i="rowIndex">
+          <tr>
+              <td>{{ i + 1 }}</td>
+              <td>{{ row.student.student_code }}</td>
+              <td>{{ row.student.full_name }}</td>
+              <td>
+                  <p-select 
+                      [options]="statusOptions" 
+                      [(ngModel)]="row.attendance.status" 
+                      appendTo="body" 
+                      styleClass="w-full">
+                  </p-select>
+              </td>
+          </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+          <tr>
+              <td colspan="4" class="text-center p-4">Không có học viên nào trong lớp này</td>
+          </tr>
+      </ng-template>
+  </p-table>
+
+  <ng-template pTemplate="footer">
+      <p-button label="Hủy" icon="pi pi-times" styleClass="p-button-text p-button-secondary" (click)="onHide()" [disabled]="saving"></p-button>
+      <p-button label="Lưu điểm danh" icon="pi pi-save" styleClass="p-button-primary" (click)="saveAttendance()" [loading]="saving" [disabled]="loading || students.length === 0"></p-button>
+  </ng-template>
+</p-dialog>

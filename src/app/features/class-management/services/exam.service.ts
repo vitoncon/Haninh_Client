@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError, throwError, of } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 
 export interface Exam {
   id: number;
@@ -57,7 +58,14 @@ export interface ExamFilters {
 export class ExamService {
   private readonly apiUrl = 'http://localhost:10093/api/exams';
   
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
+
+  private isTeacher(): boolean {
+    return this.authService.getRole() === 2;
+  }
 
   private getAuthHeaders(): { headers: HttpHeaders } {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -111,6 +119,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return of({ data: [], total: 0 });
+        }
         console.error('Error fetching exams:', error);
         return throwError(() => error);
       })
@@ -145,15 +156,15 @@ export class ExamService {
         return [];
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
         console.error('Error fetching exam results with details:', error);
         return of([]); // Return empty array instead of throwing error
       })
     );
   }
 
-  /**
-   * Lấy bài kiểm tra theo ID
-   */
   getExamById(id: number): Observable<Exam> {
     return this.http.get<Exam>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(
       map((response: any) => {
@@ -195,6 +206,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => ({ status: 403, message: 'Teachers cannot create exams' }));
+        }
         console.error('Error creating exam:', error);
         return throwError(() => error);
       })
@@ -213,6 +227,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => ({ status: 403, message: 'Teachers cannot update exams' }));
+        }
         console.error(`Error updating exam ${id}:`, error);
         return throwError(() => error);
       })
@@ -223,6 +240,9 @@ export class ExamService {
    * Duyệt bài kiểm tra (sử dụng PUT thay vì PATCH)
    */
   approveExam(id: number, approveData: ExamApproveRequest): Observable<Exam> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot approve exams' }));
+    }
     return this.http.put<Exam>(`${this.apiUrl}/${id}`, approveData, this.getAuthHeaders()).pipe(
       map((response: any) => {
         if (response.data) {
@@ -231,6 +251,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => ({ status: 403, message: 'Teachers cannot approve exams' }));
+        }
         console.error(`Error approving exam ${id}:`, error);
         return throwError(() => error);
       })
@@ -241,6 +264,9 @@ export class ExamService {
    * Mở khóa bài kiểm tra (sử dụng PUT thay vì PATCH)
    */
   unlockExam(id: number): Observable<Exam> {
+    if (this.isTeacher()) {
+      return throwError(() => ({ status: 403, message: 'Teachers cannot unlock exams' }));
+    }
     // Set status back to 'cancelled' (which maps to 'review') to unlock the exam
     return this.http.put<Exam>(`${this.apiUrl}/${id}`, { status: 'cancelled' }, this.getAuthHeaders()).pipe(
       map((response: any) => {
@@ -250,6 +276,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => ({ status: 403, message: 'Teachers cannot unlock exams' }));
+        }
         console.error(`Error unlocking exam ${id}:`, error);
         return throwError(() => error);
       })
@@ -262,6 +291,9 @@ export class ExamService {
   deleteExam(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, this.getAuthHeaders()).pipe(
       catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => ({ status: 403, message: 'Teachers cannot delete exams' }));
+        }
         console.error(`Error deleting exam ${id}:`, error);
         return throwError(() => error);
       })
@@ -280,6 +312,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return of(null);
+        }
         console.error(`Error fetching statistics for exam ${id}:`, error);
         return throwError(() => error);
       })
@@ -310,6 +345,9 @@ export class ExamService {
         return response;
       }),
       catchError(error => {
+        if (error.status === 403) {
+          return of([]);
+        }
         console.error(`Error fetching status history for exam ${id}:`, error);
         return of([]); // Return empty array instead of throwing error
       })
